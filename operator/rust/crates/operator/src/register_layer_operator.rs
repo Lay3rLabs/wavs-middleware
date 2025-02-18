@@ -19,10 +19,27 @@ use once_cell::sync::Lazy;
 use rand::RngCore;
 use std::{env, str::FromStr};
 
-pub const fn get_rpc_url() -> &'static str {
-    match option_env!("TESTNET_RPC_URL") {
-        Some(url) => url,
-        None => "http://ethereum:8545",
+pub const fn get_rpc_url() -> String {
+    match env::var("DEPLOY_ENV") {
+        Ok(env) if env == "LOCAL" => {
+            // Always use the ethereum URL for local
+            "http://ethereum:8545".to_string()
+        }
+        Ok(env) if env == "TESTNET" => {
+            // Only use TESTNET_RPC_URL if explicitly in TESTNET mode
+            match env::var("TESTNET_RPC_URL") {
+                Ok(url) => url,
+                Err(_) => {
+                    eprintln!("Warning: TESTNET_RPC_URL is not set; falling back to http://ethereum:8545");
+                    "http://ethereum:8545".to_string()
+                }
+            }
+        }
+        // Fallback if DEPLOY_ENV is neither LOCAL nor TESTNET
+        _ => {
+            eprintln!("Warning: DEPLOY_ENV is not set or invalid; falling back to http://ethereum:8545");
+            "http://ethereum:8545".to_string()
+        }
     }
 }
 pub const ANVIL_RPC_URL: &str = get_rpc_url();
