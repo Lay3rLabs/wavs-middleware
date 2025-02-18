@@ -17,7 +17,7 @@ use hello_world_utils::parse_offchain_message_consumer_address;
 use once_cell::sync::Lazy;
 use std::{env, str::FromStr};
 
-pub const fn get_rpc_url() -> String {
+fn get_rpc_url() -> String {
     match env::var("DEPLOY_ENV") {
         Ok(env) if env == "LOCAL" => {
             // Always use the ethereum URL for local

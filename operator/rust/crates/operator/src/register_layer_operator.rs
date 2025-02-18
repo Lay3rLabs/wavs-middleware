@@ -19,7 +19,7 @@ use once_cell::sync::Lazy;
 use rand::RngCore;
 use std::{env, str::FromStr};
 
-pub const fn get_rpc_url() -> String {
+fn get_rpc_url() -> String {
     match env::var("DEPLOY_ENV") {
         Ok(env) if env == "LOCAL" => {
             // Always use the ethereum URL for local
