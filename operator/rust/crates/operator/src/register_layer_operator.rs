@@ -42,12 +42,12 @@ fn get_rpc_url() -> String {
         }
     }
 }
-pub const ANVIL_RPC_URL: &str = get_rpc_url();
+pub static ANVIL_RPC_URL: Lazy<String> = Lazy::new(|| get_rpc_url());
 static KEY: Lazy<String> =
     Lazy::new(|| env::var("PRIVATE_KEY").expect("failed to retrieve private key"));
 
 async fn register_operator() -> eyre::Result<()> {
-    let pr = get_signer(&KEY.clone(), ANVIL_RPC_URL);
+    let pr = get_signer(&KEY.clone(), &ANVIL_RPC_URL);
     let signer = PrivateKeySigner::from_str(&KEY.clone())?;
 
     let default_slasher = Address::ZERO;
@@ -62,7 +62,7 @@ async fn register_operator() -> eyre::Result<()> {
         default_slasher,
         delegation_manager_address,
         avs_directory_address,
-        ANVIL_RPC_URL.to_string(),
+        ANVIL_RPC_URL.clone(),
     );
 
     let is_registered = elcontracts_reader_instance

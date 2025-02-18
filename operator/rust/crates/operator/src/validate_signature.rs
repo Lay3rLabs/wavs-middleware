@@ -40,7 +40,7 @@ fn get_rpc_url() -> String {
         }
     }
 }
-pub const ANVIL_RPC_URL: &str = get_rpc_url();
+pub static ANVIL_RPC_URL: Lazy<String> = Lazy::new(|| get_rpc_url());
 fn read_private_keys() -> Result<Vec<String>> {
     let home = env::var("HOME").expect("HOME environment variable not set");
     let mut keys = Vec::new();
@@ -84,7 +84,7 @@ static KEYS: Lazy<Vec<String>> =
     Lazy::new(|| read_private_keys().expect("failed to read private keys"));
 
 async fn validate_signature(message: String) -> Result<()> {
-    let pr = get_signer(&KEYS[0], ANVIL_RPC_URL);
+    let pr = get_signer(&KEYS[0], &ANVIL_RPC_URL);
 
     // First create and sort operators
     let mut operator_addresses = Vec::new();
@@ -117,7 +117,7 @@ async fn validate_signature(message: String) -> Result<()> {
         signatures.push(DynSolValue::Bytes(signer.sign_hash_sync(&m_hash)?.into()));
     }
 
-    let current_block = U256::from(get_provider(ANVIL_RPC_URL).get_block_number().await?);
+    let current_block = U256::from(get_provider(&ANVIL_RPC_URL).get_block_number().await?);
     let signature_data = DynSolValue::Tuple(vec![
         DynSolValue::Array(operators),
         DynSolValue::Array(signatures),
