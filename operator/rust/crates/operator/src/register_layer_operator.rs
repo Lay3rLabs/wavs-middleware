@@ -25,6 +25,11 @@ pub const fn get_rpc_url() -> &'static str {
         None => "http://ethereum:8545",
     }
 }
+
+pub fn get_chain_id() -> String {
+    env::var("CHAIN_ID").unwrap_or_else(|_| "17000".to_string())
+}
+
 pub const ANVIL_RPC_URL: &str = get_rpc_url();
 static KEY: Lazy<String> =
     Lazy::new(|| env::var("PRIVATE_KEY").expect("failed to retrieve private key"));
@@ -35,7 +40,7 @@ async fn register_operator() -> eyre::Result<()> {
 
     let default_slasher = Address::ZERO;
 
-    let data = std::fs::read_to_string("contracts/deployments/core/17000.json")?;
+    let data = std::fs::read_to_string(format!("contracts/deployments/core/{}.json", get_chain_id()))?;
     let el_parsed: EigenLayerData = serde_json::from_str(&data)?;
     let delegation_manager_address: Address = el_parsed.addresses.delegation.parse()?;
     let avs_directory_address: Address = el_parsed.addresses.avs_directory.parse()?;
@@ -60,11 +65,11 @@ async fn register_operator() -> eyre::Result<()> {
     let salt = FixedBytes::from_slice(&salt);
     let now = Utc::now().timestamp();
     let expiry: U256 = U256::from(now + 3600);
-    let data = std::fs::read_to_string("contracts/deployments/layer-middleware/17000.json")?;
+    let data = std::fs::read_to_string(format!("contracts/deployments/layer-middleware/{}.json", get_chain_id()))?;
     get_logger().info(&format!("layer-middleware deployment data: {}", data), &"");
     // Use the correct parse function for LayerMiddleware JSON
     let layer_service_manager_address = parse_layer_service_manager(
-        "contracts/deployments/layer-middleware/17000.json",
+        &format!("contracts/deployments/layer-middleware/{}.json", get_chain_id()),
     )?;
     get_logger().info(&format!("layer_service_manager_address: {}", layer_service_manager_address), &"");
     let digest_hash = elcontracts_reader_instance
@@ -86,7 +91,7 @@ async fn register_operator() -> eyre::Result<()> {
 
     // Use the LayerMiddleware parsing function for stake registry
     let stake_registry_address = parse_stake_registry_address_layer(
-        "contracts/deployments/layer-middleware/17000.json",
+        &format!("contracts/deployments/layer-middleware/{}.json", get_chain_id()),
     )?;
     let contract_ecdsa_stake_registry =
         ECDSAStakeRegistry::new(stake_registry_address, &pr);
