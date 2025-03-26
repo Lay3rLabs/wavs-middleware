@@ -23,7 +23,7 @@ import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
  */
 contract LayerServiceManager is ECDSAServiceManagerBase, ILayerServiceManager {
     using ECDSAUpgradeable for bytes32;
-
+    string public serviceURI;
     constructor(
         address _avsDirectory,
         address _stakeRegistry,
@@ -148,6 +148,12 @@ contract LayerServiceManager is ECDSAServiceManagerBase, ILayerServiceManager {
     ) external override onlyOwner {
         // Use AllocationManager instead of AVSDirectory
         IAllocationManager(allocationManager).updateAVSMetadataURI(address(this), _metadataURI);
+    }
+
+    /// @inheritdoc ILayerServiceManager
+    function setServiceURI(string calldata _serviceURI) external override {
+        serviceURI = _serviceURI;
+        emit ServiceURIUpdated(_serviceURI);
     }
 
     function validate(bytes calldata data, bytes calldata signature) external view
