@@ -220,7 +220,7 @@ create_operator_set() {
              'createOperatorSets((uint32,address[])[])' \
              '[($set_id,[$LST_STRATEGY_ADDRESS])]' \
              --private-key '$deployer_private_key' \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' "
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "created operator set $set_id with 1 strategy" \
           "cast s '$layerServiceManagerAddress' \
@@ -228,7 +228,7 @@ create_operator_set() {
              '[($set_id,[$LST_STRATEGY_ADDRESS])]' \
              --from '$owner' \
              --unlocked \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' "
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     fi
     stop_impersonating "$owner"
 }
@@ -246,7 +246,7 @@ update_avs_registrar() {
              'setAVSRegistrar(address)' \
              '$avsRegistrarAddress' \
              --private-key '$deployer_private_key' \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' "
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "set up the AVSRegistrar through LayerServiceManager" \
           "cast s '$layerServiceManagerAddress' \
@@ -254,7 +254,7 @@ update_avs_registrar() {
              '$avsRegistrarAddress' \
              --from '$owner' \
              --unlocked \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' "
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     fi
     stop_impersonating "$owner"
 }
@@ -354,7 +354,7 @@ setup_mock_token_and_rewards() {
         --private-key '$deployer_private_key' \
         --broadcast > /dev/null 2>&1"
 
-    tokenAddress=$(cat deployments/layer-middleware/mockToken$CHAIN_ID.json | jq -r '.MockToken')
+    tokenAddress=$(cat deployments/wavs-middleware/mockToken$CHAIN_ID.json | jq -r '.MockToken')
 
     impersonate_account "$owner"
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
@@ -440,10 +440,10 @@ deploy_consumer_contract() {
     cd ../wavs-middleware
     jq --arg addr "$offchainMessageConsumerAddress" \
        '.addresses.offchainMessageConsumer = $addr' \
-       contracts/deployments/layer-middleware/$CHAIN_ID.json \
-       > temp.json && mv temp.json contracts/deployments/layer-middleware/$CHAIN_ID.json
+       contracts/deployments/wavs-middleware/$CHAIN_ID.json \
+       > temp.json && mv temp.json contracts/deployments/wavs-middleware/$CHAIN_ID.json
 
-    cp contracts/deployments/layer-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
+    cp contracts/deployments/wavs-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
 }
 
 #############################################
@@ -501,12 +501,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-stakeRegistryAddress=$(cat deployments/layer-middleware/$CHAIN_ID.json | jq -r '.addresses.stakeRegistry')
-layerServiceManagerAddress=$(cat deployments/layer-middleware/$CHAIN_ID.json | jq -r '.addresses.layerServiceManager')
-avsRegistrarAddress=$(cat deployments/layer-middleware/$CHAIN_ID.json | jq -r '.addresses.avsRegistrar')
+stakeRegistryAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.stakeRegistry')
+layerServiceManagerAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.layerServiceManager')
+avsRegistrarAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.avsRegistrar')
 [ -z "$stakeRegistryAddress" -o -z "$layerServiceManagerAddress" -o -z "$avsRegistrarAddress" ] && { echo "Error: One or more required addresses (stakeRegistryAddress, layerServiceManagerAddress, avsRegistrarAddress) are null or empty"; exit 1; }
 echo "Middleware contracts deployed with addresses: LayerServiceManager: $layerServiceManagerAddress, StakeRegistry: $stakeRegistryAddress, AVSRegistrar: $avsRegistrarAddress"
-cp deployments/layer-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
+cp deployments/wavs-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
 
 owner=$(cast call "$stakeRegistryAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
@@ -516,19 +516,17 @@ owner=$(cast call "$stakeRegistryAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_R
 # This function is used to update the quorum config for the stake registry, defining the strategies and their BPS weights
 update_quorum_config "$owner" "$stakeRegistryAddress"
 
-# TODO: fails - do we need it?
 # This function is used to update the AVS registrar for the stake registry, allowing injection of business logic to AVS registration
-# update_avs_registrar "$owner" "$layerServiceManagerAddress" "$avsRegistrarAddress"
+update_avs_registrar "$owner" "$layerServiceManagerAddress" "$avsRegistrarAddress"
 
 # This function is used to update the metadata URL for the stake registry, allowing to be indexed by the Eigenlayer frontend
 update_metadata_url
 
-# TODO: fails - do we need it?
 # This function is used to create the operator sets for the stake registry, allowing meta-avs functionality or otherwise discerneable operator sets
-# NUM_OPERATOR_SETS=1
-# for i in $(seq 1 $NUM_OPERATOR_SETS); do
-#     create_operator_set "$i" "$owner" "$layerServiceManagerAddress"
-# done
+NUM_OPERATOR_SETS=1
+for i in $(seq 1 $NUM_OPERATOR_SETS); do
+    create_operator_set "$i" "$owner" "$layerServiceManagerAddress"
+done
 
 # # This function is used to register the operators to eigenlayer and the avs
 # if [ "$QUICK_MODE" = "ON" ]; then
