@@ -1,11 +1,14 @@
-FROM node:22
+FROM ghcr.io/foundry-rs/foundry:latest
 
-WORKDIR /app
+USER root
+RUN apt update && apt install -yq jq curl
 
-COPY package.json ./
-COPY tsconfig.json ./
-RUN npm install
+COPY contracts /wavs/contracts
+WORKDIR /wavs/contracts
+RUN forge build
 
-COPY . .
+COPY ./docker/start.sh /wavs/start.sh
+RUN chmod +x /wavs/start.sh
+WORKDIR /wavs
 
-CMD ["npm", "start"]
+CMD ["/wavs/start.sh"]
