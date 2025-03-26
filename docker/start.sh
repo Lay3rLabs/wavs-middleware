@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# -x echos all lines for debug, -e quits on first error
+set -e
 # set -xe
 
 # Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
@@ -236,6 +238,7 @@ update_avs_registrar() {
     local layerServiceManagerAddress="$2"
     local avsRegistrarAddress="$3"
 
+    # TODO: Bug1
     impersonate_account "$owner"
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
         execute_transaction "set up the AVSRegistrar through LayerServiceManager" \
@@ -264,6 +267,8 @@ update_metadata_url() {
     fi
   fi
 
+  cat $HOME/.nodes/avs_deploy.json
+
   serviceManagerAddress=$(jq -r '.addresses.layerServiceManager' "$HOME/.nodes/avs_deploy.json")
   if [ -z "$serviceManagerAddress" ] || [ "$serviceManagerAddress" = "null" ]; then
       echo "Error: Failed to read layerServiceManager from $HOME/.nodes/avs_deploy.json"
@@ -275,6 +280,7 @@ update_metadata_url() {
       echo "Error: Failed to read metaDataURI from $HOME/.nodes/avs_deploy.json"
       exit 1
   fi
+  echo "** $metadataURI **"
 
   owner=$(cast call "$serviceManagerAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
@@ -510,17 +516,19 @@ owner=$(cast call "$stakeRegistryAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_R
 # This function is used to update the quorum config for the stake registry, defining the strategies and their BPS weights
 update_quorum_config "$owner" "$stakeRegistryAddress"
 
+# TODO: fails - do we need it?
 # This function is used to update the AVS registrar for the stake registry, allowing injection of business logic to AVS registration
-update_avs_registrar "$owner" "$layerServiceManagerAddress" "$avsRegistrarAddress"
+# update_avs_registrar "$owner" "$layerServiceManagerAddress" "$avsRegistrarAddress"
 
 # This function is used to update the metadata URL for the stake registry, allowing to be indexed by the Eigenlayer frontend
 update_metadata_url
 
+# TODO: fails - do we need it?
 # This function is used to create the operator sets for the stake registry, allowing meta-avs functionality or otherwise discerneable operator sets
-NUM_OPERATOR_SETS=1
-for i in $(seq 1 $NUM_OPERATOR_SETS); do
-    create_operator_set "$i" "$owner" "$layerServiceManagerAddress"
-done
+# NUM_OPERATOR_SETS=1
+# for i in $(seq 1 $NUM_OPERATOR_SETS); do
+#     create_operator_set "$i" "$owner" "$layerServiceManagerAddress"
+# done
 
 # # This function is used to register the operators to eigenlayer and the avs
 # if [ "$QUICK_MODE" = "ON" ]; then
