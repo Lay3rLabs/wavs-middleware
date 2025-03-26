@@ -14,6 +14,11 @@ interface ILayerServiceManager {
     function validate(bytes calldata data, bytes calldata signature) external view;
 
     /**
+     * @return The service URI.
+     */
+    function getServiceURI() external view returns (string memory);
+
+    /**
      * @param _serviceURI The service URI to update.
      */
     function setServiceURI(string calldata _serviceURI) external;

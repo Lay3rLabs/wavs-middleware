@@ -156,6 +156,11 @@ contract LayerServiceManager is ECDSAServiceManagerBase, ILayerServiceManager {
         emit ServiceURIUpdated(_serviceURI);
     }
 
+    /// @inheritdoc ILayerServiceManager
+    function getServiceURI() external view override returns (string memory) {
+        return serviceURI;
+    }
+
     function validate(bytes calldata data, bytes calldata signature) external view
     {
         bytes32 message = keccak256(data);
