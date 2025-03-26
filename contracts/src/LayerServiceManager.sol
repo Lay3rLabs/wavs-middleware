@@ -151,7 +151,7 @@ contract LayerServiceManager is ECDSAServiceManagerBase, ILayerServiceManager {
     }
 
     /// @inheritdoc ILayerServiceManager
-    function setServiceURI(string calldata _serviceURI) external override {
+    function setServiceURI(string calldata _serviceURI) external override onlyOwner {
         serviceURI = _serviceURI;
         emit ServiceURIUpdated(_serviceURI);
     }
