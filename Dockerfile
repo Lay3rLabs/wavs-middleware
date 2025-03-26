@@ -7,8 +7,8 @@ COPY contracts /wavs/contracts
 WORKDIR /wavs/contracts
 RUN forge build --no-cache
 
-COPY ./docker/start.sh /wavs/start.sh
-RUN chmod +x /wavs/start.sh
+COPY ./docker/deploy.sh /wavs/deploy.sh
+RUN chmod +x /wavs/deploy.sh
 WORKDIR /wavs
 
-CMD ["/wavs/start.sh"]
+CMD ["/wavs/deploy.sh"]
