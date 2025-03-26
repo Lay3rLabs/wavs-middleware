@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# set -xe
+
 # Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
 # https://github.com/layr-labs/eigenlayer-contracts In the README.md
 STRATEGY_ADDRESSES='[
@@ -16,6 +18,8 @@ STRATEGY_ADDRESSES='[
   "0xaccc5a86732be85b5012e8614af237801636f8e5",
   "0xad76d205564f955a9c18103c4422d1cd94016899"
 ]'
+
+export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
 
 # Set default value for NUM_OPERATORS if not provided
 if [ -z "$NUM_OPERATORS" ]; then
@@ -115,11 +119,16 @@ setup_operator() {
         echo "QUICK_MODE is ON - skipping operator setup for operator $index"
         return 0
     fi
-    STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' contracts/deployments/core/$CHAIN_ID.json)
-
-    DELEGATION_MANAGER_ADDRESS=$(jq -r '.addresses.delegation' contracts/deployments/core/$CHAIN_ID.json)
-    token_address=$(jq -r '.addresses.token' contracts/deployments/wavs-middleware/$CHAIN_ID.json)
-    strategy_address=$(jq -r '.addresses.strategy' contracts/deployments/wavs-middleware/$CHAIN_ID.json)
+    STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' deployments/core/$CHAIN_ID.json)
+    if [ -z "$STRATEGY_MANAGER_ADDRESS" ]; then
+        echo "Error: Failed to read strategyManagerAddress from $HOME/.nodes/avs_deploy.json"
+        exit 1
+    fi
+    DELEGATION_MANAGER_ADDRESS=$(jq -r '.addresses.delegation' deployments/core/$CHAIN_ID.json)
+    if [ -z "$DELEGATION_MANAGER_ADDRESS" ]; then
+        echo "Error: Failed to read delegationManagerAddress from $HOME/.nodes/avs_deploy.json"
+        exit 1
+    fi
     local mnemonic=$(cast wallet nm --json | jq -r '.mnemonic')
     local private_key=$(cast wallet pk "$mnemonic")
     local public_key=$(cast wallet address $private_key)
@@ -177,18 +186,18 @@ setup_operator() {
     cast s "$allocationManager" \
         "registerForOperatorSets(address,(address,uint32[],bytes))" \
         "$public_key" \
-        "($layerServiceManagerAddress,[1,2],0x1234)" \
+        "($layerServiceManagerAddress,[1],0x1234)" \
         --private-key $private_key \
-        --rpc-url $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
+        --rpc-url $LOCAL_ETHEREUM_RPC_URL # > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        echo "Successfully registered operator $public_key to operator sets [1,2]"
+        echo "Successfully registered operator $public_key to operator sets [1]"
     else
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
     fi
 
     PRIVATE_KEY=$private_key
-    cargo run --bin register_layer_operator > /dev/null 2>&1
+    cargo run --bin register_layer_operator #> /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
@@ -217,7 +226,7 @@ create_operator_set() {
              '[($set_id,[$LST_STRATEGY_ADDRESS])]' \
              --from '$owner' \
              --unlocked \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' "
     fi
     stop_impersonating "$owner"
 }
@@ -234,7 +243,7 @@ update_avs_registrar() {
              'setAVSRegistrar(address)' \
              '$avsRegistrarAddress' \
              --private-key '$deployer_private_key' \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' "
     else
         execute_transaction "set up the AVSRegistrar through LayerServiceManager" \
           "cast s '$layerServiceManagerAddress' \
@@ -242,7 +251,7 @@ update_avs_registrar() {
              '$avsRegistrarAddress' \
              --from '$owner' \
              --unlocked \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' "
     fi
     stop_impersonating "$owner"
 }
@@ -339,7 +348,7 @@ setup_mock_token_and_rewards() {
         --private-key '$deployer_private_key' \
         --broadcast > /dev/null 2>&1"
 
-    tokenAddress=$(cat deployments/wavs-middleware/mockToken$CHAIN_ID.json | jq -r '.MockToken')
+    tokenAddress=$(cat deployments/layer-middleware/mockToken$CHAIN_ID.json | jq -r '.MockToken')
 
     impersonate_account "$owner"
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
@@ -425,10 +434,10 @@ deploy_consumer_contract() {
     cd ../wavs-middleware
     jq --arg addr "$offchainMessageConsumerAddress" \
        '.addresses.offchainMessageConsumer = $addr' \
-       contracts/deployments/wavs-middleware/$CHAIN_ID.json \
-       > temp.json && mv temp.json contracts/deployments/wavs-middleware/$CHAIN_ID.json
+       contracts/deployments/layer-middleware/$CHAIN_ID.json \
+       > temp.json && mv temp.json contracts/deployments/layer-middleware/$CHAIN_ID.json
 
-    cp contracts/deployments/wavs-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
+    cp contracts/deployments/layer-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
 }
 
 #############################################
@@ -436,11 +445,10 @@ deploy_consumer_contract() {
 #############################################
 
 mkdir -p ~/.nodes
-
 deployer_private_key=$(cast wallet new --json | jq -r '.[0].private_key')
 deployer_public_key=$(cast wallet address "$deployer_private_key")
-echo "PRIVATE_KEY=$deployer_private_key" > contracts/.env
-echo "PRIVATE_KEY=$deployer_private_key" > ~/.nodes/deployer
+echo "PRIVATE_KEY=$deployer_private_key" >> contracts/.env
+echo "$deployer_private_key" > ~/.nodes/deployer
 
 source contracts/.env
 
@@ -481,18 +489,18 @@ fi
 
 echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
 
-# cd contracts && forge script script/LayerMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --broadcast > /dev/null 2>&1
-cd contracts && forge script script/LayerMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --broadcast
+cd contracts && forge script script/LayerMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --broadcast # /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run middleware deployment script"
     exit 1
 fi
 
-stakeRegistryAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.stakeRegistry')
-layerServiceManagerAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.layerServiceManager')
-avsRegistrarAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.avsRegistrar')
+stakeRegistryAddress=$(cat deployments/layer-middleware/$CHAIN_ID.json | jq -r '.addresses.stakeRegistry')
+layerServiceManagerAddress=$(cat deployments/layer-middleware/$CHAIN_ID.json | jq -r '.addresses.layerServiceManager')
+avsRegistrarAddress=$(cat deployments/layer-middleware/$CHAIN_ID.json | jq -r '.addresses.avsRegistrar')
 [ -z "$stakeRegistryAddress" -o -z "$layerServiceManagerAddress" -o -z "$avsRegistrarAddress" ] && { echo "Error: One or more required addresses (stakeRegistryAddress, layerServiceManagerAddress, avsRegistrarAddress) are null or empty"; exit 1; }
 echo "Middleware contracts deployed with addresses: LayerServiceManager: $layerServiceManagerAddress, StakeRegistry: $stakeRegistryAddress, AVSRegistrar: $avsRegistrarAddress"
+cp deployments/layer-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
 
 owner=$(cast call "$stakeRegistryAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
@@ -514,14 +522,14 @@ for i in $(seq 1 $NUM_OPERATOR_SETS); do
     create_operator_set "$i" "$owner" "$layerServiceManagerAddress"
 done
 
-# This function is used to register the operators to eigenlayer and the avs
-if [ "$QUICK_MODE" = "ON" ]; then
-    setup_operator 1 "$layerServiceManagerAddress"
-else
-    for i in $(seq 1 $NUM_OPERATORS); do
-        setup_operator "$i" "$layerServiceManagerAddress"
-    done
-fi
+# # This function is used to register the operators to eigenlayer and the avs
+# if [ "$QUICK_MODE" = "ON" ]; then
+#     setup_operator 1 "$layerServiceManagerAddress"
+# else
+#     for i in $(seq 1 $NUM_OPERATORS); do
+#         setup_operator "$i" "$layerServiceManagerAddress"
+#     done
+# fi
 
 # # This function is used to setup the mock token and rewards for the stake registry, allowing the AVS to submit rewards to the operators
 # setup_mock_token_and_rewards "$owner" "$layerServiceManagerAddress"

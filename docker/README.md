@@ -16,15 +16,21 @@ docker build -t wavs-middleware .
 
 ## Run
 
+Prepare the env file:
+
+```bash
+cp docker/env.example docker/.env
+# edit the RPC_URL for a paid testnet rpc endpoint
+```
+
 Start anvil in one terminal:
 
 ```bash
-export RPC_URL="???"
+source docker/.env
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
 
 ```bash
-export LOCAL_ETHEREUM_RPC_URL="http://localhost:8545"
-export ETHERSCAN_API_KEY="foobar
-docker run -it --rm --network host -e ETHERSCAN_API_KEY -e LOCAL_ETHEREUM_RPC_URL wavs-middleware
+source docker/.env
+docker run -it --rm --network host -e ETHERSCAN_API_KEY -e LOCAL_ETHEREUM_RPC_URL -e CHAIN_ID wavs-middleware
 ```
