@@ -28,6 +28,6 @@ contract DeployMockTokenScript is Script {
 
         vm.stopBroadcast();
         string memory json = vm.serializeAddress("deployment", "MockToken", address(mockToken));
-        vm.writeJson(json, string.concat("./deployments/layer-middleware/mockToken", vm.toString(block.chainid), ".json"));
+        vm.writeJson(json, string.concat("./deployments/wavs-middleware/mockToken", vm.toString(block.chainid), ".json"));
     }
 }

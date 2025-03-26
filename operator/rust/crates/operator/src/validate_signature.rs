@@ -112,7 +112,7 @@ async fn validate_signature(message: String) -> Result<()> {
         signatureData: signature_data.into(),
     };
     let offchain_message_consumer_address = parse_offchain_message_consumer_address(
-        "contracts/deployments/layer-middleware/17000.json",
+        "contracts/deployments/wavs-middleware/17000.json",
     )?;
     let offchain_message_consumer =
         OffchainMessageConsumer::new(offchain_message_consumer_address, &pr);

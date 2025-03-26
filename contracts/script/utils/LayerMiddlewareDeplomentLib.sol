@@ -115,7 +115,7 @@ library LayerMiddlewareDeploymentLib {
     function writeDeploymentJson(
         DeploymentData memory data
     ) internal {
-        writeDeploymentJson("deployments/layer-middleware/", block.chainid, data);
+        writeDeploymentJson("deployments/wavs-middleware/", block.chainid, data);
     }
 
     function writeDeploymentJson(

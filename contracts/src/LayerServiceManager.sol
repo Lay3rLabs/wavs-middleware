@@ -142,7 +142,15 @@ contract LayerServiceManager is ECDSAServiceManagerBase, ILayerServiceManager {
         //     selector: selector
         // });
     }
-        function validate(bytes calldata data, bytes calldata signature) external view
+
+    function updateAVSMetadataURI(
+        string memory _metadataURI
+    ) external override onlyOwner {
+        // Use AllocationManager instead of AVSDirectory
+        IAllocationManager(allocationManager).updateAVSMetadataURI(address(this), _metadataURI);
+    }
+
+    function validate(bytes calldata data, bytes calldata signature) external view
     {
         bytes32 message = keccak256(data);
         bytes32 ethSignedMessageHash = ECDSAUpgradeable.toEthSignedMessageHash(message);
