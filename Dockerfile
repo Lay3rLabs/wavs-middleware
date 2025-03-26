@@ -8,7 +8,8 @@ WORKDIR /wavs/contracts
 RUN forge build
 
 COPY ./docker/deploy.sh /wavs/deploy.sh
-RUN chmod +x /wavs/deploy.sh
+COPY ./docker/set_service_uri.sh /wavs/set_service_uri.sh
+RUN chmod +x /wavs/deploy.sh /wavs/set_service_uri.sh
 WORKDIR /wavs
 
 CMD ["/wavs/deploy.sh"]
