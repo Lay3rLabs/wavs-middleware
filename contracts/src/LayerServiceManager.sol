@@ -8,7 +8,7 @@ import {IServiceManager} from "@eigenlayer-middleware/src/interfaces/IServiceMan
 import {ECDSAUpgradeable} from
     "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 import {IERC1271Upgradeable} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
-import {ILayerServiceManager} from "./ILayerServiceManager.sol";
+import {ILayerServiceManager} from "../interfaces/ILayerServiceManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
