@@ -18,13 +18,13 @@ That then calls into [`LayerMiddlewareDeployerLib.sol`](./contracts/script/utils
         DeploymentData memory result;
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.
-        result.layerServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        result.WavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         // Deploy the implementation contracts, using the proxy contracts as inputs
         address stakeRegistryImpl =
             address(new ECDSAStakeRegistry(IDelegationManager(core.delegationManager)));
-        address layerServiceManagerImpl = address(
-            new LayerServiceManager(
+        address WavsServiceManagerImpl = address(
+            new WavsServiceManager(
                 core.avsDirectory,
                 result.stakeRegistry,
                 core.rewardsCoordinator,
@@ -34,13 +34,13 @@ That then calls into [`LayerMiddlewareDeployerLib.sol`](./contracts/script/utils
         );
         // Upgrade contracts
         bytes memory stakeRegistryUpgradeCall = abi.encodeCall(
-            ECDSAStakeRegistry.initialize, (result.layerServiceManager, 0, quorum)
+            ECDSAStakeRegistry.initialize, (result.WavsServiceManager, 0, quorum)
         );
-        bytes memory layerServiceManagerUpgradeCall = abi.encodeCall(
-            LayerServiceManager.initialize, (msg.sender, msg.sender)
+        bytes memory WavsServiceManagerUpgradeCall = abi.encodeCall(
+            WavsServiceManager.initialize, (msg.sender, msg.sender)
         );
         UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryUpgradeCall);
-        UpgradeableProxyLib.upgradeAndCall(result.layerServiceManager, layerServiceManagerImpl, layerServiceManagerUpgradeCall);
+        UpgradeableProxyLib.upgradeAndCall(result.WavsServiceManager, WavsServiceManagerImpl, WavsServiceManagerUpgradeCall);
 
         // TODO: This is incredibly stupid, 
         // when we implement out own stake registry, pass owner as an argument
@@ -50,7 +50,7 @@ That then calls into [`LayerMiddlewareDeployerLib.sol`](./contracts/script/utils
         UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryOwnerUpgradeCall);
 
         // Dummy AVSRegistrar deployment for now
-        address avsRegistrar = address(new LayerAVSRegistrar());
+        address avsRegistrar = address(new WavsAVSRegistrar());
         result.avsRegistrar = avsRegistrar;
 
         result.metadataURI = core.metadataURI;
@@ -63,8 +63,8 @@ That then calls into [`LayerMiddlewareDeployerLib.sol`](./contracts/script/utils
 * `UpgradeableProxyLib` - ./UpgradeableProxyLib.sol
 * `ECDSAStakeRegistry` - @eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol
 * `IDelegationManager` - @eigenlayer/contracts/interfaces/IDelegationManager.sol
-* `LayerAVSRegistrar` - ../../src/LayerAVSRegistrar.sol
+* `WavsAVSRegistrar` - ../../src/WavsAVSRegistrar.sol
   * `IAVSRegistrar` - @eigenlayer/contracts/interfaces/IAVSRegistrar.sol
-* `LayerServiceManager` - ../../src/LayerServiceManager.sol
+* `WavsServiceManager` - ../../src/WavsServiceManager.sol
   * LOTS from eigenlayer, eigenlayer-middleware, openzeppelin
 
