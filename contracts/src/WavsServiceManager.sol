@@ -8,7 +8,7 @@ import {IServiceManager} from "@eigenlayer-middleware/src/interfaces/IServiceMan
 import {ECDSAUpgradeable} from
     "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 import {IERC1271Upgradeable} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
-import {ILayerServiceManager} from "./ILayerServiceManager.sol";
+import {IWavsServiceManager} from "../interfaces/IWavsServiceManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -21,7 +21,7 @@ import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
  * @title Primary entrypoint for procuring services from LayerMiddleware.
  * @author Eigen Labs, Inc.
  */
-contract LayerServiceManager is ECDSAServiceManagerBase, ILayerServiceManager {
+contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     using ECDSAUpgradeable for bytes32;
     string public serviceURI;
     constructor(
@@ -150,13 +150,13 @@ contract LayerServiceManager is ECDSAServiceManagerBase, ILayerServiceManager {
         IAllocationManager(allocationManager).updateAVSMetadataURI(address(this), _metadataURI);
     }
 
-    /// @inheritdoc ILayerServiceManager
+    /// @inheritdoc IWavsServiceManager
     function setServiceURI(string calldata _serviceURI) external override onlyOwner {
         serviceURI = _serviceURI;
         emit ServiceURIUpdated(_serviceURI);
     }
 
-    /// @inheritdoc ILayerServiceManager
+    /// @inheritdoc IWavsServiceManager
     function getServiceURI() external view override returns (string memory) {
         return serviceURI;
     }
@@ -174,7 +174,7 @@ contract LayerServiceManager is ECDSAServiceManagerBase, ILayerServiceManager {
                 signature
             )
         ) {
-            revert ILayerServiceManager.InvalidSignature();
+            revert IWavsServiceManager.InvalidSignature();
         }
     }
 

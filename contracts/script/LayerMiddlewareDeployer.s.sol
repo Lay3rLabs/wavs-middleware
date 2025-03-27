@@ -64,8 +64,8 @@ contract LayerMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
             layerMiddlewareDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
         );
         require(
-            layerMiddlewareDeployment.layerServiceManager != address(0),
-            "layerServiceManager address cannot be zero"
+            layerMiddlewareDeployment.WavsServiceManager != address(0),
+            "WavsServiceManager address cannot be zero"
         );
         require(layerMiddlewareDeployment.strategy != address(0), "Strategy address cannot be zero");
         require(proxyAdmin != address(0), "ProxyAdmin address cannot be zero");
