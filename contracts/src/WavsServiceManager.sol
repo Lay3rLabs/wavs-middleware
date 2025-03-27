@@ -162,17 +162,17 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         return serviceURI;
     }
 
-    function validate(IWavsServiceHandler.Envelope calldata envelope, bytes calldata signature) external view
+    function validate(IWavsServiceHandler.Envelope calldata envelope, IWavsServiceManager.SignatureData calldata signatureData) external view
     {
         bytes32 message = keccak256(envelope.data);
         bytes32 ethSignedMessageHash = ECDSAUpgradeable.toEthSignedMessageHash(message);
         bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
-
+        bytes memory signatureDataBytes = abi.encode(signatureData.operators, signatureData.signatures, signatureData.referenceBlock);
         // If the registry returns the magicValue, signature is considered valid
         if( magicValue !=
             ECDSAStakeRegistry(stakeRegistry).isValidSignature(
                 ethSignedMessageHash,
-                signature
+                signatureDataBytes
             )
         ) {
             revert IWavsServiceManager.InvalidSignature();

@@ -4,6 +4,12 @@ pragma solidity ^0.8.9;
 import "./IWavsServiceHandler.sol";
 
 interface IWavsServiceManager {
+
+    struct SignatureData {
+        address[] operators;
+        bytes[] signatures;
+        uint32 referenceBlock;
+    }
     // ------------------------------------------------------------------------
     // Custom Errors
     // ------------------------------------------------------------------------
@@ -11,9 +17,9 @@ interface IWavsServiceManager {
     event ServiceURIUpdated(string serviceURI);
     /**
      * @param envelope The envelope containing the data.
-     * @param signature The signature of the data.
+     * @param signatureData The signature data.
      */
-    function validate(IWavsServiceHandler.Envelope calldata envelope, bytes calldata signature) external view;
+    function validate(IWavsServiceHandler.Envelope calldata envelope, SignatureData calldata signatureData) external view;
 
     /**
      * @return The service URI.
