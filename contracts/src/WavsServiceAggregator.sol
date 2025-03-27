@@ -24,15 +24,15 @@ contract WavsServiceAggregator is IWavsServiceAggregator {
     }
     /**
      * @notice Multi-payload version of the handler's handleSignedData
-     * @param datas The arbitrary datas that were signed.
+     * @param envelopes The envelopes containing the datas that were signed.
      * @param signatures The signatures of the datas.
      */
-    function handleSignedDataMulti(bytes[] calldata datas, bytes[] calldata signatures) external {
-        if (datas.length != signatures.length) {
+    function handleSignedDataMulti(IWavsServiceHandler.Envelope[] calldata envelopes, bytes[] calldata signatures) external {
+        if (envelopes.length != signatures.length) {
             revert InvalidLength();
         }
-        for (uint256 i = 0; i < datas.length; i++) {
-            _handler.handleSignedData(datas[i], signatures[i]);
+        for (uint256 i = 0; i < envelopes.length; i++) {
+            _handler.handleSignedEnvelope(envelopes[i], signatures[i]);
         }
     }
 }
