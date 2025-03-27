@@ -5,11 +5,6 @@ import "./IWavsServiceHandler.sol";
 
 interface IWavsServiceManager {
 
-    struct SignatureData {
-        address[] operators;
-        bytes[] signatures;
-        uint32 referenceBlock;
-    }
     // ------------------------------------------------------------------------
     // Custom Errors
     // ------------------------------------------------------------------------
@@ -19,7 +14,7 @@ interface IWavsServiceManager {
      * @param envelope The envelope containing the data.
      * @param signatureData The signature data.
      */
-    function validate(IWavsServiceHandler.Envelope calldata envelope, SignatureData calldata signatureData) external view;
+    function validate(IWavsServiceHandler.Envelope calldata envelope, IWavsServiceHandler.SignatureData calldata signatureData) external view;
 
     /**
      * @return The service URI.
