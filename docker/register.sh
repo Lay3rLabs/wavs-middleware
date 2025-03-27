@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ "$DEPLOY_ENV" = "TESTNET" ]; then
+    LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
+else
+    LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
+fi
 
 if [ -z "$LST_CONTRACT_ADDRESS" ]; then
     echo "Error: LST_CONTRACT_ADDRESS is not set in the environment variables."
@@ -8,9 +13,9 @@ if [ -z "$LST_STRATEGY_ADDRESS" ]; then
     echo "Error: LST_STRATEGY_ADDRESS is not set in the environment variables."
     exit 1
 fi
-layerServiceManagerAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.layerServiceManager')
+layerServiceManagerAddress=$(cat ~/.nodes/avs_deploy.json | jq -r '.addresses.layerServiceManager')
 if [ -z "$layerServiceManagerAddress" ]; then
-    echo "Error: failed to read layerServiceManagerAddress from deployments/wavs-middleware/$CHAIN_ID.json"
+    echo "Error: failed to read layerServiceManagerAddress from ~/.nodes/avs_deploy.json"
     exit 1
 fi
 
@@ -36,14 +41,14 @@ setup_operator() {
         echo "QUICK_MODE is ON - skipping operator setup for operator $index"
         return 0
     fi
-    STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' deployments/core/$CHAIN_ID.json)
+    STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' contracts/deployments/core/$CHAIN_ID.json)
     if [ -z "$STRATEGY_MANAGER_ADDRESS" ]; then
-        echo "Error: Failed to read strategyManagerAddress from $HOME/.nodes/avs_deploy.json"
+        echo "Error: Failed to read strategyManagerAddress from contracts/deployments/core/$CHAIN_ID.json"
         exit 1
     fi
-    DELEGATION_MANAGER_ADDRESS=$(jq -r '.addresses.delegation' deployments/core/$CHAIN_ID.json)
+    DELEGATION_MANAGER_ADDRESS=$(jq -r '.addresses.delegation' contracts/deployments/core/$CHAIN_ID.json)
     if [ -z "$DELEGATION_MANAGER_ADDRESS" ]; then
-        echo "Error: Failed to read delegationManagerAddress from $HOME/.nodes/avs_deploy.json"
+        echo "Error: Failed to read delegationManagerAddress from contracts/deployments/core/$CHAIN_ID.json"
         exit 1
     fi
     local mnemonic=$(cast wallet nm --json | jq -r '.mnemonic')
@@ -105,7 +110,7 @@ setup_operator() {
         "$public_key" \
         "($layerServiceManagerAddress,[1],0x1234)" \
         --private-key $private_key \
-        --rpc-url $LOCAL_ETHEREUM_RPC_URL # > /dev/null 2>&1
+        --rpc-url $LOCAL_ETHEREUM_RPC_URL  > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo "Successfully registered operator $public_key to operator sets [1]"
     else
