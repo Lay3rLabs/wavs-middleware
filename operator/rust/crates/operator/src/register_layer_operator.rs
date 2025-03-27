@@ -35,7 +35,7 @@ async fn register_operator() -> eyre::Result<()> {
 
     let default_slasher = Address::ZERO;
 
-    let data = std::fs::read_to_string("contracts/deployments/core/17000.json")?;
+    let data = std::fs::read_to_string("/wavs/contracts/deployments/core/17000.json")?;
     let el_parsed: EigenLayerData = serde_json::from_str(&data)?;
     let delegation_manager_address: Address = el_parsed.addresses.delegation.parse()?;
     let avs_directory_address: Address = el_parsed.addresses.avs_directory.parse()?;
