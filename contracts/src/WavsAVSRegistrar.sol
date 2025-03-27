@@ -5,7 +5,7 @@ import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol"
 
 // TODO: decide on AVSRegistar logic
 // Dummy AVSRegistrar contract for now
-contract LayerAVSRegistrar is IAVSRegistrar {
+contract WavsAVSRegistrar is IAVSRegistrar {
     function registerOperator(
         address operator,
         address avs,

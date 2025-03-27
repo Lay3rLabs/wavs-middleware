@@ -10,7 +10,7 @@ import {console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
-import {LayerServiceManager} from "../../src/LayerServiceManager.sol";
+import {WavsServiceManager} from "../../src/WavsServiceManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {
     IECDSAStakeRegistryTypes,
@@ -19,7 +19,7 @@ import {
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {CoreDeploymentLib} from "./CoreDeploymentLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {LayerAVSRegistrar} from "../../src/LayerAVSRegistrar.sol";
+import {WavsAVSRegistrar} from "../../src/WavsAVSRegistrar.sol";
 
 library LayerMiddlewareDeploymentLib {
     using stdJson for *;
@@ -29,7 +29,7 @@ library LayerMiddlewareDeploymentLib {
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     struct DeploymentData {
-        address layerServiceManager;
+        address WavsServiceManager;
         address stakeRegistry;
         address strategy;
         address token;
@@ -45,13 +45,13 @@ library LayerMiddlewareDeploymentLib {
         DeploymentData memory result;
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.
-        result.layerServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        result.WavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         // Deploy the implementation contracts, using the proxy contracts as inputs
         address stakeRegistryImpl =
             address(new ECDSAStakeRegistry(IDelegationManager(core.delegationManager)));
-        address layerServiceManagerImpl = address(
-            new LayerServiceManager(
+        address WavsServiceManagerImpl = address(
+            new WavsServiceManager(
                 core.avsDirectory,
                 result.stakeRegistry,
                 core.rewardsCoordinator,
@@ -61,13 +61,13 @@ library LayerMiddlewareDeploymentLib {
         );
         // Upgrade contracts
         bytes memory stakeRegistryUpgradeCall = abi.encodeCall(
-            ECDSAStakeRegistry.initialize, (result.layerServiceManager, 0, quorum)
+            ECDSAStakeRegistry.initialize, (result.WavsServiceManager, 0, quorum)
         );
-        bytes memory layerServiceManagerUpgradeCall = abi.encodeCall(
-            LayerServiceManager.initialize, (msg.sender, msg.sender)
+        bytes memory WavsServiceManagerUpgradeCall = abi.encodeCall(
+            WavsServiceManager.initialize, (msg.sender, msg.sender)
         );
         UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryUpgradeCall);
-        UpgradeableProxyLib.upgradeAndCall(result.layerServiceManager, layerServiceManagerImpl, layerServiceManagerUpgradeCall);
+        UpgradeableProxyLib.upgradeAndCall(result.WavsServiceManager, WavsServiceManagerImpl, WavsServiceManagerUpgradeCall);
 
         // TODO: This is incredibly stupid, 
         // when we implement out own stake registry, pass owner as an argument
@@ -77,7 +77,7 @@ library LayerMiddlewareDeploymentLib {
         UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryOwnerUpgradeCall);
 
         // Dummy AVSRegistrar deployment for now
-        address avsRegistrar = address(new LayerAVSRegistrar());
+        address avsRegistrar = address(new WavsAVSRegistrar());
         result.avsRegistrar = avsRegistrar;
 
         result.metadataURI = core.metadataURI;
@@ -102,7 +102,7 @@ library LayerMiddlewareDeploymentLib {
 
         DeploymentData memory data;
         /// TODO: 2 Step for reading deployment json.  Read to the core and the AVS data
-        data.layerServiceManager = json.readAddress(".contracts.layerServiceManager");
+        data.WavsServiceManager = json.readAddress(".contracts.WavsServiceManager");
         data.stakeRegistry = json.readAddress(".contracts.stakeRegistry");
         data.strategy = json.readAddress(".contracts.strategy");
         data.token = json.readAddress(".contracts.token");
@@ -124,7 +124,7 @@ library LayerMiddlewareDeploymentLib {
         DeploymentData memory data
     ) internal {
         address proxyAdmin =
-            address(UpgradeableProxyLib.getProxyAdmin(data.layerServiceManager));
+            address(UpgradeableProxyLib.getProxyAdmin(data.WavsServiceManager));
 
         string memory deploymentData = _generateDeploymentJson(data, proxyAdmin);
 
@@ -161,10 +161,10 @@ library LayerMiddlewareDeploymentLib {
         return string.concat(
             '{"proxyAdmin":"',
             proxyAdmin.toHexString(),
-            '","layerServiceManager":"',
-            data.layerServiceManager.toHexString(),
-            '","layerServiceManagerImpl":"',
-            data.layerServiceManager.getImplementation().toHexString(),
+            '","WavsServiceManager":"',
+            data.WavsServiceManager.toHexString(),
+            '","WavsServiceManagerImpl":"',
+            data.WavsServiceManager.getImplementation().toHexString(),
             '","stakeRegistry":"',
             data.stakeRegistry.toHexString(),
             '","stakeRegistryImpl":"',
