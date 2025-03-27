@@ -64,9 +64,9 @@ pub struct HelloWorldAddresses {
 pub struct LayerMiddlewareAddresses {
     #[serde(rename = "proxyAdmin")]
     _proxy_admin: String,
-    #[serde(rename = "layerServiceManager")]
+    #[serde(rename = "WavsServiceManager")]
     pub layer_service_manager: String,
-    #[serde(rename = "layerServiceManagerImpl")]
+    #[serde(rename = "WavsServiceManagerImpl")]
     layer_service_manager_impl: String,
     #[serde(rename = "stakeRegistry")]
     pub stake_registry: String,
@@ -80,9 +80,9 @@ pub struct LayerMiddlewareAddresses {
 pub struct LayerAVSAddresses {
     #[serde(rename = "proxyAdmin")]
     _proxy_admin: String,
-    #[serde(rename = "layerServiceManager")]
+    #[serde(rename = "WavsServiceManager")]
     pub layer_service_manager: String,
-    #[serde(rename = "layerServiceManagerImpl")]
+    #[serde(rename = "WavsServiceManagerImpl")]
     layer_service_manager_impl: String,
     #[serde(rename = "stakeRegistry")]
     pub stake_registry: String,
