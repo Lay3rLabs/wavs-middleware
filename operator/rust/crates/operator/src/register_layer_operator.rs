@@ -60,11 +60,11 @@ async fn register_operator() -> eyre::Result<()> {
     let salt = FixedBytes::from_slice(&salt);
     let now = Utc::now().timestamp();
     let expiry: U256 = U256::from(now + 3600);
-    let data = std::fs::read_to_string("/wavs/contracts/deployments/wavs-middleware/17000.json")?;
+    let data = std::fs::read_to_string("/wavs/avs_deploy.json")?;
     get_logger().info(&format!("wavs-middleware deployment data: {}", data), &"");
     // Use the correct parse function for LayerMiddleware JSON
     let layer_service_manager_address = parse_layer_service_manager(
-        "/wavs/contracts/deployments/wavs-middleware/17000.json",
+        "/wavs/avs_deploy.json",
     )?;
     get_logger().info(&format!("layer_service_manager_address: {}", layer_service_manager_address), &"");
     let digest_hash = elcontracts_reader_instance
@@ -85,9 +85,7 @@ async fn register_operator() -> eyre::Result<()> {
     };
 
     // Use the LayerMiddleware parsing function for stake registry
-    let stake_registry_address = parse_stake_registry_address_layer(
-        "/wavs/contracts/deployments/wavs-middleware/17000.json",
-    )?;
+    let stake_registry_address = parse_stake_registry_address_layer("/wavs/avs_deploy.json")?;
     let contract_ecdsa_stake_registry =
         ECDSAStakeRegistry::new(stake_registry_address, &pr);
     let registeroperator_details_call = contract_ecdsa_stake_registry
