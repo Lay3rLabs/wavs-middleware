@@ -13,9 +13,9 @@ if [ -z "$LST_STRATEGY_ADDRESS" ]; then
     echo "Error: LST_STRATEGY_ADDRESS is not set in the environment variables."
     exit 1
 fi
-layerServiceManagerAddress=$(cat ~/.nodes/avs_deploy.json | jq -r '.addresses.layerServiceManager')
-if [ -z "$layerServiceManagerAddress" ]; then
-    echo "Error: failed to read layerServiceManagerAddress from ~/.nodes/avs_deploy.json"
+WAVSServiceManagerAddress=$(cat /wavs/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
+if [ -z "$WAVSServiceManagerAddress" ]; then
+    echo "Error: failed to read WavsServiceManager from /wavs/avs_deploy.json"
     exit 1
 fi
 
@@ -36,7 +36,7 @@ impersonate_account() {
 
 setup_operator() {
     local index=$1
-    local layerServiceManagerAddress=$2
+    local WAVSServiceManagerAddress=$2
     if [ "$QUICK_MODE" = "ON" ] && [ "$index" -ne 1 ]; then
         echo "QUICK_MODE is ON - skipping operator setup for operator $index"
         return 0
@@ -104,13 +104,13 @@ setup_operator() {
         exit 1
     fi
 
-    allocationManager=$(cast call "$layerServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+    allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
     cast s "$allocationManager" \
         "registerForOperatorSets(address,(address,uint32[],bytes))" \
         "$public_key" \
-        "($layerServiceManagerAddress,[1],0x1234)" \
-        --private-key $private_key \
-        --rpc-url $LOCAL_ETHEREUM_RPC_URL  > /dev/null 2>&1
+        "($WAVSServiceManagerAddress,[1],0x1234)" \
+        --private-key "$private_key" \
+        --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo "Successfully registered operator $public_key to operator sets [1]"
     else
@@ -118,9 +118,9 @@ setup_operator() {
         exit 1
     fi
 
-    PRIVATE_KEY=$private_key
-    cd /wavs/operator
-    cargo run --bin register_layer_operator #> /dev/null 2>&1
+    export PRIVATE_KEY=$private_key
+    export TESTNET_RPC_URL="$LOCAL_ETHEREUM_RPC_URL"  
+    /wavs/register_layer_operator #> /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
@@ -172,9 +172,9 @@ stop_impersonating() {
 
 # This function is used to register the operators to eigenlayer and the avs
 if [ "$QUICK_MODE" = "ON" ]; then
-    setup_operator 1 "$layerServiceManagerAddress"
+    setup_operator 1 "$WAVSServiceManagerAddress"
 else
     for i in $(seq 1 $NUM_OPERATORS); do
-        setup_operator "$i" "$layerServiceManagerAddress"
+        setup_operator "$i" "$WAVSServiceManagerAddress"
     done
 fi
