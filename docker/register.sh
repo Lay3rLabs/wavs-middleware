@@ -16,9 +16,9 @@ if [ -z "$LST_STRATEGY_ADDRESS" ]; then
     echo "Error: LST_STRATEGY_ADDRESS is not set in the environment variables."
     exit 1
 fi
-WAVSServiceManagerAddress=$(cat /wavs/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
+WAVSServiceManagerAddress=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
 if [ -z "$WAVSServiceManagerAddress" ]; then
-    echo "Error: failed to read WavsServiceManager from /wavs/avs_deploy.json"
+    echo "Error: failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
     exit 1
 fi
 
