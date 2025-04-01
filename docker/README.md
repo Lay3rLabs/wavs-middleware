@@ -42,7 +42,7 @@ Register:
 
 
 ```bash
-docker run --rm --network host --env-file .env -v ./.nodes/avs_deploy.json:/wavs/avs_deploy.json -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware
+docker run --rm --network host --env-file .env  -v ./.nodes/avs_deploy.json:/wavs/avs_deploy.json -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware
 ```
 
 Set Service URI:
@@ -50,7 +50,7 @@ Set Service URI:
 ```bash
 SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ./.nodes/avs_deploy.json)
 
-docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware $SERVICE_MANAGER_ADDRESS foo.bar
+docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware $SERVICE_MANAGER_ADDRESS https://ipfs.url/for-custom-service.json
 ```
 
 ### Older
