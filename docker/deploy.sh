@@ -55,6 +55,7 @@ wait_for_ethereum() {
                  --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}' \
                  "$LOCAL_ETHEREUM_RPC_URL" > /dev/null
     do
+        echo "$LOCAL_ETHEREUM_RPC_URL"
         sleep 1
     done
     echo "Ethereum node is ready!"
