@@ -68,3 +68,12 @@ That then calls into [`LayerMiddlewareDeployerLib.sol`](./contracts/script/utils
 * `WavsServiceManager` - ../../src/WavsServiceManager.sol
   * LOTS from eigenlayer, eigenlayer-middleware, openzeppelin
 
+Build: 
+`docker build  . -t wavs-middleware`
+Deploy: 
+`docker run -it --rm --network host --env-file .env  -v ./.nodes:/root/.nodes wavs-middleware`
+Register: 
+`docker run -it --rm --network host --env-file .env -v ./.nodes/avs_deploy.json:/wavs/avs_deploy.json -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware`
+Set Service URI 
+`SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ./.nodes/avs_deploy.json)`
+`docker run -it --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware $SERVICE_MANAGER_ADDRESS foo.bar`

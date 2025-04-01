@@ -5,6 +5,17 @@ set -e
 
 export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
 
+if [ -z "$DEPLOY_ENV" ]; then
+    echo "Error: DEPLOY_ENV environment variable is not set"
+    exit 1
+fi
+
+if [ "$DEPLOY_ENV" = "TESTNET" ]; then
+    LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
+else
+    LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
+fi
+
 impersonate_account() {
     local account="$1"
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
@@ -83,10 +94,7 @@ set_service_uri() {
   stop_impersonating "$owner"
 }
 
-if [ -z "$LOCAL_ETHEREUM_RPC_URL" ]; then
-    echo "Error: LOCAL_ETHEREUM_RPC_URL environment variable is not set"
-    exit 1
-fi
+LOCAL_ETHEREUM_RPC_URL="http://localhost:8545"
 if [ -z "$1" ]; then
     echo "Error: Pass SERVICE_MANAGER_ADDRESS as first arg"
     exit 1

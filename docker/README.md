@@ -30,6 +30,33 @@ source docker/.env
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
 
+### Newer
+
+Deploy:
+
+```bash
+docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes wavs-middleware
+```
+
+Set Service URI:
+
+```bash
+SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ./.nodes/avs_deploy.json)
+
+docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware $SERVICE_MANAGER_ADDRESS https://ipfs.url/for-custom-service.json
+```
+
+
+Register: 
+
+
+```bash
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware
+```
+
+
+### Older
+
 ```bash
 source docker/.env
 docker run --rm --network host -e ETHERSCAN_API_KEY -e LOCAL_ETHEREUM_RPC_URL -e CHAIN_ID wavs-middleware
