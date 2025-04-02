@@ -276,6 +276,7 @@ update_metadata_url() {
       exit 1
   fi
 
+  # TODO: take this as an argument
   metadataURI=$(jq -r '.metaDataURI' "$HOME/.nodes/avs_deploy.json")
   if [ -z "$metadataURI" ] || [ "$metadataURI" = "null" ]; then
       echo "Error: Failed to read metaDataURI from $HOME/.nodes/avs_deploy.json"
@@ -521,6 +522,7 @@ update_quorum_config "$owner" "$stakeRegistryAddress"
 update_avs_registrar "$owner" "$WavsServiceManagerAddress" "$avsRegistrarAddress"
 
 # This function is used to update the metadata URL for the stake registry, allowing to be indexed by the Eigenlayer frontend
+# TODO: pass argument for the projects metadata url, not some weird hardcoded thing from core deploy
 update_metadata_url
 
 # This function is used to create the operator sets for the stake registry, allowing meta-avs functionality or otherwise discerneable operator sets

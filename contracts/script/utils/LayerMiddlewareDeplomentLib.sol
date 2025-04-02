@@ -17,7 +17,7 @@ import {
     IStrategy
 } from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
-import {CoreDeploymentLib} from "./CoreDeploymentLib.sol";
+import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {WavsAVSRegistrar} from "../../src/WavsAVSRegistrar.sol";
 
@@ -34,12 +34,11 @@ library LayerMiddlewareDeploymentLib {
         address strategy;
         address token;
         address avsRegistrar;
-        string metadataURI;
     }
 
     function deployContracts(
         address proxyAdmin,
-        CoreDeploymentLib.DeploymentData memory core,
+        ReadCoreLib.DeploymentData memory core,
         IECDSAStakeRegistryTypes.Quorum memory quorum
     ) internal returns (DeploymentData memory) {
         DeploymentData memory result;
@@ -80,7 +79,6 @@ library LayerMiddlewareDeploymentLib {
         address avsRegistrar = address(new WavsAVSRegistrar());
         result.avsRegistrar = avsRegistrar;
 
-        result.metadataURI = core.metadataURI;
         return result;
     }
 
@@ -149,7 +147,6 @@ library LayerMiddlewareDeploymentLib {
                 '},',
                 '"addresses":', 
                     _generateContractsJson(data, proxyAdmin),
-                ',"metaDataURI":"', data.metadataURI, '"',
             '}'
         );
     }
