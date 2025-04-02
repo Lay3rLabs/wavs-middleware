@@ -16,6 +16,7 @@ import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts
 import {ISignatureUtils} from "@eigenlayer/contracts/interfaces/ISignatureUtils.sol";
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+import {IWavsServiceHandler} from "../interfaces/IWavsServiceHandler.sol";
 
 /**
  * @title Primary entrypoint for procuring services from LayerMiddleware.
@@ -161,17 +162,17 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         return serviceURI;
     }
 
-    function validate(bytes calldata data, bytes calldata signature) external view
+    function validate(IWavsServiceHandler.Envelope calldata envelope, IWavsServiceHandler.SignatureData calldata signatureData) external view
     {
-        bytes32 message = keccak256(data);
+        bytes32 message = keccak256(abi.encode(envelope));
         bytes32 ethSignedMessageHash = ECDSAUpgradeable.toEthSignedMessageHash(message);
         bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
-
+        bytes memory signatureDataBytes = abi.encode(signatureData.operators, signatureData.signatures, signatureData.referenceBlock);
         // If the registry returns the magicValue, signature is considered valid
         if( magicValue !=
             ECDSAStakeRegistry(stakeRegistry).isValidSignature(
                 ethSignedMessageHash,
-                signature
+                signatureDataBytes
             )
         ) {
             revert IWavsServiceManager.InvalidSignature();
