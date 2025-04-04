@@ -16,10 +16,8 @@ COPY contracts /wavs/contracts
 WORKDIR /wavs/contracts
 RUN forge build
 
-COPY ./docker/deploy.sh /wavs/deploy.sh
-COPY ./docker/set_service_uri.sh /wavs/set_service_uri.sh
-COPY ./docker/register.sh /wavs/register.sh
-RUN chmod +x /wavs/deploy.sh /wavs/set_service_uri.sh /wavs/register.sh
 WORKDIR /wavs
+COPY ./docker/*.sh /wavs
+RUN chmod +x /wavs/*.sh
 
 CMD ["/wavs/deploy.sh"]

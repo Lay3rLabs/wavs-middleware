@@ -1,8 +1,17 @@
 #!/bin/bash
 
-# -x echos all lines for debug, -e quits on first error
-set -e
-# set -xe
+# -x echos all lines for debug
+# set -x
+
+set -o errexit -o nounset -o pipefail
+command -v shellcheck >/dev/null && shellcheck "$0"
+
+SCRIPT_DIR="$(realpath "$(dirname "$0")")"
+# shellcheck source=./helpers.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR"/helpers.sh
+
+# source contracts/.env
 
 # Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
 # https://github.com/layr-labs/eigenlayer-contracts In the README.md
@@ -20,8 +29,6 @@ STRATEGY_ADDRESSES='[
   "0xaccc5a86732be85b5012e8614af237801636f8e5",
   "0xad76d205564f955a9c18103c4422d1cd94016899"
 ]'
-
-export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
 
 # Set default value for NUM_OPERATORS if not provided
 if [ -z "$NUM_OPERATORS" ]; then
@@ -55,71 +62,6 @@ if [ "$DEPLOY_ENV" = "LOCAL" ]; then
     unset TESTNET_RPC_URL
 fi
 
-wait_for_ethereum() {
-    echo "Waiting for Ethereum node to be ready..."
-    while ! curl -s -X POST -H "Content-Type: application/json" \
-                 --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}' \
-                 "$LOCAL_ETHEREUM_RPC_URL" > /dev/null
-    do
-        echo "$LOCAL_ETHEREUM_RPC_URL"
-        sleep 1
-    done
-    echo "Ethereum node is ready!"
-}
-
-impersonate_account() {
-    local account="$1"
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        return 0
-    fi
-    cast rpc anvil_impersonateAccount $account -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        handle_error "Failed to impersonate account $account"
-    fi
-    cast rpc anvil_setBalance $account 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        handle_error "Failed to set balance for account $account"
-    fi
-}
-
-handle_error() {
-    local message="$1"
-    echo "Error: $message"
-    exit 1
-}
-
-check_env_var() {
-    local var_name="$1"
-    local var_value="$2"
-    if [ -z "$var_value" ]; then
-        handle_error "$var_name is not set in the environment variables"
-    fi
-}
-
-execute_transaction() {
-    local description="$1"
-    local command="$2"
-
-    eval "$command"
-
-    if [ $? -eq 0 ]; then
-        echo "Successfully $description"
-    else
-        handle_error "Failed to $description"
-    fi
-}
-
-stop_impersonating() {
-    local account="$1"
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        return 0
-    fi
-    cast rpc anvil_stopImpersonatingAccount "$account" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to stop impersonating account $account"
-        exit 1
-    fi
-}
 
 setup_operator() {
     local index=$1
@@ -462,8 +404,6 @@ deployer_private_key=$(cast wallet new --json | jq -r '.[0].private_key')
 deployer_public_key=$(cast wallet address "$deployer_private_key")
 echo "PRIVATE_KEY=$deployer_private_key" >> contracts/.env
 echo "$deployer_private_key" > ~/.nodes/deployer
-
-source contracts/.env
 
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
