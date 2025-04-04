@@ -30,7 +30,7 @@ source docker/.env
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
 
-### Newer
+Run all the following scripts in the `docker/` directory.
 
 Deploy:
 
@@ -46,27 +46,8 @@ SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ./.nodes/avs_dep
 docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware $SERVICE_MANAGER_ADDRESS https://ipfs.url/for-custom-service.json
 ```
 
-
 Register: 
-
 
 ```bash
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware
-```
-
-
-### Older
-
-```bash
-source docker/.env
-docker run --rm --network host -e ETHERSCAN_API_KEY -e LOCAL_ETHEREUM_RPC_URL -e CHAIN_ID wavs-middleware
-```
-
-Set service manager:
-
-TODO: record service manager better
-TODO: get this docker run command cleaner
-
-```bash
-docker run --rm --network host -e ETHERSCAN_API_KEY -e LOCAL_ETHEREUM_RPC_URL -e CHAIN_ID --entrypoint /wavs/set_service_uri.sh wavs-middleware 0x4588f79798d3c51822b9d2f9abad5e58d44eb7c5 "https://foo.bar/baz"
 ```

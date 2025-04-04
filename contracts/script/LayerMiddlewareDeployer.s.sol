@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/Test.sol";
 import {LayerMiddlewareDeploymentLib} from "./utils/LayerMiddlewareDeplomentLib.sol";
-import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
+import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
 import {ERC20Mock} from "../test/ERC20Mock.sol";
@@ -20,13 +20,13 @@ import {
 } from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 contract LayerMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
-    using CoreDeploymentLib for *;
+    using ReadCoreLib for *;
     using UpgradeableProxyLib for address;
 
     address private deployer;
     address proxyAdmin;
     IStrategy helloWorldStrategy;
-    CoreDeploymentLib.DeploymentData coreDeployment;
+    ReadCoreLib.DeploymentData coreDeployment;
     LayerMiddlewareDeploymentLib.DeploymentData layerMiddlewareDeployment;
     Quorum internal quorum;
     ERC20Mock token;
@@ -34,7 +34,7 @@ contract LayerMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
 
-        coreDeployment = CoreDeploymentLib.readDeploymentJson("deployments/core/", block.chainid);
+        coreDeployment = ReadCoreLib.readDeploymentJson("deployments/core/", block.chainid);
        
         token = new ERC20Mock();
         helloWorldStrategy = IStrategy(StrategyFactory(coreDeployment.strategyFactory).deployNewStrategy(token));

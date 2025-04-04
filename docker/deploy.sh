@@ -29,6 +29,12 @@ if [ -z "$NUM_OPERATORS" ]; then
     echo "NUM_OPERATORS not set, defaulting to 3"
 fi
 
+# Check if METADATA_URI is provided
+if [ -z "$METADATA_URI" ]; then
+    echo "Error: METADATA_URI environment variable must be set"
+    exit 1
+fi
+
 # Build the `strategies` array as a Solidity-compatible input
 # This is a workaround to get to a valid BPS value, in production strategies need to be weighed and maintained by an oracle 
 declare -g combined_strategies=""
@@ -276,12 +282,12 @@ update_metadata_url() {
       exit 1
   fi
 
-  metadataURI=$(jq -r '.metaDataURI' "$HOME/.nodes/avs_deploy.json")
-  if [ -z "$metadataURI" ] || [ "$metadataURI" = "null" ]; then
-      echo "Error: Failed to read metaDataURI from $HOME/.nodes/avs_deploy.json"
+  # Use METADATA_URI from environment
+  if [ -z "$METADATA_URI" ]; then
+      echo "Error: METADATA_URI environment variable must be set"
       exit 1
   fi
-  echo "** $metadataURI **"
+  echo "** $METADATA_URI **"
 
   owner=$(cast call "$serviceManagerAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
@@ -289,13 +295,13 @@ update_metadata_url() {
   if [ "$DEPLOY_ENV" = "TESTNET" ]; then
       execute_transaction "updated AVS metadata URI" \
         "cast s '$serviceManagerAddress' 'updateAVSMetadataURI(string)' \
-         '$metadataURI' \
+         '$METADATA_URI' \
          --private-key '$deployer_private_key' \
          --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
   else
       execute_transaction "updated AVS metadata URI" \
         "cast s '$serviceManagerAddress' 'updateAVSMetadataURI(string)' \
-         '$metadataURI' \
+         '$METADATA_URI' \
          --from '$owner' \
          --unlocked \
          --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
@@ -521,6 +527,7 @@ update_quorum_config "$owner" "$stakeRegistryAddress"
 update_avs_registrar "$owner" "$WavsServiceManagerAddress" "$avsRegistrarAddress"
 
 # This function is used to update the metadata URL for the stake registry, allowing to be indexed by the Eigenlayer frontend
+# TODO: pass argument for the projects metadata url, not some weird hardcoded thing from core deploy
 update_metadata_url
 
 # This function is used to create the operator sets for the stake registry, allowing meta-avs functionality or otherwise discerneable operator sets
