@@ -32,8 +32,10 @@ if [ -z "$WAVSServiceManagerAddress" ]; then
 fi
 
 setup_operator() {
-    local index=$1
-    local WAVSServiceManagerAddress=$2
+    local WAVSServiceManagerAddress=$1
+    local private_key=$2
+    local public_key=$(cast wallet address $private_key)
+
     STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' contracts/deployments/core/$CHAIN_ID.json)
     if [ -z "$STRATEGY_MANAGER_ADDRESS" ]; then
         echo "Error: Failed to read strategyManagerAddress from contracts/deployments/core/$CHAIN_ID.json"
@@ -44,16 +46,18 @@ setup_operator() {
         echo "Error: Failed to read delegationManagerAddress from contracts/deployments/core/$CHAIN_ID.json"
         exit 1
     fi
-    local mnemonic=$(cast wallet nm --json | jq -r '.mnemonic')
-    local private_key=$(cast wallet pk "$mnemonic")
-    local public_key=$(cast wallet address $private_key)
+
     
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
+        # TODO: remove this and replace with a check the AVS key has a balance
         cast s "$public_key" --value 50000000000000000 --private-key "$FUNDED_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             echo "Error: Failed to give operator $index balance"
             exit 1
         fi
+
+        # TODO: use this in both testnet and local - which LST do we use?
+        # See https://github.com/Lay3rLabs/wavs-middleware/issues/61
         MINT_FUNCTION="submit(address _referral)"
         cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
             --private-key "$private_key" \
@@ -83,7 +87,7 @@ setup_operator() {
         cast rpc anvil_setBalance $public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
     fi
     if [ $? -ne 0 ]; then
-        echo "Failed to set balance for operator $index"
+        echo "Failed to set balance for operator"
         exit 1
     fi
 
@@ -97,6 +101,7 @@ setup_operator() {
         exit 1
     fi
 
+    # TODO: what is this magic 0x1234 number here? Maybe we want a real variable for it?
     allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
     cast s "$allocationManager" \
         "registerForOperatorSets(address,(address,uint32[],bytes))" \
@@ -113,13 +118,21 @@ setup_operator() {
 
     export PRIVATE_KEY=$private_key
     export TESTNET_RPC_URL="$LOCAL_ETHEREUM_RPC_URL"  
+
+    # TODO: pull some stuff out of Rust into bash
+    # See https://github.com/Lay3rLabs/wavs-middleware/issues/52
+    # and https://github.com/Lay3rLabs/wavs-middleware/issues/42
     /wavs/register_layer_operator #> /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
     fi
-    echo "PRIVATE_KEY_${index}=$private_key" > ~/.nodes/operator$index
-    echo "MNEMONIC_${index}=$mnemonic" > ~/.nodes/operator_mnemonic$index
+
+    # TODO: add a query of the current voting power of this operator on the stake registry
 }
 
-setup_operator 1 "$WAVSServiceManagerAddress"
+if [ -z "$1" ]; then
+    echo "Error: Pass private AVS Key as first arg"
+    exit 1
+fi
+setup_operator "$WAVSServiceManagerAddress" "$1"

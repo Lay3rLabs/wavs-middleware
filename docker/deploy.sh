@@ -154,10 +154,6 @@ update_metadata_url() {
 update_quorum_config() {
     local owner="$1"
     local stakeRegistryAddress="$2"
-    if [ "$QUICK_MODE" = "ON" ]; then
-        echo "QUICK_MODE is ON - skipping update quorum config"
-        return 0
-    fi
     impersonate_account "$owner"
     
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
