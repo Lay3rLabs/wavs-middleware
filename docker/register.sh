@@ -34,10 +34,6 @@ fi
 setup_operator() {
     local index=$1
     local WAVSServiceManagerAddress=$2
-    if [ "$QUICK_MODE" = "ON" ] && [ "$index" -ne 1 ]; then
-        echo "QUICK_MODE is ON - skipping operator setup for operator $index"
-        return 0
-    fi
     STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' contracts/deployments/core/$CHAIN_ID.json)
     if [ -z "$STRATEGY_MANAGER_ADDRESS" ]; then
         echo "Error: Failed to read strategyManagerAddress from contracts/deployments/core/$CHAIN_ID.json"
@@ -126,12 +122,4 @@ setup_operator() {
     echo "MNEMONIC_${index}=$mnemonic" > ~/.nodes/operator_mnemonic$index
 }
 
-
-# This function is used to register the operators to eigenlayer and the avs
-if [ "$QUICK_MODE" = "ON" ]; then
-    setup_operator 1 "$WAVSServiceManagerAddress"
-else
-    for i in $(seq 1 $NUM_OPERATORS); do
-        setup_operator "$i" "$WAVSServiceManagerAddress"
-    done
-fi
+setup_operator 1 "$WAVSServiceManagerAddress"

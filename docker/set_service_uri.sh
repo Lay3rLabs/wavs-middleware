@@ -46,16 +46,12 @@ set_service_uri() {
   stop_impersonating "$owner"
 }
 
-LOCAL_ETHEREUM_RPC_URL="http://localhost:8545"
 if [ -z "$1" ]; then
-    echo "Error: Pass SERVICE_MANAGER_ADDRESS as first arg"
+    echo "Error: Pass SERVICE_URI as first arg"
     exit 1
 fi
-SERVICE_MANAGER_ADDRESS="$1"
-if [ -z "$2" ]; then
-    echo "Error: Pass SERVICE_URI as second arg"
-    exit 1
-fi
-SERVICE_URI="$2"
+SERVICE_URI="$1"
+
+SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' /root/.nodes/avs_deploy.json)
 
 set_service_uri $SERVICE_MANAGER_ADDRESS $SERVICE_URI

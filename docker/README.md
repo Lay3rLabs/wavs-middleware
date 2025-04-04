@@ -14,7 +14,7 @@ Then, build the image:
 docker build -t wavs-middleware .
 ```
 
-## Run
+## Setup
 
 Prepare the env file:
 
@@ -23,12 +23,16 @@ cp docker/env.example docker/.env
 # edit the RPC_URL for a paid testnet rpc endpoint
 ```
 
+## Testnet Fork
+
 Start anvil in one terminal:
 
 ```bash
 source docker/.env
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
+
+## Deploy
 
 Run all the following scripts in the `docker/` directory.
 
@@ -41,9 +45,7 @@ docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes wavs-mi
 Set Service URI:
 
 ```bash
-SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ./.nodes/avs_deploy.json)
-
-docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware $SERVICE_MANAGER_ADDRESS https://ipfs.url/for-custom-service.json
+docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware https://ipfs.url/for-custom-service.json
 ```
 
 Register: 
