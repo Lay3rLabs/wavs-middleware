@@ -1,6 +1,6 @@
 # Deployment Contract Map
 
-`wavs-el-env` has `start.sh` that deploys the wavs contracts.
+The `deploy.sh` script in the docker directory deploys the wavs contracts.
 This requires foundry and calls into `cd contracts && forge script script/LayerMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --broadcast`
 
 This is now in the current repo, [`LayerMiddlewareDeployer.s.sol`](./contracts/script/LayerMiddlewareDeployer.s.sol)

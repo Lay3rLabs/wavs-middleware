@@ -1,6 +1,15 @@
 #!/bin/bash
 
-export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
+# -x echos all lines for debug
+# set -x
+
+set -o errexit -o nounset -o pipefail
+command -v shellcheck >/dev/null && shellcheck "$0"
+
+SCRIPT_DIR="$(realpath "$(dirname "$0")")"
+# shellcheck source=./helpers.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR"/helpers.sh
 
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
@@ -22,28 +31,9 @@ if [ -z "$WAVSServiceManagerAddress" ]; then
     exit 1
 fi
 
-impersonate_account() {
-    local account="$1"
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        return 0
-    fi
-    cast rpc anvil_impersonateAccount $account -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        handle_error "Failed to impersonate account $account"
-    fi
-    cast rpc anvil_setBalance $account 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        handle_error "Failed to set balance for account $account"
-    fi
-}
-
 setup_operator() {
     local index=$1
     local WAVSServiceManagerAddress=$2
-    if [ "$QUICK_MODE" = "ON" ] && [ "$index" -ne 1 ]; then
-        echo "QUICK_MODE is ON - skipping operator setup for operator $index"
-        return 0
-    fi
     STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' contracts/deployments/core/$CHAIN_ID.json)
     if [ -z "$STRATEGY_MANAGER_ADDRESS" ]; then
         echo "Error: Failed to read strategyManagerAddress from contracts/deployments/core/$CHAIN_ID.json"
@@ -132,52 +122,4 @@ setup_operator() {
     echo "MNEMONIC_${index}=$mnemonic" > ~/.nodes/operator_mnemonic$index
 }
 
-
-handle_error() {
-    local message="$1"
-    echo "Error: $message"
-    exit 1
-}
-
-check_env_var() {
-    local var_name="$1"
-    local var_value="$2"
-    if [ -z "$var_value" ]; then
-        handle_error "$var_name is not set in the environment variables"
-    fi
-}
-
-execute_transaction() {
-    local description="$1"
-    local command="$2"
-
-    eval "$command"
-
-    if [ $? -eq 0 ]; then
-        echo "Successfully $description"
-    else
-        handle_error "Failed to $description"
-    fi
-}
-
-stop_impersonating() {
-    local account="$1"
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        return 0
-    fi
-    cast rpc anvil_stopImpersonatingAccount "$account" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to stop impersonating account $account"
-        exit 1
-    fi
-}
-
-
-# This function is used to register the operators to eigenlayer and the avs
-if [ "$QUICK_MODE" = "ON" ]; then
-    setup_operator 1 "$WAVSServiceManagerAddress"
-else
-    for i in $(seq 1 $NUM_OPERATORS); do
-        setup_operator "$i" "$WAVSServiceManagerAddress"
-    done
-fi
+setup_operator 1 "$WAVSServiceManagerAddress"

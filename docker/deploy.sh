@@ -1,8 +1,17 @@
 #!/bin/bash
 
-# -x echos all lines for debug, -e quits on first error
-set -e
-# set -xe
+# -x echos all lines for debug
+# set -x
+
+set -o errexit -o nounset -o pipefail
+command -v shellcheck >/dev/null && shellcheck "$0"
+
+SCRIPT_DIR="$(realpath "$(dirname "$0")")"
+# shellcheck source=./helpers.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR"/helpers.sh
+
+# source contracts/.env
 
 # Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
 # https://github.com/layr-labs/eigenlayer-contracts In the README.md
@@ -20,14 +29,6 @@ STRATEGY_ADDRESSES='[
   "0xaccc5a86732be85b5012e8614af237801636f8e5",
   "0xad76d205564f955a9c18103c4422d1cd94016899"
 ]'
-
-export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
-
-# Set default value for NUM_OPERATORS if not provided
-if [ -z "$NUM_OPERATORS" ]; then
-    NUM_OPERATORS=3
-    echo "NUM_OPERATORS not set, defaulting to 3"
-fi
 
 # Check if METADATA_URI is provided
 if [ -z "$METADATA_URI" ]; then
@@ -54,166 +55,6 @@ combined_strategies=${combined_strategies%,}
 if [ "$DEPLOY_ENV" = "LOCAL" ]; then
     unset TESTNET_RPC_URL
 fi
-
-wait_for_ethereum() {
-    echo "Waiting for Ethereum node to be ready..."
-    while ! curl -s -X POST -H "Content-Type: application/json" \
-                 --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}' \
-                 "$LOCAL_ETHEREUM_RPC_URL" > /dev/null
-    do
-        echo "$LOCAL_ETHEREUM_RPC_URL"
-        sleep 1
-    done
-    echo "Ethereum node is ready!"
-}
-
-impersonate_account() {
-    local account="$1"
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        return 0
-    fi
-    cast rpc anvil_impersonateAccount $account -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        handle_error "Failed to impersonate account $account"
-    fi
-    cast rpc anvil_setBalance $account 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        handle_error "Failed to set balance for account $account"
-    fi
-}
-
-handle_error() {
-    local message="$1"
-    echo "Error: $message"
-    exit 1
-}
-
-check_env_var() {
-    local var_name="$1"
-    local var_value="$2"
-    if [ -z "$var_value" ]; then
-        handle_error "$var_name is not set in the environment variables"
-    fi
-}
-
-execute_transaction() {
-    local description="$1"
-    local command="$2"
-
-    eval "$command"
-
-    if [ $? -eq 0 ]; then
-        echo "Successfully $description"
-    else
-        handle_error "Failed to $description"
-    fi
-}
-
-stop_impersonating() {
-    local account="$1"
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        return 0
-    fi
-    cast rpc anvil_stopImpersonatingAccount "$account" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to stop impersonating account $account"
-        exit 1
-    fi
-}
-
-setup_operator() {
-    local index=$1
-    local WavsServiceManagerAddress=$2
-    if [ "$QUICK_MODE" = "ON" ] && [ "$index" -ne 1 ]; then
-        echo "QUICK_MODE is ON - skipping operator setup for operator $index"
-        return 0
-    fi
-    STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' deployments/core/$CHAIN_ID.json)
-    if [ -z "$STRATEGY_MANAGER_ADDRESS" ]; then
-        echo "Error: Failed to read strategyManagerAddress from $HOME/.nodes/avs_deploy.json"
-        exit 1
-    fi
-    DELEGATION_MANAGER_ADDRESS=$(jq -r '.addresses.delegation' deployments/core/$CHAIN_ID.json)
-    if [ -z "$DELEGATION_MANAGER_ADDRESS" ]; then
-        echo "Error: Failed to read delegationManagerAddress from $HOME/.nodes/avs_deploy.json"
-        exit 1
-    fi
-    local mnemonic=$(cast wallet nm --json | jq -r '.mnemonic')
-    local private_key=$(cast wallet pk "$mnemonic")
-    local public_key=$(cast wallet address $private_key)
-    
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        cast s "$public_key" --value 50000000000000000 --private-key "$FUNDED_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to give operator $index balance"
-            exit 1
-        fi
-        MINT_FUNCTION="submit(address _referral)"
-        cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
-            --private-key "$private_key" \
-            --value 10000000000000000 \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to mint LST for $ADDRESS"
-            exit 1
-        fi
-        cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
-            "$STRATEGY_MANAGER_ADDRESS" 10000000000000000 \
-            --private-key "$private_key" \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to approve LST for $STRATEGY_MANAGER_ADDRESS"
-            exit 1
-        fi
-        cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
-            "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" 10000000000000000 \
-            --private-key "$private_key" \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to deposit into strategy for $LST_STRATEGY_ADDRESS"
-            exit 1
-        fi
-    else
-        cast rpc anvil_setBalance $public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-    fi
-    if [ $? -ne 0 ]; then
-        echo "Failed to set balance for operator $index"
-        exit 1
-    fi
-
-    cast send "$DELEGATION_MANAGER_ADDRESS" \
-        "registerAsOperator(address,uint32,string)" \
-        "$public_key" 0 "foo.bar" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to register as operator for $DELEGATION_MANAGER_ADDRESS"
-        exit 1
-    fi
-
-    allocationManager=$(cast call "$WavsServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
-    cast s "$allocationManager" \
-        "registerForOperatorSets(address,(address,uint32[],bytes))" \
-        "$public_key" \
-        "($WavsServiceManagerAddress,[1],0x1234)" \
-        --private-key $private_key \
-        --rpc-url $LOCAL_ETHEREUM_RPC_URL # > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        echo "Successfully registered operator $public_key to operator sets [1]"
-    else
-        echo "Error: Failed to register operator $public_key to operator sets"
-        exit 1
-    fi
-
-    PRIVATE_KEY=$private_key
-    cargo run --bin register_layer_operator #> /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to register operator $public_key to operator sets"
-        exit 1
-    fi
-    echo "PRIVATE_KEY_${index}=$private_key" > ~/.nodes/operator$index
-    echo "MNEMONIC_${index}=$mnemonic" > ~/.nodes/operator_mnemonic$index
-}
 
 create_operator_set() {
     local set_id="$1"
@@ -345,88 +186,6 @@ update_quorum_config() {
     fi
 }
 
-setup_mock_token_and_rewards() {
-    local owner="$1"
-    local WavsServiceManagerAddress="$2"
-    if [ "$QUICK_MODE" = "ON" ]; then
-        echo "QUICK_MODE is ON - skipping setup_mock_token_and_rewards"
-        return 0
-    fi
-    MOCK_TOKEN_SUPPLY=$(cast to-wei 100)
-    cd contracts && execute_transaction "deployed mock rewards token" "forge script DeployMockTokenScript \
-        --sig 'run(address,uint256)' \
-        '$owner' \
-        '$MOCK_TOKEN_SUPPLY' \
-        --rpc-url $LOCAL_ETHEREUM_RPC_URL \
-        --private-key '$deployer_private_key' \
-        --broadcast > /dev/null 2>&1"
-
-    tokenAddress=$(cat deployments/wavs-middleware/mockToken$CHAIN_ID.json | jq -r '.MockToken')
-
-    impersonate_account "$owner"
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        execute_transaction "approved WavsServiceManager for mock token transfers" \
-          "cast s '$tokenAddress' \
-             'approve(address,uint256)' \
-             '$WavsServiceManagerAddress' \
-             '$MOCK_TOKEN_SUPPLY' \
-             --private-key '$deployer_private_key' \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
-    else
-        execute_transaction "approved WavsServiceManager for mock token transfers" \
-          "cast s '$tokenAddress' \
-             'approve(address,uint256)' \
-             '$WavsServiceManagerAddress' \
-             '$MOCK_TOKEN_SUPPLY' \
-             --from '$owner' \
-             --unlocked \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
-    fi
-    stop_impersonating "$owner"
-
-    operator_addresses=()
-    for i in $(seq 1 $NUM_OPERATORS); do
-        operator_addresses+=($(cast wallet address $(grep '^PRIVATE_KEY_[0-9]=' ~/.nodes/operator$i | cut -d'=' -f2)))
-    done
-
-    sorted_addresses=($(
-      for addr in "${operator_addresses[@]}"; do
-        lower_addr=$(echo "$addr" | tr '[:upper:]' '[:lower:]')
-        echo "$lower_addr"
-      done | sort
-    ))
-
-    operator_rewards=""
-    for i in "${!sorted_addresses[@]}"; do
-        address="${sorted_addresses[$i]}"
-        reward=$(cast to-wei $((i + 1)))
-        operator_rewards+="(${address},${reward}),"
-    done
-    operator_rewards=${operator_rewards%,}
-
-    impersonate_account "$owner"
-    twoWeeksAgo=$(date -d "2 weeks ago" +%s)
-    twoWeeksAgoRounded=$(( twoWeeksAgo / 604800 * 604800 ))
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        execute_transaction "created AVS Directed Rewards Submission" \
-          "cast s '$WavsServiceManagerAddress' \
-             'createOperatorDirectedAVSRewardsSubmission(((address,uint96)[],address,(address,uint256)[],uint32,uint32,string)[])' \
-             '[([$combined_strategies],$tokenAddress,[$operator_rewards],$twoWeeksAgoRounded,604800,\"mock description\")]' \
-             --private-key '$deployer_private_key' \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
-    else
-        execute_transaction "created AVS Directed Rewards Submission" \
-          "cast s '$WavsServiceManagerAddress' \
-             'createOperatorDirectedAVSRewardsSubmission(((address,uint96)[],address,(address,uint256)[],uint32,uint32,string)[])' \
-             '[([$combined_strategies],$tokenAddress,[$operator_rewards],$twoWeeksAgoRounded,604800,\"mock description\")]' \
-             --from '$owner' \
-             --unlocked \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
-    fi
-    stop_impersonating "$owner"
-
-    cd ..
-}
 
 deploy_consumer_contract() {
     cd ../../avs-ecdsa-sol-sdk
@@ -462,8 +221,6 @@ deployer_private_key=$(cast wallet new --json | jq -r '.[0].private_key')
 deployer_public_key=$(cast wallet address "$deployer_private_key")
 echo "PRIVATE_KEY=$deployer_private_key" >> contracts/.env
 echo "$deployer_private_key" > ~/.nodes/deployer
-
-source contracts/.env
 
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
@@ -536,25 +293,3 @@ for i in $(seq 1 $NUM_OPERATOR_SETS); do
     create_operator_set "$i" "$owner" "$WavsServiceManagerAddress"
 done
 
-# # This function is used to register the operators to eigenlayer and the avs
-# if [ "$QUICK_MODE" = "ON" ]; then
-#     setup_operator 1 "$WavsServiceManagerAddress"
-# else
-#     for i in $(seq 1 $NUM_OPERATORS); do
-#         setup_operator "$i" "$WavsServiceManagerAddress"
-#     done
-# fi
-
-# # This function is used to setup the mock token and rewards for the stake registry, allowing the AVS to submit rewards to the operators
-# setup_mock_token_and_rewards "$owner" "$WavsServiceManagerAddress"
-
-# # This function is used to validate the signature of operators on the consumer contract, allowing for e2e signature validation testing
-# if [ "$QUICK_MODE" = "ON" ]; then
-#     NUM_OPERATORS=1 
-# fi
-# cargo run --bin validate_signature $NUM_OPERATORS
-
-# # This function is used to keep the container running indefinitely, in order to allow re-running the script without having to restart the container
-# while true; do
-#     sleep 1
-# done
