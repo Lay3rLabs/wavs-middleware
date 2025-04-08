@@ -21,7 +21,7 @@ import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {WavsAVSRegistrar} from "../../src/WavsAVSRegistrar.sol";
 
-library LayerMiddlewareDeploymentLib {
+library WavsMiddlewareDeploymentLib {
     using stdJson for *;
     using Strings for *;
     using UpgradeableProxyLib for address;

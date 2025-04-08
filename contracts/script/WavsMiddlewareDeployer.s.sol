@@ -19,7 +19,7 @@ import {
     IStrategy
 } from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
-contract LayerMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
+contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     using ReadCoreLib for *;
     using UpgradeableProxyLib for address;
 
@@ -27,7 +27,7 @@ contract LayerMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     address proxyAdmin;
     IStrategy helloWorldStrategy;
     ReadCoreLib.DeploymentData coreDeployment;
-    LayerMiddlewareDeploymentLib.DeploymentData layerMiddlewareDeployment;
+    WavsMiddlewareDeploymentLib.DeploymentData wavsMiddlewareDeployment;
     Quorum internal quorum;
     ERC20Mock token;
     function setUp() public virtual {
@@ -48,26 +48,26 @@ contract LayerMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         vm.startBroadcast(deployer);
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
 
-        layerMiddlewareDeployment =
-            LayerMiddlewareDeploymentLib.deployContracts(proxyAdmin, coreDeployment, quorum);
+        wavsMiddlewareDeployment =
+            WavsMiddlewareDeploymentLib.deployContracts(proxyAdmin, coreDeployment, quorum);
 
-        layerMiddlewareDeployment.strategy = address(helloWorldStrategy);
-        layerMiddlewareDeployment.token = address(token);
+        wavsMiddlewareDeployment.strategy = address(helloWorldStrategy);
+        wavsMiddlewareDeployment.token = address(token);
         vm.stopBroadcast();
 
         verifyDeployment();
-        LayerMiddlewareDeploymentLib.writeDeploymentJson(layerMiddlewareDeployment);
+        WavsMiddlewareDeploymentLib.writeDeploymentJson(wavsMiddlewareDeployment);
     }
 
     function verifyDeployment() internal view {
         require(
-            layerMiddlewareDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
+            wavsMiddlewareDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
         );
         require(
-            layerMiddlewareDeployment.WavsServiceManager != address(0),
+            wavsMiddlewareDeployment.WavsServiceManager != address(0),
             "WavsServiceManager address cannot be zero"
         );
-        require(layerMiddlewareDeployment.strategy != address(0), "Strategy address cannot be zero");
+        require(wavsMiddlewareDeployment.strategy != address(0), "Strategy address cannot be zero");
         require(proxyAdmin != address(0), "ProxyAdmin address cannot be zero");
         require(
             coreDeployment.delegationManager != address(0),

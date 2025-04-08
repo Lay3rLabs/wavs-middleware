@@ -39,13 +39,13 @@ Run all the following scripts in the `docker/` directory.
 Deploy:
 
 ```bash
-docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes wavs-middleware
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes -e LOCAL_ETHEREUM_RPC_URL=http://host.docker.internal:8545 wavs-middleware
 ```
 
 Set Service URI:
 
 ```bash
-docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware https://ipfs.url/for-custom-service.json
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes -e LOCAL_ETHEREUM_RPC_URL=http://host.docker.internal:8545 --entrypoint /wavs/set_service_uri.sh wavs-middleware https://ipfs.url/for-custom-service.json
 ```
 
 Register: 
