@@ -1,0 +1,8 @@
+{
+  "name": "wavs-middleware",
+  "version": "1.0.0",
+  "description": "WAVS Middleware",
+  "main": "index.js",
+  "author": "Lay3rLabs Team",
+  "license": "MIT"
+}
