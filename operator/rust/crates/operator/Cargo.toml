@@ -46,8 +46,8 @@ serial_test = "3.1.1"
 
 
 [[bin]]
-name = "register_layer_operator"
-path = "src/register_layer_operator.rs"
+name = "register_wavs_operator"
+path = "src/register_wavs_operator.rs"
 
 [[bin]]
 name = "validate_signature"
