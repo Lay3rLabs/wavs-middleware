@@ -51,5 +51,8 @@ docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --ent
 Register: 
 
 ```bash
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware
+# TODO: get the private AVS key (0x...) for this service from the WAVS node
+AVS_KEY=0x974b676703542ff93841c3daeeabcbfdb6ba62101856e22d5fb6b9d2f9db42fd
+
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY"
 ```
