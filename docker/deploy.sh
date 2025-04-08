@@ -255,7 +255,7 @@ fi
 
 echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
 
-cd contracts && forge script script/LayerMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --broadcast # /dev/null 2>&1
+cd contracts && forge script script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --broadcast # /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run middleware deployment script"
     exit 1
