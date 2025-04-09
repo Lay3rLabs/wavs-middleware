@@ -39,13 +39,15 @@ Run all the following scripts in the `docker/` directory.
 Deploy:
 
 ```bash
-docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes wavs-middleware
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware
 ```
 
 Set Service URI:
 
 ```bash
-docker run --rm --network host --env-file .env  -v ./.nodes:/root/.nodes   --entrypoint /wavs/set_service_uri.sh wavs-middleware https://ipfs.url/for-custom-service.json
+SERVICE_URI="https://ipfs.url/for-custom-service.json"
+
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/set_service_uri.sh wavs-middleware "$SERVICE_URI"
 ```
 
 Register: 
