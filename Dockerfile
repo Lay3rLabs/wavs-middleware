@@ -9,8 +9,8 @@ FROM ghcr.io/foundry-rs/foundry:latest
 USER root
 RUN apt update && apt install -yq jq curl
 
-COPY --from=builder /wavs/operator/target/release/register_layer_operator /wavs/register_layer_operator
-RUN chmod +x /wavs/register_layer_operator
+COPY --from=builder /wavs/operator/target/release/register_wavs_operator /wavs/register_wavs_operator
+RUN chmod +x /wavs/register_wavs_operator
 
 COPY contracts /wavs/contracts
 WORKDIR /wavs/contracts

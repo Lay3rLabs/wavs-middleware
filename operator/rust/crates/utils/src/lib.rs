@@ -11,10 +11,10 @@ use serde::Deserialize;
 
 #[allow(unused)]
 #[derive(Deserialize, Debug)]
-pub struct LayerMiddlewareData {
+pub struct WavsMiddlewareData {
     #[serde(rename = "lastUpdate")]
     last_update: LastUpdate,
-    pub addresses: LayerMiddlewareAddresses,
+    pub addresses: WavsMiddlewareAddresses,
 }
 
 #[allow(unused)]
@@ -27,10 +27,10 @@ pub struct HelloWorldData {
 
 #[allow(unused)]
 #[derive(Deserialize, Debug)]
-pub struct LayerAVSData {
+pub struct WavsAVSData {
     #[serde(rename = "lastUpdate")]
     last_update: LastUpdate,
-    pub addresses: LayerAVSAddresses,
+    pub addresses: WavsAVSAddresses,
 }
 
 #[allow(unused)]
@@ -61,13 +61,13 @@ pub struct HelloWorldAddresses {
 
 #[allow(unused)]
 #[derive(Deserialize, Debug)]
-pub struct LayerMiddlewareAddresses {
+pub struct WavsMiddlewareAddresses {
     #[serde(rename = "proxyAdmin")]
     _proxy_admin: String,
     #[serde(rename = "WavsServiceManager")]
-    pub layer_service_manager: String,
+    pub wavs_service_manager: String,
     #[serde(rename = "WavsServiceManagerImpl")]
-    layer_service_manager_impl: String,
+    wavs_service_manager_impl: String,
     #[serde(rename = "stakeRegistry")]
     pub stake_registry: String,
     #[serde(rename = "stakeRegistryImpl")]
@@ -77,13 +77,13 @@ pub struct LayerMiddlewareAddresses {
 }
 #[allow(unused)]
 #[derive(Deserialize, Debug)]
-pub struct LayerAVSAddresses {
+pub struct WavsAVSAddresses {
     #[serde(rename = "proxyAdmin")]
     _proxy_admin: String,
     #[serde(rename = "WavsServiceManager")]
-    pub layer_service_manager: String,
+    pub wavs_service_manager: String,
     #[serde(rename = "WavsServiceManagerImpl")]
-    layer_service_manager_impl: String,
+    wavs_service_manager_impl: String,
     #[serde(rename = "stakeRegistry")]
     pub stake_registry: String,
     #[serde(rename = "stakeRegistryImpl")]
@@ -130,17 +130,17 @@ pub struct EigenLayerAddresses {
     strategy_beacon: String,
 }
 
-pub fn parse_layer_service_manager(path: &str) -> eyre::Result<Address> {
+pub fn parse_wavs_service_manager(path: &str) -> eyre::Result<Address> {
     let data = std::fs::read_to_string(path)?;
-    let parsed: LayerMiddlewareData = serde_json::from_str(&data)?;
-    let layer_service_manager_address: Address =
-        parsed.addresses.layer_service_manager.parse()?;
-    Ok(layer_service_manager_address)
+    let parsed: WavsMiddlewareData = serde_json::from_str(&data)?;
+    let wavs_service_manager_address: Address =
+        parsed.addresses.wavs_service_manager.parse()?;
+    Ok(wavs_service_manager_address)
 }
 
-pub fn parse_stake_registry_address_layer(path: &str) -> eyre::Result<Address> {
+pub fn parse_stake_registry_address_wavs(path: &str) -> eyre::Result<Address> {
     let data = std::fs::read_to_string(path)?;
-    let parsed: LayerMiddlewareData = serde_json::from_str(&data)?;
+    let parsed: WavsMiddlewareData = serde_json::from_str(&data)?;
     let stake_registry_address: Address = parsed.addresses.stake_registry.parse()?;
     Ok(stake_registry_address)
 }
@@ -162,7 +162,7 @@ pub fn parse_stake_registry_address(path: &str) -> eyre::Result<Address> {
 
 pub fn parse_offchain_message_consumer_address(path: &str) -> eyre::Result<Address> {
     let data = std::fs::read_to_string(path)?;
-    let parsed: LayerAVSData = serde_json::from_str(&data)?;
+    let parsed: WavsAVSData = serde_json::from_str(&data)?;
     let offchain_message_consumer_address: Address = parsed.addresses.offchain_message_consumer.parse()?;
     Ok(offchain_message_consumer_address)
 }

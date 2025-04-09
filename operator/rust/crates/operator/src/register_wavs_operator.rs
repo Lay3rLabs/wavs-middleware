@@ -12,7 +12,7 @@ use hello_world_utils::ecdsastakeregistry::ECDSAStakeRegistry;
 use hello_world_utils::{
     ecdsastakeregistry::ISignatureUtils::SignatureWithSaltAndExpiry, EigenLayerData,
 };
-use hello_world_utils::{parse_layer_service_manager, parse_stake_registry_address_layer};
+use hello_world_utils::{parse_wavs_service_manager, parse_stake_registry_address_wavs};
 
 use once_cell::sync::Lazy;
 use rand::RngCore;
@@ -61,20 +61,20 @@ async fn register_operator() -> eyre::Result<()> {
     let expiry: U256 = U256::from(now + 3600);
     let data = std::fs::read_to_string("/root/.nodes/avs_deploy.json")?;
     get_logger().info(&format!("wavs-middleware deployment data: {}", data), &"");
-    // Use the correct parse function for LayerMiddleware JSON
-    let layer_service_manager_address =
-        parse_layer_service_manager("/root/.nodes/avs_deploy.json")?;
+    // Use the correct parse function for WavsMiddleware JSON
+    let wavs_service_manager_address =
+        parse_wavs_service_manager("/root/.nodes/avs_deploy.json")?;
     get_logger().info(
         &format!(
-            "layer_service_manager_address: {}",
-            layer_service_manager_address
+            "wavs_service_manager_address: {}",
+            wavs_service_manager_address
         ),
         &"",
     );
     let digest_hash = elcontracts_reader_instance
         .calculate_operator_avs_registration_digest_hash(
             signer.address(),
-            layer_service_manager_address,
+            wavs_service_manager_address,
             salt,
             expiry,
         )
@@ -88,14 +88,14 @@ async fn register_operator() -> eyre::Result<()> {
         expiry: expiry,
     };
 
-    // Use the LayerMiddleware parsing function for stake registry
+    // Use the WavsMiddleware parsing function for stake registry
     let stake_registry_address =
-        parse_stake_registry_address_layer("/root/.nodes/avs_deploy.json")?;
+        parse_stake_registry_address_wavs("/root/.nodes/avs_deploy.json")?;
     let contract_ecdsa_stake_registry = ECDSAStakeRegistry::new(stake_registry_address, &pr);
     let registeroperator_details_call = contract_ecdsa_stake_registry
         .registerOperatorWithSignature(operator_signature, signer.clone().address())
         .gas(500000);
-    let register_layer_middleware_hash = registeroperator_details_call
+    let register_wavs_middleware_hash = registeroperator_details_call
         .send()
         .await?
         .get_receipt()
@@ -106,7 +106,7 @@ async fn register_operator() -> eyre::Result<()> {
         &format!(
             "Operator registered on AVS successfully :{} , tx_hash :{}",
             signer.address(),
-            register_layer_middleware_hash
+            register_wavs_middleware_hash
         ),
         &"",
     );

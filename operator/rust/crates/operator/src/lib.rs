@@ -1,7 +1,7 @@
 //! Start creating tasks and respond appropriately
 //! testing utils
-/// Register Layer Operator
-pub mod register_layer_operator;
+/// Register WAVS Operator
+pub mod register_wavs_operator;
 /// Create createNewTask at regular intervals with random task names
 pub mod spam_tasks;
 /// test utils

@@ -176,7 +176,7 @@ setup_operator() {
     fi
 
     PRIVATE_KEY=$private_key
-    cargo run --bin register_layer_operator #> /dev/null 2>&1
+    cargo run --bin register_wavs_operator #> /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
