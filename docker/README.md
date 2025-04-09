@@ -54,7 +54,8 @@ Register:
 
 ```bash
 # TODO: get the private AVS key (0x...) for this service from the WAVS node
-AVS_KEY=0x974b676703542ff93841c3daeeabcbfdb6ba62101856e22d5fb6b9d2f9db42fd
+# Generate a new private key for the AVS
+AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY"
 ```
