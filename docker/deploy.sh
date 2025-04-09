@@ -23,12 +23,13 @@ STRATEGY_ADDRESSES='[
   "0x70eb4d3c164a6b4a5f908d4fbb5a9caffb66bab6",
   "0x7673a47463f80c6a3553db9e54c8cdcd5313d0ac",
   "0x78dbcbef8ff94ec7f631c23d38d197744a323868",
-  "0x7d704507b76571a51d9cae8addabbfd0ba0e63d3",
+  "0x7d704507b76571a51d9cae8addabbfd0ba0e63d3", 
   "0x80528d6e9a2babfc766965e0e26d5ab08d9cfaf9",
   "0x9281ff96637710cd9a5cacce9c6fad8c9f54631c",
   "0xaccc5a86732be85b5012e8614af237801636f8e5",
   "0xad76d205564f955a9c18103c4422d1cd94016899"
 ]'
+# 0x7d704507b76571a51d9cae8addabbfd0ba0e63d3 is sETH on Holesky
 
 # Check if METADATA_URI is provided
 if [ -z "$METADATA_URI" ]; then
