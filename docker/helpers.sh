@@ -2,6 +2,11 @@
 
 export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
 
+# Set LOCAL_ETHEREUM_RPC_URL if it's not already set
+if [ -z "${LOCAL_ETHEREUM_RPC_URL:-}" ]; then
+    export LOCAL_ETHEREUM_RPC_URL="http://host.docker.internal:8545"
+fi
+
 wait_for_ethereum() {
     echo "Waiting for Ethereum node to be ready..."
     while ! curl -s -X POST -H "Content-Type: application/json" \
