@@ -36,8 +36,7 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
 
         coreDeployment = ReadCoreLib.readDeploymentJson("deployments/core/", block.chainid);
        
-        token = new ERC20Mock();
-        helloWorldStrategy = IStrategy(StrategyFactory(coreDeployment.strategyFactory).deployNewStrategy(token));
+        helloWorldStrategy = IStrategy(0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3);
 
         quorum.strategies.push(
             StrategyParams({strategy: helloWorldStrategy, multiplier: 10_000})
