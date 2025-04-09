@@ -1,7 +1,11 @@
 FROM ubuntu:latest AS git-deps
 RUN apt update && apt install -yq git
-COPY . /tmp/
-RUN cd /tmp && git submodule update --init --recursive
+RUN mkdir -p /tmp/contracts/lib
+COPY .gitmodules contracts/lib /tmp/
+WORKDIR /tmp
+# a git env required to submodule pull
+RUN git init
+RUN git submodule update --init --recursive
 
 FROM rust AS builder
 COPY operator /wavs/operator/
