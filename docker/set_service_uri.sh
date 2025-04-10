@@ -22,6 +22,17 @@ else
     LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
 fi
 
+# Read the deployer private key from file
+if [ -f "$HOME/.nodes/deployer" ]; then
+    deployer_private_key=$(cat "$HOME/.nodes/deployer")
+    echo "Read deployer key from file."
+    deployer_public_key=$(cast wallet address "$deployer_private_key")
+    echo "Deployer address: $deployer_public_key"
+else
+    echo "Error: Deployer key file not found at $HOME/.nodes/deployer"
+    exit 1
+fi
+
 set_service_uri() {
   local service_manager_address="$1"
   local service_uri="$2"

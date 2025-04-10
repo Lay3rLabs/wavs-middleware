@@ -18,18 +18,16 @@ use once_cell::sync::Lazy;
 use rand::RngCore;
 use std::{env, str::FromStr};
 
-pub const fn get_rpc_url() -> &'static str {
-    match option_env!("TESTNET_RPC_URL") {
-        Some(url) => url,
-        None => "http://localhost:8545",
-    }
+fn get_rpc_url() -> String {
+    env::var("TESTNET_RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string())
 }
-pub const ANVIL_RPC_URL: &str = get_rpc_url();
+
+static ANVIL_RPC_URL: Lazy<String> = Lazy::new(|| get_rpc_url());
 static KEY: Lazy<String> =
     Lazy::new(|| env::var("PRIVATE_KEY").expect("failed to retrieve private key"));
 
 async fn register_operator() -> eyre::Result<()> {
-    let pr = get_signer(&KEY.clone(), ANVIL_RPC_URL);
+    let pr = get_signer(&KEY.clone(), &ANVIL_RPC_URL);
     let signer = PrivateKeySigner::from_str(&KEY.clone())?;
 
     let default_slasher = Address::ZERO;
@@ -38,13 +36,12 @@ async fn register_operator() -> eyre::Result<()> {
     let el_parsed: EigenLayerData = serde_json::from_str(&data)?;
     let delegation_manager_address: Address = el_parsed.addresses.delegation.parse()?;
     let avs_directory_address: Address = el_parsed.addresses.avs_directory.parse()?;
-
     let elcontracts_reader_instance = ELChainReader::new(
         get_logger().clone(),
         default_slasher,
         delegation_manager_address,
         avs_directory_address,
-        ANVIL_RPC_URL.to_string(),
+        ANVIL_RPC_URL.clone(),
     );
 
     let is_registered = elcontracts_reader_instance
