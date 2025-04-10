@@ -55,41 +55,41 @@ setup_operator() {
             echo "Error: Failed to give operator $index balance"
             exit 1
         fi
-
-        # TODO: use this in both testnet and local - which LST do we use?
-        # See https://github.com/Lay3rLabs/wavs-middleware/issues/61
-        MINT_FUNCTION="submit(address _referral)"
-        cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
-            --private-key "$private_key" \
-            --value 10000000000000000 \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to mint LST for $ADDRESS"
-            exit 1
-        fi
-        cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
-            "$STRATEGY_MANAGER_ADDRESS" 10000000000000000 \
-            --private-key "$private_key" \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to approve LST for $STRATEGY_MANAGER_ADDRESS"
-            exit 1
-        fi
-        cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
-            "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" 10000000000000000 \
-            --private-key "$private_key" \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to deposit into strategy for $LST_STRATEGY_ADDRESS"
-            exit 1
-        fi
     else
         cast rpc anvil_setBalance $public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Failed to set balance for operator"
+            exit 1
+        fi
     fi
+
+    # TODO: is this write? need proper LST addr setup in the .env file
+    MINT_FUNCTION="submit(address _referral)"
+    cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
+        --private-key "$private_key" \
+        --value 10000000000000000 \
+        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
-        echo "Failed to set balance for operator"
+        echo "Error: Failed to mint LST for $ADDRESS"
         exit 1
     fi
+    cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
+        "$STRATEGY_MANAGER_ADDRESS" 10000000000000000 \
+        --private-key "$private_key" \
+        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to approve LST for $STRATEGY_MANAGER_ADDRESS"
+        exit 1
+    fi
+    cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
+        "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" 10000000000000000 \
+        --private-key "$private_key" \
+        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to deposit into strategy for $LST_STRATEGY_ADDRESS"
+        exit 1
+    fi
+
 
     cast send "$DELEGATION_MANAGER_ADDRESS" \
         "registerAsOperator(address,uint32,string)" \
@@ -127,8 +127,6 @@ setup_operator() {
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
     fi
-
-    # TODO: add a query of the current voting power of this operator on the stake registry
 }
 
 if [ -z "$1" ]; then
