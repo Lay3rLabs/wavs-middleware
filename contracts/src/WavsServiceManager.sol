@@ -167,6 +167,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         bytes32 message = keccak256(abi.encode(envelope));
         bytes32 ethSignedMessageHash = ECDSAUpgradeable.toEthSignedMessageHash(message);
         bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
+
         bytes memory signatureDataBytes = abi.encode(signatureData.operators, signatureData.signatures, signatureData.referenceBlock);
         // If the registry returns the magicValue, signature is considered valid
         if( magicValue !=
@@ -177,6 +178,21 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         ) {
             revert IWavsServiceManager.InvalidSignature();
         }
+    }
+
+    /// @inheritdoc IWavsServiceManager
+    function getOperatorWeight(address operator) external view returns (uint256) {
+        return ECDSAStakeRegistry(stakeRegistry).getLastCheckpointOperatorWeight(operator);
+    }
+
+    /// @inheritdoc IWavsServiceManager
+    function getLastCheckpointTotalWeight() external view returns (uint256) {
+        return ECDSAStakeRegistry(stakeRegistry).getLastCheckpointTotalWeight();
+    }
+
+    /// @inheritdoc IWavsServiceManager
+    function getLastCheckpointThresholdWeight() external view returns (uint256) {
+        return ECDSAStakeRegistry(stakeRegistry).getLastCheckpointThresholdWeight();
     }
 
 }
