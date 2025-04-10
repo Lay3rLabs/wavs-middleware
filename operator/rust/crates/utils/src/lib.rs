@@ -54,7 +54,6 @@ pub struct HelloWorldAddresses {
     #[serde(rename = "stakeRegistryImpl")]
     stake_registry_impl: String,
     strategy: String,
-    token: String,
     #[serde(rename = "offchainMessageConsumer")]
     pub offchain_message_consumer: String,
 }
@@ -73,7 +72,6 @@ pub struct WavsMiddlewareAddresses {
     #[serde(rename = "stakeRegistryImpl")]
     stake_registry_impl: String,
     strategy: String,
-    token: String,
 }
 #[allow(unused)]
 #[derive(Deserialize, Debug)]
@@ -89,7 +87,6 @@ pub struct WavsAVSAddresses {
     #[serde(rename = "stakeRegistryImpl")]
     stake_registry_impl: String,
     strategy: String,
-    token: String,
     #[serde(rename = "offchainMessageConsumer")]
     pub offchain_message_consumer: String,
 }
