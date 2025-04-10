@@ -32,7 +32,6 @@ library WavsMiddlewareDeploymentLib {
         address WavsServiceManager;
         address stakeRegistry;
         address strategy;
-        address token;
         address avsRegistrar;
     }
 
@@ -103,7 +102,6 @@ library WavsMiddlewareDeploymentLib {
         data.WavsServiceManager = json.readAddress(".contracts.WavsServiceManager");
         data.stakeRegistry = json.readAddress(".contracts.stakeRegistry");
         data.strategy = json.readAddress(".contracts.strategy");
-        data.token = json.readAddress(".contracts.token");
         data.avsRegistrar = json.readAddress(".contracts.avsRegistrar");
         
         return data;
@@ -168,8 +166,6 @@ library WavsMiddlewareDeploymentLib {
             data.stakeRegistry.getImplementation().toHexString(),
             '","strategy":"',
             data.strategy.toHexString(),
-            '","token":"',
-            data.token.toHexString(),
             '","avsRegistrar":"',
             data.avsRegistrar.toHexString(),
              '"}'

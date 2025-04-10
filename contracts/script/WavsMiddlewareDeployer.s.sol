@@ -7,7 +7,6 @@ import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeplomentLib.so
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
-import {ERC20Mock} from "../test/ERC20Mock.sol";
 import {TransparentUpgradeableProxy} from
     "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
@@ -29,7 +28,7 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     ReadCoreLib.DeploymentData coreDeployment;
     WavsMiddlewareDeploymentLib.DeploymentData wavsMiddlewareDeployment;
     Quorum internal quorum;
-    ERC20Mock token;
+
     function setUp() public virtual {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
@@ -51,7 +50,6 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
             WavsMiddlewareDeploymentLib.deployContracts(proxyAdmin, coreDeployment, quorum);
 
         wavsMiddlewareDeployment.strategy = address(helloWorldStrategy);
-        wavsMiddlewareDeployment.token = address(token);
         vm.stopBroadcast();
 
         verifyDeployment();
