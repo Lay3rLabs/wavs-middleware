@@ -49,7 +49,17 @@ if [ -z "$OPERATOR_EVENTS" ]; then
     exit 1
 fi
 
-echo "Parsing $OPERATOR_EVENTS"
+
+# It is the second line after topics,
+# and looks like 0x0000000000000000000000003464592915269a1dbdd65b8e3452011e43d50c59
+RAW_OPS=$(echo "$OPERATOR_EVENTS" | grep -A2 'topics:' | grep '0x00000000000000')
+
+DEBUG=${DEBUG:-0}
+if [ "$DEBUG" -eq 1 ]; then
+    echo "Parsing $OPERATOR_EVENTS"
+    echo "** matched topics **"
+    echo $RAW_OPS
+fi
 
 # Convert events to operator addresses and store in array
 declare -a OPERATORS
@@ -58,7 +68,7 @@ while IFS= read -r line; do
     OPERATOR="0x${line: -40}"
     OPERATORS+=("$OPERATOR")
     echo "Found operator: $OPERATOR"
-done <<< "$OPERATOR_EVENTS"
+done <<< "$RAW_OPS"
 
 # Query weight for each operator
 echo -e "\n=== Operator Weights ==="
