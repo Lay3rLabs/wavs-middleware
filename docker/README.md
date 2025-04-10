@@ -59,3 +59,10 @@ AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY"
 ```
+
+List Operators:
+
+```bash
+# View stake registry status, including registered operators and their weights
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/list_operator.sh wavs-middleware
+```
