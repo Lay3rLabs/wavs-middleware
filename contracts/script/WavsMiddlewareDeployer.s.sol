@@ -35,8 +35,8 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         vm.label(deployer, "Deployer");
 
         coreDeployment = ReadCoreLib.readDeploymentJson("deployments/core/", block.chainid);
-        // This is the strategy address for seth on holesky 
-        helloWorldStrategy = IStrategy(0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3);
+        // Get the LST strategy address from environment
+        helloWorldStrategy = IStrategy(vm.envAddress("LST_STRATEGY_ADDRESS"));
 
         quorum.strategies.push(
             StrategyParams({strategy: helloWorldStrategy, multiplier: 10_000})
