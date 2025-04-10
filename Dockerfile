@@ -1,5 +1,13 @@
-FROM rust AS builder
+FROM ubuntu:latest AS git-deps
+RUN apt update && apt install -yq git
+RUN mkdir -p /tmp/contracts/lib
+COPY .gitmodules contracts/lib /tmp/
+WORKDIR /tmp
+# a git env required to submodule pull
+RUN git init
+RUN git submodule update --init --recursive
 
+FROM rust AS builder
 COPY operator /wavs/operator/
 WORKDIR /wavs/operator
 RUN cargo build --release
@@ -13,8 +21,12 @@ COPY --from=builder /wavs/operator/target/release/register_wavs_operator /wavs/r
 RUN chmod +x /wavs/register_wavs_operator
 
 COPY contracts /wavs/contracts
+COPY --from=git-deps /tmp/contracts/lib /wavs/contracts/lib
+
 WORKDIR /wavs/contracts
 RUN forge build
+
+RUN rm -rf /tmp
 
 WORKDIR /wavs
 COPY ./docker/*.sh /wavs
