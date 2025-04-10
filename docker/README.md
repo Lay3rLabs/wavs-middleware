@@ -34,7 +34,7 @@ anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 
 ## Deploy
 
-Run all the following scripts in the `docker/` directory.
+**Run all the following scripts in the `docker/` directory.**
 
 Deploy:
 
