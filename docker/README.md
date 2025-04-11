@@ -36,6 +36,10 @@ anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 
 **Run all the following scripts in the `docker/` directory.**
 
+```bash
+cd docker/
+```
+
 Deploy:
 
 ```bash
@@ -50,7 +54,7 @@ SERVICE_URI="https://ipfs.url/for-custom-service.json"
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/set_service_uri.sh wavs-middleware "$SERVICE_URI"
 ```
 
-Register: 
+Register:
 
 ```bash
 # TODO: get the private AVS key (0x...) for this service from the WAVS node
