@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -x echos all lines for debug
-set -x
+# set -x
 
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
@@ -62,7 +62,7 @@ register_operator_with_avs() {
     # Remove 0x prefix from digest hash if present
     digest_hash=${digest_hash#0x}
     # Sign the digest hash with the private key
-    local signature=$(cast wallet sign $digest_hash --private-key "$private_key")
+    local signature=$(cast wallet sign $digest_hash --no-hash --private-key "$private_key")
     
     # Register the operator with the signature
     echo "Registering operator with signature..."
@@ -173,15 +173,11 @@ setup_operator() {
     export PRIVATE_KEY=$private_key
     export TESTNET_RPC_URL="$LOCAL_ETHEREUM_RPC_URL"  
 
-    # TODO: pull some stuff out of Rust into bash
-    # See https://github.com/Lay3rLabs/wavs-middleware/issues/52
-    # and https://github.com/Lay3rLabs/wavs-middleware/issues/42
-    # /wavs/register_wavs_operator #> /dev/null 2>&1
-    # if [ $? -ne 0 ]; then
-    #     echo "Error: Failed to register operator $public_key to operator sets"
-    #     exit 1
-    # fi
-    register_operator_with_avs "$private_key"
+    register_operator_with_avs "$private_key" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to register operator $public_key to operator sets"
+        exit 1
+    fi
 
 }
 
