@@ -66,3 +66,5 @@ List Operators:
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/list_operator.sh wavs-middleware
 ```
+## Deploy Testnet 
+Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"`
