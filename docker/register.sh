@@ -169,15 +169,12 @@ setup_operator() {
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
     fi
-    echo "PRIVATE_KEY=$private_key"
-    export PRIVATE_KEY=$private_key
-    export TESTNET_RPC_URL="$LOCAL_ETHEREUM_RPC_URL"  
-
     register_operator_with_avs "$private_key" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
-        echo "Error: Failed to register operator $public_key to operator sets"
+        echo "Error: Failed to register operator $public_key to AVS"
         exit 1
     fi
+    echo "Successfully registered operator $public_key to AVS"
 
 }
 
