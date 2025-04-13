@@ -59,7 +59,8 @@ register_operator_with_avs() {
     local expiry=$(($(date +%s) + 3600))
     
     local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$service_manager_address" "$salt" "$expiry")
-    echo "digest_hash bash: $digest_hash"
+    # Remove 0x prefix from digest hash if present
+    digest_hash=${digest_hash#0x}
     # Sign the digest hash with the private key
     local signature=$(cast wallet sign $digest_hash --private-key "$private_key")
     
@@ -175,11 +176,11 @@ setup_operator() {
     # TODO: pull some stuff out of Rust into bash
     # See https://github.com/Lay3rLabs/wavs-middleware/issues/52
     # and https://github.com/Lay3rLabs/wavs-middleware/issues/42
-    /wavs/register_wavs_operator #> /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to register operator $public_key to operator sets"
-        exit 1
-    fi
+    # /wavs/register_wavs_operator #> /dev/null 2>&1
+    # if [ $? -ne 0 ]; then
+    #     echo "Error: Failed to register operator $public_key to operator sets"
+    #     exit 1
+    # fi
     register_operator_with_avs "$private_key"
 
 }
