@@ -122,7 +122,8 @@ setup_operator() {
     # TODO: pull some stuff out of Rust into bash
     # See https://github.com/Lay3rLabs/wavs-middleware/issues/52
     # and https://github.com/Lay3rLabs/wavs-middleware/issues/42
-    /wavs/register_wavs_operator #> /dev/null 2>&1
+    # /wavs/register_wavs_operator #> /dev/null 2>&1
+    /wavs/register_wavs_operator.sh #> /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
