@@ -63,6 +63,9 @@ setup_operator() {
         fi
     fi
 
+    echo "Using LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
+    echo "Using LST_STRATEGY_ADDRESS: $LST_STRATEGY_ADDRESS"
+    
     # TODO: is this write? need proper LST addr setup in the .env file
     MINT_FUNCTION="submit(address _referral)"
     cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
