@@ -189,6 +189,39 @@ update_quorum_config() {
     fi
 }
 
+update_minimum_weight() {
+    local owner="$1"
+    local stakeRegistryAddress="$2"
+    local minimumWeight="$3"  # Very small value to ensure operators have enough stake
+    
+    impersonate_account "$owner"
+    
+    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
+        execute_transaction "update minimum weight" \
+          "cast s '$stakeRegistryAddress' \
+             'updateMinimumWeight(uint256,address[])' \
+             '$minimumWeight' \
+             '[]' \
+             --private-key '$deployer_private_key' \
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
+    else
+        execute_transaction "update minimum weight" \
+          "cast s '$stakeRegistryAddress' \
+             'updateMinimumWeight(uint256,address[])' \
+             '$minimumWeight' \
+             '[]' \
+             --from '$owner' \
+             --unlocked \
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
+    fi
+    
+    if [ $? -eq 0 ]; then
+        stop_impersonating "$owner"
+    else
+        echo "Error: Failed to update minimum weight."
+        exit 1
+    fi
+}
 
 deploy_consumer_contract() {
     cd ../../avs-ecdsa-sol-sdk
@@ -245,6 +278,20 @@ else
         echo "Error: Failed to set balance for deployer"
         exit 1
     fi
+    
+    # This is needed for LST minting and depositing to work in local mode
+    if [ -z "$LST_STRATEGY_ADDRESS" ]; then
+        LST_STRATEGY_ADDRESS=$(echo "$STRATEGY_ADDRESSES" | jq -r '.[0]')
+        echo "Using default LST_STRATEGY_ADDRESS for LOCAL mode: $LST_STRATEGY_ADDRESS"
+        export LST_STRATEGY_ADDRESS
+    fi
+    
+    if [ -z "$LST_CONTRACT_ADDRESS" ]; then
+        # Get the LST contract address from the strategy
+        LST_CONTRACT_ADDRESS=$(cast call "$LST_STRATEGY_ADDRESS" "underlyingToken()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+        echo "Using LST_CONTRACT_ADDRESS for LOCAL mode: $LST_CONTRACT_ADDRESS"
+        export LST_CONTRACT_ADDRESS
+    fi
 fi
 
 echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
@@ -269,6 +316,9 @@ owner=$(cast call "$stakeRegistryAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_R
 
 # This function is used to update the quorum config for the stake registry, defining the strategies and their BPS weights
 update_quorum_config "$owner" "$stakeRegistryAddress"
+
+# This function is used to set a very low minimum weight to ensure operators have enough stake
+update_minimum_weight "$owner" "$stakeRegistryAddress" 1
 
 # This function is used to update the AVS registrar for the stake registry, allowing injection of business logic to AVS registration
 update_avs_registrar "$owner" "$WavsServiceManagerAddress" "$avsRegistrarAddress"
