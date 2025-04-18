@@ -33,6 +33,7 @@ fi
 
 # Function to register operator with AVS using cast commands
 register_operator_with_avs() {
+    echo "Registering operator with AVS..."
     local private_key=$1
     local public_key=$(cast wallet address $private_key)
     
@@ -58,7 +59,7 @@ register_operator_with_avs() {
     # Calculate expiry (current time + 1 hour)
     local expiry=$(($(date +%s) + 3600))
     
-    local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$service_manager_address" "$salt" "$expiry")
+    local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$service_manager_address" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     # Remove 0x prefix from digest hash if present
     digest_hash=${digest_hash#0x}
     # Sign the digest hash with the private key
