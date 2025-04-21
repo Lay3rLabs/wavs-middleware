@@ -202,7 +202,7 @@ update_minimum_weight() {
              'updateMinimumWeight(uint256,address[])' \
              '$minimumWeight' \
              '[]' \
-             --private-key '$deployer_private_key' \
+             --private-key '$FUNDED_KEY' \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "update minimum weight" \

@@ -20,7 +20,7 @@ Prepare the env file:
 
 ```bash
 cp docker/env.example docker/.env
-# edit the RPC_URL for a paid testnet rpc endpoint, add funded key, and TESTNET_RPC_URL
+# if testnet edit the RPC_URL for a paid testnet rpc endpoint, add actually funded key, and TESTNET_RPC_URL
 ```
 
 ## Testnet Fork

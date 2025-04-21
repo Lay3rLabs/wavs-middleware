@@ -1,4 +1,10 @@
-# Docker
+## Prerequisites
+
+- Docker and Docker Compose
+- Node.js and Yarn (will be installed in container)
+- Foundry (will be installed in container)
+
+# Docker Quick start
 
 ## Build
 
@@ -72,3 +78,9 @@ docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entryp
 ```
 ## Deploy Testnet 
 Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"`
+
+
+## References
+
+- [EigenLayer Documentation](https://docs.eigenlayer.xyz/)
+- [Hello World AVS Repository](https://github.com/Layr-Labs/eigenlayer-hello-world)
