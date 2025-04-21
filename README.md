@@ -1,8 +1,6 @@
 ## Prerequisites
 
 - Docker and Docker Compose
-- Node.js and Yarn (will be installed in container)
-- Foundry (will be installed in container)
 
 # Docker Quick start
 
