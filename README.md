@@ -64,6 +64,8 @@ Register:
 # TODO: get the private AVS key (0x...) for this service from the WAVS node
 # Generate a new private key for the AVS
 AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+# This will show the address, so you can confirm it was properly added when listing operators
+cast wallet addr --private-key "$AVS_KEY"
 
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY"
 ```

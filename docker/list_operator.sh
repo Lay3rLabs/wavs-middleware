@@ -76,3 +76,5 @@ for OPERATOR in "${OPERATORS[@]}"; do
     WEIGHT=$(cast call "$ECDSAStakeRegistryAddress" "getOperatorWeight(address)(uint256)" "$OPERATOR" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     echo "Operator $OPERATOR weight: $WEIGHT"
 done
+
+echo
