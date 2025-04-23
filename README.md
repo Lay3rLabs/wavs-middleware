@@ -76,7 +76,9 @@ List Operators:
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/list_operator.sh wavs-middleware
 ```
+
 ## Deploy Testnet 
+
 Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"` and make sure the `FUNDED_KEY` is actually funded on testnet
 
 
@@ -93,7 +95,7 @@ sequenceDiagram
     autonumber
     participant Env as Environment
     participant Deploy as Deploy Script
-    participant Service as Service URI
+    participant Service as Service U
     participant Register as Register Operator
     participant Contracts as Contracts
 
@@ -102,16 +104,16 @@ sequenceDiagram
     Env->>Env: Check Required Variables
 
     Deploy->>Contracts: Deploy Middleware Contracts
-    Deploy->>Contracts: Read Contract Addresses
+    Deploy->>Deploy: Read Contract Addresses
     Deploy->>Contracts: Update Quorum Config
     Deploy->>Contracts: Update Minimum Weight
     Deploy->>Contracts: Update AVS Registrar
     Deploy->>Contracts: Update Metadata URL
     Deploy->>Contracts: Create Operator Sets
 
-    Service->>Contracts: Read Deployer Key
-    Service->>Contracts: Get Service Manager Address
-    Service->>Contracts: Get Owner Address
+    Service->>Service: Read Deployer Key
+    Service->>Service: Get Service Manager Address
+    Service->>Service: Get Owner Address
     Service->>Contracts: Impersonate Owner
     Service->>Contracts: Set Service URI
     Service->>Contracts: Stop Impersonating
@@ -119,11 +121,11 @@ sequenceDiagram
     Register->>Register: Read AVS Key
     Register->>Register: Setup Operator
     Register->>Register: Fund Operator Account
-    Register->>Register: Mint LST Tokens
-    Register->>Register: Approve LST Tokens
-    Register->>Register: Deposit into Strategy
-    Register->>Register: Register as Operator
-    Register->>Register: Register for Operator Sets
+    Register->>Contracts: Mint LST Tokens
+    Register->>Contracts: Approve LST Tokens
+    Register->>Contracts: Deposit into Strategy
+    Register->>Contracts: Register as Operator
+    Register->>Contracts: Register for Operator Sets
     Register->>Contracts: Get Stake Registry Address
     Register->>Contracts: Get Service Manager Address
     Register->>Contracts: Get AVS Directory Address
