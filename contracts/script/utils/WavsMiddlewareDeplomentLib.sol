@@ -59,7 +59,7 @@ library WavsMiddlewareDeploymentLib {
         );
         // Upgrade contracts
         bytes memory stakeRegistryUpgradeCall = abi.encodeCall(
-            ECDSAStakeRegistry.initialize, (result.WavsServiceManager, 0, quorum)
+            ECDSAStakeRegistry.initialize, (result.WavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
         );
         bytes memory WavsServiceManagerUpgradeCall = abi.encodeCall(
             WavsServiceManager.initialize, (msg.sender, msg.sender)

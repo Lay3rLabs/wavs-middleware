@@ -37,6 +37,12 @@ if [ -z "$METADATA_URI" ]; then
     exit 1
 fi
 
+# Check if FUNDED_KEY is provided
+if [ -z "$FUNDED_KEY" ]; then
+    echo "Error: FUNDED_KEY environment variable must be set"
+    exit 1
+fi
+
 # Build the `strategies` array as a Solidity-compatible input
 # This is a workaround to get to a valid BPS value, in production strategies need to be weighed and maintained by an oracle 
 declare -g combined_strategies=""
@@ -68,7 +74,7 @@ create_operator_set() {
           "cast s '$WavsServiceManagerAddress' \
              'createOperatorSets((uint32,address[])[])' \
              '[($set_id,[$LST_STRATEGY_ADDRESS])]' \
-             --private-key '$deployer_private_key' \
+             --private-key '$FUNDED_KEY' \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "created operator set $set_id with 1 strategy" \
@@ -94,7 +100,7 @@ update_avs_registrar() {
           "cast s '$WavsServiceManagerAddress' \
              'setAVSRegistrar(address)' \
              '$avsRegistrarAddress' \
-             --private-key '$deployer_private_key' \
+             --private-key '$FUNDED_KEY' \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "set up the AVSRegistrar through WavsServiceManager" \
@@ -138,7 +144,7 @@ update_metadata_url() {
       execute_transaction "updated AVS metadata URI" \
         "cast s '$serviceManagerAddress' 'updateAVSMetadataURI(string)' \
          '$METADATA_URI' \
-         --private-key '$deployer_private_key' \
+         --private-key '$FUNDED_KEY' \
          --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
   else
       execute_transaction "updated AVS metadata URI" \
@@ -163,7 +169,7 @@ update_quorum_config() {
              'updateQuorumConfig(((address,uint96)[]),address[])' \
              '([$combined_strategies])' \
              '[]' \
-             --private-key '$deployer_private_key' \
+             --private-key '$FUNDED_KEY' \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "update quorum config" \
@@ -183,13 +189,46 @@ update_quorum_config() {
     fi
 }
 
+update_minimum_weight() {
+    local owner="$1"
+    local stakeRegistryAddress="$2"
+    local minimumWeight="$3"  # Very small value to ensure operators have enough stake
+    
+    impersonate_account "$owner"
+    
+    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
+        execute_transaction "update minimum weight" \
+          "cast s '$stakeRegistryAddress' \
+             'updateMinimumWeight(uint256,address[])' \
+             '$minimumWeight' \
+             '[]' \
+             --private-key '$FUNDED_KEY' \
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
+    else
+        execute_transaction "update minimum weight" \
+          "cast s '$stakeRegistryAddress' \
+             'updateMinimumWeight(uint256,address[])' \
+             '$minimumWeight' \
+             '[]' \
+             --from '$owner' \
+             --unlocked \
+             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
+    fi
+    
+    if [ $? -eq 0 ]; then
+        stop_impersonating "$owner"
+    else
+        echo "Error: Failed to update minimum weight."
+        exit 1
+    fi
+}
 
 deploy_consumer_contract() {
     cd ../../avs-ecdsa-sol-sdk
     offchainMessageConsumerAddress=$(
         forge create --json \
           -r "$LOCAL_ETHEREUM_RPC_URL" \
-          --private-key "$deployer_private_key" \
+          --private-key "$FUNDED_KEY" \
           --broadcast src/example-contracts/OffchainMessageConsumer.sol:OffchainMessageConsumer \
           --constructor-args "$stakeRegistryAddress" \
         | jq -r '.deployedTo'
@@ -214,10 +253,9 @@ deploy_consumer_contract() {
 #############################################
 
 mkdir -p ~/.nodes
-deployer_private_key=$(cast wallet new --json | jq -r '.[0].private_key')
-deployer_public_key=$(cast wallet address "$deployer_private_key")
-echo "PRIVATE_KEY=$deployer_private_key" >> contracts/.env
-echo "$deployer_private_key" > ~/.nodes/deployer
+deployer_public_key=$(cast wallet address "$FUNDED_KEY")
+echo "PRIVATE_KEY=$FUNDED_KEY" >> contracts/.env
+echo "$FUNDED_KEY" > ~/.nodes/deployer
 
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
@@ -233,17 +271,6 @@ if [ "$DEPLOY_ENV" = "TESTNET" ]; then
         echo "Error: LST_STRATEGY_ADDRESS is not set in the environment variables."
         exit 1
     fi
-    if [ -n "$FUNDED_KEY" ] && [ -z "$FUNDED_KEY" ]; then
-        echo "Error: FUNDED_KEY environment variable is set but empty"
-        exit 1
-    fi
-    cast s "$deployer_public_key" --value 100000000000000000 \
-    --private-key "$FUNDED_KEY" \
-    -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to set balance for deployer"
-        exit 1
-    fi
 else
     wait_for_ethereum
     cast rpc anvil_setBalance $deployer_public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
@@ -251,11 +278,25 @@ else
         echo "Error: Failed to set balance for deployer"
         exit 1
     fi
+    
+    # This is needed for LST minting and depositing to work in local mode
+    if [ -z "$LST_STRATEGY_ADDRESS" ]; then
+        LST_STRATEGY_ADDRESS=$(echo "$STRATEGY_ADDRESSES" | jq -r '.[0]')
+        echo "Using default LST_STRATEGY_ADDRESS for LOCAL mode: $LST_STRATEGY_ADDRESS"
+        export LST_STRATEGY_ADDRESS
+    fi
+    
+    if [ -z "$LST_CONTRACT_ADDRESS" ]; then
+        # Get the LST contract address from the strategy
+        LST_CONTRACT_ADDRESS=$(cast call "$LST_STRATEGY_ADDRESS" "underlyingToken()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+        echo "Using LST_CONTRACT_ADDRESS for LOCAL mode: $LST_CONTRACT_ADDRESS"
+        export LST_CONTRACT_ADDRESS
+    fi
 fi
 
 echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
 
-cd contracts && forge script script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $deployer_private_key --broadcast # /dev/null 2>&1
+cd contracts && forge script script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast # /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run middleware deployment script"
     exit 1
@@ -275,6 +316,9 @@ owner=$(cast call "$stakeRegistryAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_R
 
 # This function is used to update the quorum config for the stake registry, defining the strategies and their BPS weights
 update_quorum_config "$owner" "$stakeRegistryAddress"
+
+# This function is used to set a very low minimum weight to ensure operators have enough stake
+update_minimum_weight "$owner" "$stakeRegistryAddress" 1
 
 # This function is used to update the AVS registrar for the stake registry, allowing injection of business logic to AVS registration
 update_avs_registrar "$owner" "$WavsServiceManagerAddress" "$avsRegistrarAddress"

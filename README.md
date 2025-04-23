@@ -1,188 +1,204 @@
-# Hello World AVS
+## Prerequisites
 
-Welcome to the Hello World AVS. This project shows you the simplest functionality you can expect from an AVS. It will give you a concrete understanding of the basic components. For new users, please find [this video walkthrough](https://drive.google.com/file/d/1P6uA6kYWCbpeorTjADuoTlQ-q8uqwPZf/view?usp=sharing) of the hello world AVS repository.
+- Docker and Docker Compose
 
-## Architecture
+# Docker Quick start
 
-![hello-world-png](./assets/hello-world-diagramv2.png)
+## Build
 
-### AVS User Flow
+First, ensure you have all submodules:
 
-1) AVS consumer requests a "Hello World" message to be generated and signed.
-2) HelloWorld contract receives the request and emits a NewTaskCreated event for the request.
-3) All Operators who are registered to the AVS and has staked, delegated assets takes this request. Operator generates the requested message, hashes it, and signs the hash with their private key.
-4) Each Operator submits their signed hash back to the HelloWorld AVS contract.
-5) If the Operator is registered to the AVS and has the minimum needed stake, the submission is accepted.
-
-That's it. This simple flow highlights some of the core mechanics of how AVSs work.
-
-# Local Devnet Deployment
-
-The following instructions explain how to manually deploy the AVS from scratch including EigenLayer and AVS specific contracts using Foundry (forge) to a local anvil chain, and start Typescript Operator application and tasks.
-
-## Development Environment
-This section describes the tooling required for local development.
-
-### Non-Nix Environment
-Install dependencies:
-
-- [Node](https://nodejs.org/en/download/)
-- [Typescript](https://www.typescriptlang.org/download)
-- [ts-node](https://www.npmjs.com/package/ts-node)
-- [tcs](https://www.npmjs.com/package/tcs#installation)
-- [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-- [Foundry](https://getfoundry.sh/)
-- [ethers](https://www.npmjs.com/package/ethers)
-
-### Nix Environment 
-On [Nix](https://nixos.org/) platforms, if you already have the proper Nix configuration, you can build the project’s artifacts inside a `nix develop` shell
-``` sh
-nix develop
-```
-Otherwise, please refer to [installed and configured](./docs/nix-setup-guide.md) section.
-
-## Quick start
-
-### Start Anvil Chain
-
-In terminal window #1, execute the following commands:
-
-```sh
-
-# Install npm packages
-npm install
-
-# Start local anvil chain
-npm run start:anvil
+```bash
+git submodule update --init --recursive
 ```
 
-### Deploy Contracts and Start Operator
+Then, build the image:
 
-Open a separate terminal window #2, execute the following commands
-
-```sh
-# Setup .env file
-cp .env.example .env
-cp contracts/.env.example contracts/.env
-
-# Updates dependencies if necessary and builds the contracts 
-npm run build
-
-# Deploy the EigenLayer contracts
-npm run deploy:core
-
-# Deploy the Hello World AVS contracts
-npm run deploy:hello-world
-
-# (Optional) Update ABIs
-npm run extract:abis
-
-# Start the Operator application
-npm run start:operator
-
+```bash
+docker build -t wavs-middleware .
 ```
 
-### Create Hello-World-AVS Tasks
+## Setup
 
-Open a separate terminal window #3, execute the following commands
+Prepare the env file:
 
-```sh
-# Start the createNewTasks application 
-npm run start:traffic
+```bash
+cp docker/env.example docker/.env
+# edit the RPC_URL for a paid testnet rpc endpoint, add funded key, and TESTNET_RPC_URL
 ```
 
-### Help and Support
+## Testnet Fork
 
-For help and support deploying and modifying this repo for your AVS, please:
+Start anvil in one terminal:
 
-1. Open a ticket via the intercom link at [support.eigenlayer.xyz](https://support.eigenlayer.xyz).
-2. Include the necessary troubleshooting information for your environment:
-  * Local anvil testing:
-    * Redeploy your local test using `--revert-strings debug` flag via the following commands and retest: `npm run deploy:core-debug && npm run deploy:hello-world-debug`
-    * Include the full stacktrace from your error as a .txt file attachment.
-    * Create a minimal repo that demonstrates the behavior (fork or otherwise)
-    * Steps require to reproduce issue (compile and cause the error)
-  * Holesky testing:
-    * Ensure contracts are verified on Holesky. Eg `forge verify-contract --chain-id 17000 --num-of-optimizations 200 src/YourContract.sol:YourContract YOUR_CONTRACT_ADDRESS`
-    * Send us your transaction hash where your contract is failing. We will use Tenderly to debug (adjust gas limit) and/or cast to re-run the transaction (eg `cast call --trace "trace_replayTransaction(0xTransactionHash)"`).
-
-
-### Contact Us
-
-If you're planning to build an AVS and would like to speak with a member of the EigenLayer DevRel team to discuss your ideas or architecture, please fill out this form and we'll be in touch shortly: [EigenLayer AVS Intro Call](https://share.hsforms.com/1BksFoaPjSk2l3pQ5J4EVCAein6l)
-
-
-### Disclaimers
-
-- This repo is meant currently intended for _local anvil development testing_. Holesky deployment support will be added shortly.
-- Users who wish to build an AVS for Production purposes will want to migrate from the `ECDSAServiceManagerBase` implementation in `HelloWorldServiceManager.sol` to a BLS style architecture using [RegistryCoordinator](https://github.com/Layr-Labs/eigenlayer-middleware/blob/dev/docs/RegistryCoordinator.md).
-
-# Appendix (Future Capabilities In Progress)
-
-## Adding a New Strategy
-
-## Potential Enhancements to the AVS (for learning purposes)
-
-The architecture can be further enhanced via:
-
-- the nature of the request is more sophisticated than generating a constant string
-- the operators might need to coordinate with each other
-- the type of signature is different based on the constraints of the service
-- the type and amount of security used to secure the AVS
-
-## Rust Operator instructions
-
-### Anvil Deployment
-
-1. Start Anvil Chain
-
-In terminal window #1, execute the following commands:
-```sh
-anvil
+```bash
+source docker/.env
+anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
 
-2. Deploy Contracts
+## Deploy
 
-Open a separate terminal window #2, execute the following commands
+**Run all the following scripts in the `docker/` directory.**
 
-```
-make deploy-eigenlayer-contracts
-
-make deploy-helloworld-contracts
+```bash
+cd docker/
 ```
 
-3. Start Operator
+Deploy:
 
-```sh
-make start-rust-operator
-```
-4. Spam Tasks
-
-```sh
-make spam-rust-tasks
+```bash
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware
 ```
 
-### Testing
+Set Service URI:
 
-1. Start Anvil Chain
+```bash
+SERVICE_URI="https://ipfs.url/for-custom-service.json"
 
-In terminal window #1, execute the following commands:
-```sh
-anvil
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/set_service_uri.sh wavs-middleware "$SERVICE_URI"
 ```
 
-2. Deploy Contracts
+Register:
 
-Open a separate terminal window #2, execute the following commands
+```bash
+# TODO: get the private AVS key (0x...) for this service from the WAVS node
+# Generate a new private key for the AVS
+AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+# This will show the address, so you can confirm it was properly added when listing operators
+cast wallet addr --private-key "$AVS_KEY"
 
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY"
 ```
-make deploy-eigenlayer-contracts
 
-make deploy-helloworld-contracts
+List Operators:
+
+```bash
+# View stake registry status, including registered operators and their weights
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/list_operator.sh wavs-middleware
 ```
 
-3. Run this command
+## Deploy Testnet 
 
+Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"` and make sure the `FUNDED_KEY` is actually funded on testnet
+
+
+## References
+
+- [EigenLayer Documentation](https://docs.eigenlayer.xyz/)
+- [Hello World AVS Repository](https://github.com/Layr-Labs/eigenlayer-hello-world)
+
+
+## Deployment Process Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Env as Environment
+    participant Deploy as Deploy Script
+    participant Service as Service U
+    participant Register as Register Operator
+    participant Contracts as Contracts
+
+    Env->>Env: Load Environment Variables
+    Env->>Env: Set LOCAL_ETHEREUM_RPC_URL
+    Env->>Env: Check Required Variables
+
+    Deploy->>Contracts: Deploy Middleware Contracts
+    Deploy->>Deploy: Read Contract Addresses
+    Deploy->>Contracts: Update Quorum Config
+    Deploy->>Contracts: Update Minimum Weight
+    Deploy->>Contracts: Update AVS Registrar
+    Deploy->>Contracts: Update Metadata URL
+    Deploy->>Contracts: Create Operator Sets
+
+    Service->>Service: Read Deployer Key
+    Service->>Service: Get Service Manager Address
+    Service->>Service: Get Owner Address
+    Service->>Contracts: Impersonate Owner
+    Service->>Contracts: Set Service URI
+    Service->>Contracts: Stop Impersonating
+
+    Register->>Register: Read AVS Key
+    Register->>Register: Setup Operator
+    Register->>Register: Fund Operator Account
+    Register->>Contracts: Mint LST Tokens
+    Register->>Contracts: Approve LST Tokens
+    Register->>Contracts: Deposit into Strategy
+    Register->>Contracts: Register as Operator
+    Register->>Contracts: Register for Operator Sets
+    Register->>Contracts: Get Stake Registry Address
+    Register->>Contracts: Get Service Manager Address
+    Register->>Contracts: Get AVS Directory Address
+    Register->>Register: Generate Random Salt
+    Register->>Register: Calculate Expiry
+    Register->>Register: Calculate Digest Hash
+    Register->>Register: Sign Digest Hash
+    Register->>Contracts: Register with Signature
 ```
-cargo test --workspace
-```
+
+## Detailed Process Explanation
+
+### Initial Setup
+- Load environment variables from `.env` file
+- Set `LOCAL_ETHEREUM_RPC_URL` based on environment (TESTNET or LOCAL)
+- Check for required environment variables
+
+### Deploy Process (deploy.sh)
+1. Deploy middleware contracts using Forge script
+2. Read contract addresses from deployment JSON
+3. Update quorum config with strategy weights
+4. Set minimum weight for operators
+5. Configure AVS registrar
+6. Update metadata URL for EigenLayer frontend
+7. Create operator sets for meta-AVS functionality
+
+### Set Service URI (set_service_uri.sh)
+1. Read deployer private key from file
+2. Get service manager address from deployment JSON
+3. Get owner address from service manager contract
+4. Impersonate owner account (LOCAL only)
+5. Set service URI on service manager contract
+6. Stop impersonating owner account
+
+### Register Operator (register.sh)
+1. Read AVS private key from command line
+2. Setup operator with initial configuration
+3. Fund operator account with ETH
+4. Mint LST tokens for operator
+5. Approve LST tokens for strategy manager
+6. Deposit LST tokens into strategy
+7. Register as operator with delegation manager
+8. Register for operator sets with allocation manager
+9. Register with AVS using signature:
+   - Get stake registry address
+   - Get service manager address
+   - Get AVS directory address
+   - Generate random salt
+   - Calculate expiry time
+   - Calculate digest hash
+   - Sign digest hash with private key
+   - Register with signature on stake registry
+
+### Helper Functions (helpers.sh)
+- `wait_for_ethereum`: Check if Ethereum node is ready
+- `impersonate_account`: Impersonate an account (LOCAL only)
+- `execute_transaction`: Run a transaction and handle errors
+- `stop_impersonating`: Stop impersonating an account (LOCAL only)
+
+### Instructions on getting Holesky ETH
+
+To get Holesky ETH for running on testnet:
+
+1. PoW Mining Faucet:
+   - Go to https://holesky-faucet.pk910.de/
+   - Connect your wallet
+   - Mine blocks in your browser to earn ETH
+   - Rewards based on mining time/hashrate
+   - No external requirements
+
+2. Alchemy Faucet (Alternative):
+   - Visit https://www.alchemy.com/faucets/holesky
+   - Requires mainnet ETH balance to use
+   - Connect wallet and verify ownership
+   - Request funds (limits apply)
+

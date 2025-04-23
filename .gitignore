@@ -30,5 +30,5 @@ target/
 debug/
 
 yarn.lock
-.nodes
+docker/.nodes
 
