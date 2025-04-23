@@ -28,6 +28,9 @@ jobs:
       - name: Checkout the repo
         uses: actions/checkout@v4
 
+      - name: Pull submodules recursively
+        run: git submodule update --init --recursive
+
       - name: Set IMAGE_TAG
         shell: bash
         run: |
@@ -68,6 +71,9 @@ jobs:
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v4
+
+      - name: Pull submodules recursively
+        run: git submodule update --init --recursive
 
       - name: Set IMAGE_TAG
         shell: bash
