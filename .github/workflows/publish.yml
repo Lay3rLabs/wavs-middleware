@@ -15,7 +15,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: lay3rlabs/wavs-middleware
 
-
 jobs:
   build_amd64:
     name: Build and Push AMD64 Image
