@@ -10,7 +10,7 @@ import {IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegist
 import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IStrategyManager} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
-import {ISignatureUtils} from "@eigenlayer/contracts/interfaces/ISignatureUtils.sol";
+import {ISignatureUtilsMixinTypes} from "@eigenlayer/contracts/interfaces/ISignatureUtilsMixin.sol";
 import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -47,6 +47,9 @@ contract WavsRegisterOperator is Script {
 
     // Environment
     string private deployEnv;
+
+    // Stake amount
+    uint256 private stakeAmount;
 
     // Get command line arguments from json file
     function getCliArgs() internal returns (string[] memory) {
@@ -85,6 +88,30 @@ contract WavsRegisterOperator is Script {
 
         operatorAddress = vm.addr(operatorPrivateKey);
         console2.log("Operator address:", operatorAddress);
+
+        // Get stake amount (in ETH units) from environment variable or command line args
+        string memory stakeAmountEnv = vm.envOr("STAKE_AMOUNT", string("0.1"));
+
+        // For "0.1" specifically, use a hardcoded value
+        if (keccak256(bytes(stakeAmountEnv)) == keccak256(bytes("0.1"))) {
+            stakeAmount = 0.1 ether;
+            console2.log("Using stake amount: 0.1 ETH");
+            console2.log("Amount in wei:", stakeAmount);
+        } else {
+            // For other values, try to parse as integer amount
+            try vm.parseUint(stakeAmountEnv) returns (uint256 parsed) {
+                stakeAmount = parsed * 10 ** 18; // Convert to wei
+                console2.log("Using stake amount:", stakeAmountEnv, "ETH");
+                console2.log("Amount in wei:", stakeAmount);
+            } catch {
+                // Default fallback
+                stakeAmount = 0.1 ether;
+                console2.log(
+                    "Failed to parse stake amount, using default: 0.1 ETH"
+                );
+                console2.log("Amount in wei:", stakeAmount);
+            }
+        }
 
         // Get deployer key for funding
         deployerPrivateKey = vm.envOr("FUNDED_KEY", uint256(0));
@@ -219,6 +246,7 @@ contract WavsRegisterOperator is Script {
         console2.log("Stake Registry:", stakeRegistryAddress);
         console2.log("LST Strategy:", lstStrategyAddress);
         console2.log("LST Contract:", lstContractAddress);
+        console2.log("Stake Amount:", stakeAmount);
 
         // Process command line arguments if any
         string[] memory args = getCliArgs();
@@ -229,13 +257,39 @@ contract WavsRegisterOperator is Script {
                     string.concat("Arg ", vm.toString(i), ": ", args[i])
                 );
             }
+
+            // Try to use the second argument as stake amount if provided
+            if (args.length >= 2) {
+                // Check if it's "0.1" specifically
+                if (keccak256(bytes(args[1])) == keccak256(bytes("0.1"))) {
+                    stakeAmount = 0.1 ether;
+                    console2.log("Using command line stake amount: 0.1 ETH");
+                    console2.log("Amount in wei:", stakeAmount);
+                } else {
+                    // For other values
+                    try vm.parseUint(args[1]) returns (uint256 parsed) {
+                        stakeAmount = parsed * 10 ** 18; // Convert to wei
+                        console2.log(
+                            "Using command line stake amount:",
+                            args[1],
+                            "ETH"
+                        );
+                        console2.log("Amount in wei:", stakeAmount);
+                    } catch {
+                        // Keep the existing amount
+                        console2.log(
+                            "Failed to parse command line stake amount, using existing value"
+                        );
+                    }
+                }
+            }
         }
 
         // 1. Fund the operator account
         _fundOperator();
 
-        // 2. Mint and deposit LST tokens
-        _mintAndDepositLST(0, lstContractAddress, 100);
+        // 2. Deposit LST tokens
+        _depositLST(0, lstContractAddress, stakeAmount);
 
         // 3. Register as operator with delegation manager
         _registerAsDelegationOperator();
@@ -277,29 +331,34 @@ contract WavsRegisterOperator is Script {
     }
 
     /**
-     * @notice Mints and deposits LST tokens into the strategy
+     * @notice Deposits existing LST tokens into the strategy
      * @param strategyIndex The index of the strategy
      * @param lstContractAddress Address of the LST token contract
-     * @param amount Amount to mint and deposit
+     * @param amount Amount to deposit
      */
-    function _mintAndDepositLST(
+    function _depositLST(
         uint256 strategyIndex,
         address lstContractAddress,
         uint256 amount
     ) internal {
-        // Try to mint LST tokens to the operator
-        try TestERC20(lstContractAddress).mint(operatorAddress, amount) {
+        // Check existing token balance
+        uint256 balance = IERC20(lstContractAddress).balanceOf(operatorAddress);
+        console2.log("Current LST token balance:", balance);
+
+        if (balance < amount) {
             console2.log(
-                "Minted",
-                amount,
-                "LST tokens to operator",
-                operatorAddress
+                "WARNING: LST token balance is less than requested deposit amount"
             );
-        } catch {
-            console2.log(
-                "Failed to mint LST tokens. Contract may not support minting or caller doesn't have minter role."
-            );
-            return;
+            console2.log("Requested:", amount, "Available:", balance);
+
+            // Use available balance instead
+            if (balance > 0) {
+                console2.log("Using available balance for deposit");
+                amount = balance;
+            } else {
+                console2.log("No LST tokens available, skipping deposit");
+                return;
+            }
         }
 
         // Use lstStrategyAddress directly instead of trying to get it by index
@@ -407,8 +466,8 @@ contract WavsRegisterOperator is Script {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         // 5. Create signature params
-        ISignatureUtils.SignatureWithSaltAndExpiry
-            memory signatureWithSaltAndExpiry = ISignatureUtils
+        ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry
+            memory signatureWithSaltAndExpiry = ISignatureUtilsMixinTypes
                 .SignatureWithSaltAndExpiry({
                     signature: signature,
                     salt: salt,

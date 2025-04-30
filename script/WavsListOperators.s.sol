@@ -25,6 +25,9 @@ contract WavsListOperators is Script {
     // Contract addresses
     address private stakeRegistryAddress;
 
+    // Command line arguments - allows checking a specific operator
+    address[] private specificOperators;
+
     function setUp() public {
         // Read contract addresses from deployment file
         string memory deploymentPath = string.concat(
@@ -56,6 +59,61 @@ contract WavsListOperators is Script {
         if (stakeRegistryAddress == address(0)) {
             revert("Failed to read stake registry address");
         }
+
+        // Get command line args if any
+        string[] memory args = getCliArgs();
+        console2.log("Checking for command line arguments...");
+
+        if (args.length > 0) {
+            console2.log("Found", args.length, "arguments");
+            // First arg is the script name, remaining args are operator addresses
+            for (uint i = 0; i < args.length; i++) {
+                if (bytes(args[i]).length > 0) {
+                    // Try to parse as an address
+                    try vm.parseAddress(args[i]) returns (address op) {
+                        console2.log("Adding specific operator to check:", op);
+                        // Create array if needed and add address
+                        if (specificOperators.length == 0) {
+                            specificOperators = new address[](1);
+                            specificOperators[0] = op;
+                        } else {
+                            // Create new array with one more slot
+                            address[] memory newOperators = new address[](
+                                specificOperators.length + 1
+                            );
+                            for (
+                                uint j = 0;
+                                j < specificOperators.length;
+                                j++
+                            ) {
+                                newOperators[j] = specificOperators[j];
+                            }
+                            newOperators[specificOperators.length] = op;
+                            specificOperators = newOperators;
+                        }
+                    } catch {
+                        console2.log(
+                            "Failed to parse argument as address:",
+                            args[i]
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    // Get command line arguments from json file
+    function getCliArgs() internal returns (string[] memory) {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/script.json");
+        // Check if file exists
+        try vm.readFile(path) returns (string memory) {
+            // If it exists, parse it
+            return vm.parseJsonStringArray(vm.readFile(path), "$.args");
+        } catch {
+            // If file doesn't exist or can't be read, return empty array
+            return new string[](0);
+        }
     }
 
     function run() external {
@@ -74,7 +132,7 @@ contract WavsListOperators is Script {
 
         // Calculate block range for event query
         uint256 latestBlock = block.number;
-        uint256 fromBlock = latestBlock > 2000 ? latestBlock - 2000 : 0;
+        uint256 fromBlock = latestBlock > 5000 ? latestBlock - 5000 : 0;
 
         console2.log("\n=== Registered Operators ===");
         console2.log(
@@ -84,23 +142,61 @@ contract WavsListOperators is Script {
             latestBlock
         );
 
-        // Get all OperatorRegistered events
-        address[] memory operators = getRegisteredOperators(
-            fromBlock,
-            latestBlock
-        );
+        // If specific operators were provided, check them directly
+        if (specificOperators.length > 0) {
+            console2.log("\n=== Checking Specified Operators ===");
+            for (uint i = 0; i < specificOperators.length; i++) {
+                address operator = specificOperators[i];
+                uint256 weight = ECDSAStakeRegistry(stakeRegistryAddress)
+                    .getOperatorWeight(operator);
+                console2.log("Operator", operator, "weight:", weight);
+            }
+        } else {
+            // Get all OperatorRegistered events
+            address[] memory operators = getRegisteredOperators(
+                fromBlock,
+                latestBlock
+            );
 
-        if (operators.length == 0) {
-            console2.log("No operators found");
-            return;
-        }
+            if (operators.length == 0) {
+                console2.log("No operators found in event logs");
 
-        // Query weight for each operator
-        console2.log("\n=== Operator Weights ===");
-        for (uint256 i = 0; i < operators.length; i++) {
-            uint256 weight = ECDSAStakeRegistry(stakeRegistryAddress)
-                .getOperatorWeight(operators[i]);
-            console2.log("Operator", operators[i], "weight:", weight);
+                // Try to check all operators in the last AVS registration
+                console2.log("\n=== Trying to check recent operators ===");
+                console2.log("Looking for recent operators...");
+
+                // Directly check the last few operators you know have been registered
+                address[] memory recentOperators = new address[](5);
+                recentOperators[0] = 0xe83AF7151219462f1703A278Cd500d59d6EB7EF2; // Latest we just created
+                recentOperators[1] = 0x07a42B2DEc6bc393Bd541f44C69204aE6Be7BaE5; // Previously tried
+                recentOperators[2] = 0x1Dbc1FAf10F01F3A397A8EAF0ff433cf089880cD; // Previously tried
+                recentOperators[3] = 0x2FBf8C5d7a3D3Fd6732703c60b8E79bB055A6168; // Previously tried
+                recentOperators[4] = 0x8d9c0A916D9A66f11D9b3bDd3ab9b6f332d5347A; // Previously tried
+
+                for (uint i = 0; i < recentOperators.length; i++) {
+                    if (recentOperators[i] != address(0)) {
+                        uint256 weight = ECDSAStakeRegistry(
+                            stakeRegistryAddress
+                        ).getOperatorWeight(recentOperators[i]);
+                        console2.log(
+                            "Recent operator",
+                            recentOperators[i],
+                            "weight:",
+                            weight
+                        );
+                    }
+                }
+
+                return;
+            }
+
+            // Query weight for each operator
+            console2.log("\n=== Operator Weights ===");
+            for (uint256 i = 0; i < operators.length; i++) {
+                uint256 weight = ECDSAStakeRegistry(stakeRegistryAddress)
+                    .getOperatorWeight(operators[i]);
+                console2.log("Operator", operators[i], "weight:", weight);
+            }
         }
     }
 

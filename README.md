@@ -1,3 +1,11 @@
+# WIP
+
+TODO:
+
+- POA Opset (ECDSAStakeRegistry compatible) #55
+- Rename contracts
+- ~~Figure out why operator isn't registering~~ Fixed: operators need LST tokens to appear in weight lists
+
 ## Prerequisites
 
 - Docker and Docker Compose
@@ -68,7 +76,11 @@ AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 # This will show the address, so you can confirm it was properly added when listing operators
 cast wallet addr --private-key "$AVS_KEY"
 
+# Register the operator (defaults to 0.1 stETH stake amount)
 docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/register_operator.sh wavs-middleware "$AVS_KEY"
+
+# To specify a custom stake amount (e.g. 1 stETH)
+# docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/register_operator.sh wavs-middleware "$AVS_KEY" "1"
 ```
 
 List Operators:
@@ -77,6 +89,18 @@ List Operators:
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/list_operators.sh wavs-middleware
 ```
+
+## Important: LST Tokens Required for Operator Registration
+
+Note that operators will not appear in the weight lists unless they have LST tokens staked. The registration process has two main parts:
+
+1. **Basic registration**: This allows the operator to participate in the network but with zero weight
+2. **Staking**: Only operators with staked tokens will appear in `list_operators.sh` output and have voting weight
+
+To get your operator fully registered with weight:
+
+1. Acquire LST tokens for the operator address
+2. Run the registration script which will automatically stake any available tokens
 
 ## Local vs Testnet Deployment
 

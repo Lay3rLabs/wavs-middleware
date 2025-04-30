@@ -23,6 +23,10 @@ fi
 OPERATOR_KEY="$1"
 echo -e "Using operator private key to register"
 
+# Check for optional amount parameter - default to 0.1 stETH
+STAKE_AMOUNT=${2:-"0.1"}
+echo -e "Using stake amount: $STAKE_AMOUNT stETH"
+
 # Set up RPC URL based on environment
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
@@ -58,13 +62,15 @@ echo -e "\n${GREEN}Registration Configuration:${NC}"
 echo "- Environment: $DEPLOY_ENV"
 echo "- RPC URL: $LOCAL_ETHEREUM_RPC_URL"
 echo "- LST Strategy: $LST_STRATEGY_ADDRESS"
-echo -e "- LST Contract: $LST_CONTRACT_ADDRESS\n"
+echo "- LST Contract: $LST_CONTRACT_ADDRESS"
+echo -e "- Stake Amount: $STAKE_AMOUNT stETH\n"
 
 # Export needed variables for the script
 export OPERATOR_KEY
+export STAKE_AMOUNT
 
 # Run the forge script in the Docker context
-forge script script/WavsRegisterOperator.s.sol:WavsRegisterOperator "$OPERATOR_KEY" \
+forge script script/WavsRegisterOperator.s.sol:WavsRegisterOperator "$OPERATOR_KEY" "$STAKE_AMOUNT" \
     --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
     --private-key "$FUNDED_KEY" \
     --broadcast
