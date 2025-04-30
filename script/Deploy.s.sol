@@ -20,11 +20,11 @@ import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 
 /**
- * @title WavsDeployment
+ * @title Deploy
  * @notice A Forge script to deploy and configure WAVS middleware contracts
  * @dev This script replaces the docker/deploy.sh bash script
  */
-contract WavsDeployment is Script, IECDSAStakeRegistryTypes {
+contract Deploy is Script, IECDSAStakeRegistryTypes {
     using ReadCoreLib for *;
     using UpgradeableProxyLib for address;
     using Strings for *;

@@ -11,11 +11,11 @@ import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IE
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
- * @title WavsListOperators
+ * @title ListOperators
  * @notice A Forge script to list registered operators and their weights
  * @dev This script replaces the docker/list_operator.sh bash script
  */
-contract WavsListOperators is Script {
+contract ListOperators is Script {
     using Strings for *;
 
     // Event signature for OperatorRegistered

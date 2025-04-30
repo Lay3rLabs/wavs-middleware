@@ -105,7 +105,7 @@ export OPERATOR_KEY
 export STAKE_AMOUNT
 
 # Run the forge script in the Docker context
-forge script script/WavsRegisterOperator.s.sol:WavsRegisterOperator "$OPERATOR_KEY" "$STAKE_AMOUNT" \
+forge script script/RegisterOperator.s.sol:RegisterOperator "$OPERATOR_KEY" "$STAKE_AMOUNT" \
     --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
     --private-key "$FUNDED_KEY" \
     --broadcast

@@ -7,11 +7,11 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {WavsServiceManager} from "../src/WavsServiceManager.sol";
 
 /**
- * @title WavsSetServiceURI
+ * @title SetServiceURI
  * @notice A Forge script to set the service URI for the WAVS service manager
  * @dev This script replaces the docker/set_service_uri.sh bash script
  */
-contract WavsSetServiceURI is Script {
+contract SetServiceURI is Script {
     using Strings for *;
 
     // Contract addresses

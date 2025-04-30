@@ -3,7 +3,6 @@
 TODO:
 
 - POA Opset (ECDSAStakeRegistry compatible) #55
-- Rename contracts
 
 ## Prerequisites
 

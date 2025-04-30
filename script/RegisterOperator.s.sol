@@ -20,11 +20,11 @@ interface TestERC20 is IERC20 {
 }
 
 /**
- * @title WavsRegisterOperator
+ * @title RegisterOperator
  * @notice A Forge script to register an operator with the WAVS AVS
  * @dev This script replaces the docker/register.sh bash script
  */
-contract WavsRegisterOperator is Script {
+contract RegisterOperator is Script {
     using Strings for *;
 
     // Contract addresses

@@ -110,7 +110,7 @@ echo -e "WavsServiceManager: $SERVICE_MANAGER_ADDRESS"
 echo -e "\n${GREEN}Running Forge script to set service URI...${NC}"
 # Export the SERVICE_URI as an environment variable for the script
 export SERVICE_URI
-forge script script/WavsSetServiceURI.s.sol:WavsSetServiceURI \
+forge script script/SetServiceURI.s.sol:SetServiceURI \
     --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
     --private-key "$deployer_private_key" \
     --broadcast

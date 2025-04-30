@@ -85,7 +85,7 @@ echo -e "- LST Contract: $LST_CONTRACT_ADDRESS\n"
 
 # Run the forge script
 echo -e "${GREEN}Running Forge deployment script...${NC}"
-forge script script/WavsDeployment.s.sol:WavsDeployment --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast
+forge script script/Deploy.s.sol:Deploy --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast
 
 # Check if the deployment was successful
 if [ $? -ne 0 ]; then

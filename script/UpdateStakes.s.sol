@@ -7,10 +7,10 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ECDSAStakeRegistry} from "lib/eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 
 /**
- * @title WavsUpdateStakes
+ * @title UpdateStakes
  * @notice A Forge script to update operator stakes in the stake registry
  */
-contract WavsUpdateStakes is Script {
+contract UpdateStakes is Script {
     using Strings for *;
 
     // Deployment file path

@@ -106,7 +106,7 @@ if [ -n "$OPERATOR_ARGS" ]; then
 else
     # Run the forge script for full listing
     echo -e "\n${GREEN}Running Forge script to list operators...${NC}"
-    forge script script/WavsListOperators.s.sol:WavsListOperators --rpc-url "$RPC_URL"
+    forge script script/ListOperators.s.sol:ListOperators --rpc-url "$RPC_URL"
 fi
 
 # Exit gracefully

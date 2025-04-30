@@ -99,6 +99,6 @@ export OPERATORS="$OPERATOR_LIST"
 
 # Run Forge script to update stakes
 echo -e "\n${GREEN}Running Forge script to update stakes...${NC}"
-forge script script/WavsUpdateStakes.s.sol:WavsUpdateStakes --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast
+forge script script/UpdateStakes.s.sol:UpdateStakes --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast
 
 echo -e "\n${GREEN}Done! Run check_all_operators.sh to see updated weights${NC}" 
