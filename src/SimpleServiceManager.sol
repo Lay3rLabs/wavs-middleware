@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IWavsServiceManager} from "../interfaces/IWavsServiceManager.sol";
-import {IWavsServiceHandler} from "../interfaces/IWavsServiceHandler.sol";
+import {IWavsServiceManager} from "./interfaces/IWavsServiceManager.sol";
+import {IWavsServiceHandler} from "./interfaces/IWavsServiceHandler.sol";
 
 contract SimpleServiceManager is IWavsServiceManager {
     string private serviceURI;
@@ -41,7 +41,12 @@ contract SimpleServiceManager is IWavsServiceManager {
         return 3; // hard-coded at 3 for demo purposes
     }
 
-    function getLastCheckpointTotalWeight() external pure override returns (uint256) {
+    function getLastCheckpointTotalWeight()
+        external
+        pure
+        override
+        returns (uint256)
+    {
         return 5; // hard-coded at 5 for demo purposes
     }
 }

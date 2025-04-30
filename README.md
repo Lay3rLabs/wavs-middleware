@@ -4,7 +4,6 @@ TODO:
 
 - POA Opset (ECDSAStakeRegistry compatible) #55
 - Rename contracts
-- Move interfaces to `src`
 
 ## Prerequisites
 
