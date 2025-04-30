@@ -3,6 +3,11 @@
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
+SCRIPT_DIR="$(realpath "$(dirname "$0")")"
+# shellcheck source=./helpers.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR"/helpers.sh
+
 # Set up colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -26,10 +31,9 @@ source docker/.env
 # Check required environment variables
 check_env_var() {
     local var_name="$1"
-    if [ -z "${!var_name:-}" ]; then
-        echo -e "${RED}Error: $var_name is not set in the environment variables${NC}"
-        echo "Please set it in docker/.env file"
-        exit 1
+    local var_value="${!var_name:-}"
+    if [ -z "$var_value" ]; then
+        handle_error "$var_name is not set in the environment variables"
     fi
 }
 
@@ -42,37 +46,40 @@ check_env_var "LST_CONTRACT_ADDRESS"
 # Set up RPC URL based on environment
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     check_env_var "TESTNET_RPC_URL"
-    RPC_URL="$TESTNET_RPC_URL"
-    echo -e "${YELLOW}Deploying to TESTNET at $RPC_URL${NC}"
+    LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
+    echo -e "${YELLOW}Deploying to TESTNET at $LOCAL_ETHEREUM_RPC_URL${NC}"
 else
-    RPC_URL="http://localhost:8545"
-    echo -e "${YELLOW}Deploying to LOCAL at $RPC_URL${NC}"
+    LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-"http://localhost:8545"}
+    echo -e "${YELLOW}Deploying to LOCAL at $LOCAL_ETHEREUM_RPC_URL${NC}"
     
-    # Check if anvil is running
-    if ! curl -s -X POST -H "Content-Type: application/json" \
-             --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}' \
-             "$RPC_URL" > /dev/null; then
-        echo -e "${RED}Error: Could not connect to anvil at $RPC_URL${NC}"
-        echo "Please run anvil in another terminal with:"
-        echo "anvil --fork-url \$RPC_URL --host 0.0.0.0 --port 8545"
-        exit 1
-    fi
+    # Wait for Ethereum node
+    wait_for_ethereum
 fi
 
 # Create output directory
-mkdir -p ~/.nodes
+mkdir -p /root/.nodes
+
+# Write the deployer key to file
+echo "$FUNDED_KEY" > /root/.nodes/deployer
+deployer_public_key=$(cast wallet address "$FUNDED_KEY")
+echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
 
 # Display configuration
 echo -e "\n${GREEN}Deployment Configuration:${NC}"
 echo "- Environment: $DEPLOY_ENV"
-echo "- RPC URL: $RPC_URL"
+echo "- RPC URL: $LOCAL_ETHEREUM_RPC_URL"
 echo "- Metadata URI: $METADATA_URI"
 echo "- LST Strategy: $LST_STRATEGY_ADDRESS"
 echo -e "- LST Contract: $LST_CONTRACT_ADDRESS\n"
 
 # Run the forge script
 echo -e "${GREEN}Running Forge deployment script...${NC}"
-forge script contracts/script/WavsDeployment.s.sol --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast --slow
+cd /wavs/contracts && \
+forge script script/WavsDeployment.s.sol \
+    --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
+    --private-key "$FUNDED_KEY" \
+    --broadcast \
+    --slow
 
 # Check if the deployment was successful
 if [ $? -ne 0 ]; then
@@ -81,17 +88,17 @@ if [ $? -ne 0 ]; then
 fi
 
 # Copy deployment file to .nodes directory
-echo -e "\n${GREEN}Copying deployment file to ~/.nodes/avs_deploy.json${NC}"
-CHAIN_ID=$(cast chain-id --rpc-url "$RPC_URL")
-if [ -f "contracts/deployments/wavs-middleware/$CHAIN_ID.json" ]; then
-    cp "contracts/deployments/wavs-middleware/$CHAIN_ID.json" ~/.nodes/avs_deploy.json
+echo -e "\n${GREEN}Copying deployment file to /root/.nodes/avs_deploy.json${NC}"
+CHAIN_ID=$(cast chain-id --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+if [ -f "/wavs/contracts/deployments/wavs-middleware/$CHAIN_ID.json" ]; then
+    cp "/wavs/contracts/deployments/wavs-middleware/$CHAIN_ID.json" /root/.nodes/avs_deploy.json
     echo -e "${GREEN}Deployment successful!${NC}"
     echo "Deployment details saved to:"
-    echo "- contracts/deployments/wavs-middleware/$CHAIN_ID.json"
-    echo "- ~/.nodes/avs_deploy.json"
+    echo "- /wavs/contracts/deployments/wavs-middleware/$CHAIN_ID.json"
+    echo "- /root/.nodes/avs_deploy.json"
 else
     echo -e "${RED}Error: Deployment file not found${NC}"
-    echo "Expected at: contracts/deployments/wavs-middleware/$CHAIN_ID.json"
+    echo "Expected at: /wavs/contracts/deployments/wavs-middleware/$CHAIN_ID.json"
     exit 1
 fi
 
