@@ -4,7 +4,7 @@ TODO:
 
 - POA Opset (ECDSAStakeRegistry compatible) #55
 - Rename contracts
-- ~~Figure out why operator isn't registering~~ Fixed: operators need LST tokens to appear in weight lists
+- Move interfaces to `src`
 
 ## Prerequisites
 
@@ -60,7 +60,7 @@ Deploy:
 docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes wavs-middleware
 ```
 
-Set Service URI:
+### Set Service URI:
 
 ```bash
 SERVICE_URI="https://ipfs.url/for-custom-service.json"
@@ -68,19 +68,57 @@ SERVICE_URI="https://ipfs.url/for-custom-service.json"
 docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/set_service_uri.sh wavs-middleware "$SERVICE_URI"
 ```
 
-Register:
+### Registering an operator with existing LST tokens
+
+If you want to register an operator using your existing LST tokens (like stETH):
 
 ```bash
-# Generate a new private key for the AVS
+# Generate a new operator key
 AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
-# This will show the address, so you can confirm it was properly added when listing operators
-cast wallet addr --private-key "$AVS_KEY"
+OPERATOR_ADDRESS=$(cast wallet addr --private-key "$AVS_KEY")
+echo "New operator address: $OPERATOR_ADDRESS"
 
-# Register the operator (defaults to 0.1 stETH stake amount)
-docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/register_operator.sh wavs-middleware "$AVS_KEY"
+# Transfer some LST tokens to the operator (we use 0.15 stETH to ensure sufficient stake)
+source docker/.env
+cast send --rpc-url $TESTNET_RPC_URL --private-key $FUNDED_KEY \
+    $LST_CONTRACT_ADDRESS "transfer(address,uint256)(bool)" \
+    $OPERATOR_ADDRESS 150000000000000000  # 0.15 stETH
 
-# To specify a custom stake amount (e.g. 1 stETH)
-# docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/register_operator.sh wavs-middleware "$AVS_KEY" "1"
+# Register the operator
+docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes \
+    --entrypoint /wavs/docker/register_operator.sh wavs-middleware "$AVS_KEY"
+
+# Check the operator's weight
+./docker/check_operator.sh $OPERATOR_ADDRESS
+```
+
+##### Important: LST Tokens Required for Operator Registration
+
+Note that operators will not appear in the weight lists unless they have LST tokens staked. The registration process has two main parts:
+
+1. **Basic registration**: This allows the operator to participate in the network but with zero weight
+2. **Staking**: Only operators with staked tokens will appear in `list_operators.sh` output and have voting weight
+
+To get your operator fully registered with weight:
+
+1. Acquire LST tokens for the operator address by getting testnet ETH ([holesky](https://holesky-faucet.pk910.de/#/) or [sepolia](https://sepolia-faucet.pk910.de/)), and [liquid staking it with Lido](https://stake-holesky.testnet.fi/).
+2. Run the registration script which will automatically stake any available tokens
+
+### Update stakes
+
+```bash
+# IMPORTANT: After registering operators, you must update their stakes to have them recognized with proper weights
+# You MUST specify at least one operator address as an argument
+OPERATOR_ADDRESS=$(cast wallet addr --private-key "$AVS_KEY")
+docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes \
+  --entrypoint /wavs/docker/update_stakes.sh wavs-middleware $OPERATOR_ADDRESS
+```
+
+Check a specific operator's weight:
+
+```bash
+# Check if an operator address has registered and with what weight, you can optionally pass in a list of addresses
+docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/check_operator.sh wavs-middleware $OPERATOR_ADDRESS
 ```
 
 List Operators:
@@ -90,17 +128,14 @@ List Operators:
 docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/list_operators.sh wavs-middleware
 ```
 
-## Important: LST Tokens Required for Operator Registration
+## Deployment Files
 
-Note that operators will not appear in the weight lists unless they have LST tokens staked. The registration process has two main parts:
+The system stores deployment information in two locations:
 
-1. **Basic registration**: This allows the operator to participate in the network but with zero weight
-2. **Staking**: Only operators with staked tokens will appear in `list_operators.sh` output and have voting weight
+1. `./deployments/wavs-middleware/<chain_id>.json` - Main deployment file
+2. `~/.nodes/avs_deploy.json` - Copy used by node processes
 
-To get your operator fully registered with weight:
-
-1. Acquire LST tokens for the operator address
-2. Run the registration script which will automatically stake any available tokens
+All scripts have been improved to search for files in multiple locations and provide detailed error messages if files cannot be found or accessed.
 
 ## Local vs Testnet Deployment
 

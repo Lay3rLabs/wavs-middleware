@@ -59,9 +59,21 @@ else
     fi
 fi
 
-# Create output directory
-mkdir -p ~/.nodes
-mkdir -p deployments/wavs-middleware
+# Create output directories
+echo -e "Creating output directories..."
+mkdir -p ~/.nodes || { echo -e "${RED}Error: Failed to create ~/.nodes directory${NC}"; exit 1; }
+mkdir -p deployments/wavs-middleware || { echo -e "${RED}Error: Failed to create deployments/wavs-middleware directory${NC}"; exit 1; }
+
+# Check write permissions
+if [ ! -w ~/.nodes ]; then
+    echo -e "${RED}Error: Do not have write permissions to ~/.nodes directory${NC}"
+    exit 1
+fi
+
+if [ ! -w deployments/wavs-middleware ]; then
+    echo -e "${RED}Error: Do not have write permissions to deployments/wavs-middleware directory${NC}"
+    exit 1
+fi
 
 # Display configuration
 echo -e "\n${GREEN}Deployment Configuration:${NC}"
@@ -84,15 +96,40 @@ fi
 # Copy deployment file to .nodes directory
 echo -e "\n${GREEN}Copying deployment file to ~/.nodes/avs_deploy.json${NC}"
 CHAIN_ID=$(cast chain-id --rpc-url "$RPC_URL")
-if [ -f "deployments/wavs-middleware/$CHAIN_ID.json" ]; then
-    cp "deployments/wavs-middleware/$CHAIN_ID.json" ~/.nodes/avs_deploy.json
+echo "Chain ID: $CHAIN_ID"
+
+DEPLOYMENT_FILE="deployments/wavs-middleware/$CHAIN_ID.json"
+TARGET_FILE=~/.nodes/avs_deploy.json
+
+echo "Checking if deployment file exists: $DEPLOYMENT_FILE"
+if [ -f "$DEPLOYMENT_FILE" ]; then
+    echo "Source file exists, attempting to copy..."
+    cp "$DEPLOYMENT_FILE" "$TARGET_FILE" || { echo -e "${RED}Error: Failed to copy deployment file${NC}"; exit 1; }
+    
+    if [ -f "$TARGET_FILE" ]; then
+        echo "Target file exists, validating..."
+        diff "$DEPLOYMENT_FILE" "$TARGET_FILE" > /dev/null && {
+            echo -e "${GREEN}Validation successful: Files match${NC}"
+        } || {
+            echo -e "${RED}Error: Files don't match after copy${NC}"
+            echo "Source file size: $(stat -c%s "$DEPLOYMENT_FILE") bytes"
+            echo "Target file size: $(stat -c%s "$TARGET_FILE" 2>/dev/null || echo "N/A") bytes"
+        }
+    else
+        echo -e "${RED}Error: Target file doesn't exist after copy${NC}"
+        echo "Target path: $TARGET_FILE"
+        echo "Directory exists: $([ -d "$(dirname "$TARGET_FILE")" ] && echo "Yes" || echo "No")"
+        echo "Directory is writable: $([ -w "$(dirname "$TARGET_FILE")" ] && echo "Yes" || echo "No")"
+    fi
+    
     echo -e "${GREEN}Deployment successful!${NC}"
     echo "Deployment details saved to:"
-    echo "- deployments/wavs-middleware/$CHAIN_ID.json"
-    echo "- ~/.nodes/avs_deploy.json"
+    echo "- $DEPLOYMENT_FILE"
+    echo "- $TARGET_FILE"
 else
     echo -e "${RED}Error: Deployment file not found${NC}"
-    echo "Expected at: deployments/wavs-middleware/$CHAIN_ID.json"
+    echo "Expected at: $DEPLOYMENT_FILE"
+    ls -la "deployments/wavs-middleware/" || echo "Failed to list directory"
     exit 1
 fi
 

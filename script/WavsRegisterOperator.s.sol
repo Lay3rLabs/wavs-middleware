@@ -345,43 +345,48 @@ contract WavsRegisterOperator is Script {
         uint256 balance = IERC20(lstContractAddress).balanceOf(operatorAddress);
         console2.log("Current LST token balance:", balance);
 
-        if (balance < amount) {
-            console2.log(
-                "WARNING: LST token balance is less than requested deposit amount"
-            );
-            console2.log("Requested:", amount, "Available:", balance);
-
-            // Use available balance instead
-            if (balance > 0) {
-                console2.log("Using available balance for deposit");
-                amount = balance;
+        // Use the full balance for deposit regardless of the requested amount
+        if (balance > 0) {
+            // For safety, don't use all tokens if balance is significantly higher than requested
+            if (balance > amount * 10) {
+                // If balance is 10x higher than requested
+                console2.log(
+                    "Balance significantly exceeds requested amount. Using requested amount:",
+                    amount
+                );
             } else {
-                console2.log("No LST tokens available, skipping deposit");
-                return;
+                // Use the entire balance
+                amount = balance;
+                console2.log(
+                    "Using full available balance for deposit:",
+                    amount
+                );
             }
+
+            // Use lstStrategyAddress directly instead of trying to get it by index
+            IStrategy strategy = IStrategy(lstStrategyAddress);
+
+            // Approve strategy manager to spend tokens
+            vm.startBroadcast(operatorPrivateKey);
+            IERC20(lstContractAddress).approve(strategyManagerAddress, amount);
+
+            // Deposit into strategy
+            IStrategyManager(strategyManagerAddress).depositIntoStrategy(
+                strategy,
+                IERC20(lstContractAddress),
+                amount
+            );
+            vm.stopBroadcast();
+
+            console2.log(
+                "Deposited",
+                amount,
+                "LST tokens into strategy",
+                address(strategy)
+            );
+        } else {
+            console2.log("No LST tokens available, skipping deposit");
         }
-
-        // Use lstStrategyAddress directly instead of trying to get it by index
-        IStrategy strategy = IStrategy(lstStrategyAddress);
-
-        // Approve strategy manager to spend tokens
-        vm.startBroadcast(operatorPrivateKey);
-        IERC20(lstContractAddress).approve(strategyManagerAddress, amount);
-
-        // Deposit into strategy
-        IStrategyManager(strategyManagerAddress).depositIntoStrategy(
-            strategy,
-            IERC20(lstContractAddress),
-            amount
-        );
-        vm.stopBroadcast();
-
-        console2.log(
-            "Deposited",
-            amount,
-            "LST tokens into strategy",
-            address(strategy)
-        );
     }
 
     /**

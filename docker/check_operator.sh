@@ -72,8 +72,11 @@ echo -e "Stake Registry: ${STAKE_REGISTRY}"
 
 # Check operator weight
 echo -e "\n${GREEN}Checking operator weight...${NC}"
-WEIGHT=$(cast call --rpc-url "$RPC_URL" "$STAKE_REGISTRY" "getOperatorWeight(address)(uint256)" "$OPERATOR_ADDRESS")
-echo -e "Operator ${OPERATOR_ADDRESS} weight: ${WEIGHT}"
+WEIGHT_RAW=$(cast call --rpc-url "$RPC_URL" "$STAKE_REGISTRY" "getOperatorWeight(address)(uint256)" "$OPERATOR_ADDRESS")
+echo -e "Operator ${OPERATOR_ADDRESS} weight: ${WEIGHT_RAW}"
+
+# Extract just the number part, removing any scientific notation or additional text
+WEIGHT=$(echo "$WEIGHT_RAW" | sed -E 's/\s+\[.*\]$//')
 
 # Convert to ETH for readability if possible
 if [[ "$WEIGHT" =~ ^[0-9]+$ ]]; then
@@ -84,8 +87,9 @@ if [[ "$WEIGHT" =~ ^[0-9]+$ ]]; then
 fi
 
 # Check if the weight is greater than minimum (1)
-if [[ "$WEIGHT" =~ ^[0-9]+$ ]] && [ "$WEIGHT" -gt 0 ]; then
+if [ "$WEIGHT" -gt 0 ] 2>/dev/null; then
     echo -e "${GREEN}Operator is successfully registered with non-zero weight!${NC}"
+    echo -e "Actual weight: $WEIGHT"
 else
     echo -e "${YELLOW}Operator is registered but has zero weight.${NC}"
     echo -e "This is likely because the operator has no LST tokens staked."

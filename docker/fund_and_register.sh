@@ -42,8 +42,8 @@ else
     echo -e "${YELLOW}Using LOCAL at $RPC_URL${NC}"
 fi
 
-# Amount of stETH to transfer (default 0.1)
-AMOUNT=${1:-"0.1"}
+# Amount of stETH to transfer (default 0.15)
+AMOUNT=${1:-"0.15"}
 echo -e "Using amount: ${AMOUNT} stETH"
 
 # Generate new operator key
@@ -85,7 +85,9 @@ if [ "$AMOUNT_WEI" = "0" ]; then
 fi
 
 # Check if balance is sufficient
-if (( BALANCE < AMOUNT_WEI )); then
+# Extract just the number part, removing any scientific notation
+BALANCE_CLEAN=$(echo "$BALANCE" | sed -E 's/\s+\[.*\]$//')
+if ! [[ "$BALANCE_CLEAN" =~ ^[0-9]+$ ]] || (( BALANCE_CLEAN < AMOUNT_WEI )); then
     echo -e "${RED}Error: Insufficient stETH balance. Need at least ${AMOUNT} stETH.${NC}"
     echo -e "Current balance: ${BALANCE_ETH} stETH"
     exit 1
@@ -117,4 +119,12 @@ echo -e "Please save the operator key securely."
 
 # View the list of operators
 echo -e "\n${GREEN}Checking registered operators...${NC}"
-docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/list_operators.sh wavs-middleware 
+docker run --rm --network host --env-file docker/.env -v ./deployments:/wavs/deployments -v ./.nodes:/root/.nodes --entrypoint /wavs/docker/list_operators.sh wavs-middleware
+
+# Update stakes to ensure the operator has weight
+echo -e "\n${GREEN}Updating stakes for the new operator...${NC}"
+./docker/update_stakes.sh "$OPERATOR_ADDRESS"
+
+# Check the operator's weight after update
+echo -e "\n${GREEN}Checking operator weight after update...${NC}"
+./docker/check_operator.sh "$OPERATOR_ADDRESS" 
