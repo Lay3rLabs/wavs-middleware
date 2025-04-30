@@ -4,9 +4,6 @@ set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"
-# shellcheck source=./helpers.sh
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR"/helpers.sh
 
 # Set up colors for output
 GREEN='\033[0;32m'
@@ -32,9 +29,6 @@ if [ "$DEPLOY_ENV" = "TESTNET" ]; then
 else
     LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-"http://localhost:8545"}
     echo -e "${YELLOW}Connecting to LOCAL at $LOCAL_ETHEREUM_RPC_URL${NC}"
-    
-    # Wait for Ethereum node
-    wait_for_ethereum
 fi
 
 # Read the deployer private key from file
@@ -59,8 +53,7 @@ fi
 echo -e "\n${GREEN}Running Forge script to set service URI...${NC}"
 # Export the SERVICE_URI as an environment variable for the script
 export SERVICE_URI
-cd /wavs/contracts && \
-forge script script/WavsSetServiceURI.s.sol \
+forge script script/WavsSetServiceURI.s.sol:WavsSetServiceURI \
     --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
     --private-key "$deployer_private_key" \
     --broadcast

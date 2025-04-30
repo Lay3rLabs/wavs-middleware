@@ -61,6 +61,7 @@ fi
 
 # Create output directory
 mkdir -p ~/.nodes
+mkdir -p deployments/wavs-middleware
 
 # Display configuration
 echo -e "\n${GREEN}Deployment Configuration:${NC}"
@@ -72,7 +73,7 @@ echo -e "- LST Contract: $LST_CONTRACT_ADDRESS\n"
 
 # Run the forge script
 echo -e "${GREEN}Running Forge deployment script...${NC}"
-forge script contracts/script/WavsDeployment.s.sol --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast --slow
+forge script script/WavsDeployment.s.sol:WavsDeployment --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast
 
 # Check if the deployment was successful
 if [ $? -ne 0 ]; then
@@ -83,19 +84,19 @@ fi
 # Copy deployment file to .nodes directory
 echo -e "\n${GREEN}Copying deployment file to ~/.nodes/avs_deploy.json${NC}"
 CHAIN_ID=$(cast chain-id --rpc-url "$RPC_URL")
-if [ -f "contracts/deployments/wavs-middleware/$CHAIN_ID.json" ]; then
-    cp "contracts/deployments/wavs-middleware/$CHAIN_ID.json" ~/.nodes/avs_deploy.json
+if [ -f "deployments/wavs-middleware/$CHAIN_ID.json" ]; then
+    cp "deployments/wavs-middleware/$CHAIN_ID.json" ~/.nodes/avs_deploy.json
     echo -e "${GREEN}Deployment successful!${NC}"
     echo "Deployment details saved to:"
-    echo "- contracts/deployments/wavs-middleware/$CHAIN_ID.json"
+    echo "- deployments/wavs-middleware/$CHAIN_ID.json"
     echo "- ~/.nodes/avs_deploy.json"
 else
     echo -e "${RED}Error: Deployment file not found${NC}"
-    echo "Expected at: contracts/deployments/wavs-middleware/$CHAIN_ID.json"
+    echo "Expected at: deployments/wavs-middleware/$CHAIN_ID.json"
     exit 1
 fi
 
 echo -e "\n${GREEN}Done!${NC}"
-echo "To view the registered operators, run the list_operator.sh script"
-echo "To register a new operator, run the register.sh script"
+echo "To view the registered operators, run the list_operators.sh script"
+echo "To register a new operator, run the register_operator.sh script"
 echo "To set a service URI, run the set_service_uri.sh script" 

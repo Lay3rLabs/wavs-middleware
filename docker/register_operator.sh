@@ -10,9 +10,6 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"
-# shellcheck source=./helpers.sh
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR"/helpers.sh
 
 # Print header
 echo -e "${GREEN}WAVS Middleware - Register Operator${NC}"
@@ -33,9 +30,6 @@ if [ "$DEPLOY_ENV" = "TESTNET" ]; then
 else
     LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-"http://localhost:8545"}
     echo -e "${YELLOW}Connecting to LOCAL at $LOCAL_ETHEREUM_RPC_URL${NC}"
-    
-    # Wait for Ethereum node
-    wait_for_ethereum
 fi
 
 # Check required environment variables
@@ -70,8 +64,7 @@ echo -e "- LST Contract: $LST_CONTRACT_ADDRESS\n"
 export OPERATOR_KEY
 
 # Run the forge script in the Docker context
-cd /wavs/contracts && \
-forge script script/WavsRegisterOperator.s.sol "$OPERATOR_KEY" \
+forge script script/WavsRegisterOperator.s.sol:WavsRegisterOperator "$OPERATOR_KEY" \
     --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
     --private-key "$FUNDED_KEY" \
     --broadcast

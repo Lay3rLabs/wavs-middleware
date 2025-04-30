@@ -2,13 +2,12 @@ FROM ghcr.io/foundry-rs/foundry:latest
 USER root
 RUN apt update && apt install -yq jq curl
 
-COPY contracts /wavs/contracts
-RUN forge build --root /wavs/contracts
+WORKDIR /wavs
+COPY . /wavs/
+RUN chmod +x /wavs/docker/*.sh
+
+RUN forge build
 
 RUN rm -rf /tmp
 
-WORKDIR /wavs
-COPY ./docker/*.sh /wavs
-RUN chmod +x /wavs/*.sh
-
-CMD ["/wavs/deploy.sh"]
+CMD ["/wavs/docker/deploy.sh"]

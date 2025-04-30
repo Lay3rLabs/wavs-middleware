@@ -35,7 +35,7 @@ fi
 
 # Run the forge script
 echo -e "\n${GREEN}Running Forge script to list operators...${NC}"
-forge script contracts/script/WavsListOperators.s.sol --rpc-url "$RPC_URL"
+forge script script/WavsListOperators.s.sol:WavsListOperators --rpc-url "$RPC_URL"
 
 # Exit gracefully
 echo -e "\n${GREEN}Done!${NC}" 

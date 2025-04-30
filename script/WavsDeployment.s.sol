@@ -59,7 +59,17 @@ contract WavsDeployment is Script, IECDSAStakeRegistryTypes {
      * @notice Setup function to initialize environment variables
      */
     function setUp() public {
-        deployerPrivateKey = vm.envUint(ENV_PRIVATE_KEY);
+        string memory rawKey = vm.envString(ENV_PRIVATE_KEY);
+        // Check if the private key has the 0x prefix, add it if missing
+        if (
+            bytes(rawKey).length > 0 &&
+            bytes(rawKey)[0] != bytes("0")[0] &&
+            bytes(rawKey)[1] != bytes("x")[0]
+        ) {
+            rawKey = string(abi.encodePacked("0x", rawKey));
+        }
+
+        deployerPrivateKey = vm.parseUint(rawKey);
         deployer = vm.rememberKey(deployerPrivateKey);
         vm.label(deployer, "Deployer");
 
