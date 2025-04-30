@@ -263,27 +263,79 @@ sequenceDiagram
    - Sign digest hash with private key
    - Register with signature on stake registry
 
-### Helper Functions
+# WAVS Proof of Authority (PoA) Service Manager
 
-- `wait_for_ethereum`: Check if Ethereum node is ready
-- `impersonate_account`: Impersonate an account (LOCAL only)
-- `execute_transaction`: Run a transaction and handle errors
-- `stop_impersonating`: Stop impersonating an account (LOCAL only)
+A Proof of Authority implementation of the WAVS (Web3 Application Verifiable Streaming) Service Manager that does not rely on EigenLayer restaking for its operator set. This enables quicker deployment and bootstrapping for use cases that don't want to configure EigenLayer integration.
 
-### Instructions on getting Holesky ETH
+## Features
 
-To get Holesky ETH for running on testnet:
+- Implements all interfaces expected from WAVS (`IWavsServiceManager.sol`)
+- Initializes with a configurable operator set
+- Implements signature verification logic based on the standard WAVS pattern
+- Allows contract owner to update the operator set and signature threshold
+- Equal weight for all operators (each operator has a weight of 1)
+- Configurable signature threshold (how many operators need to sign for validation)
 
-1. PoW Mining Faucet:
+## Automated Deployment
 
-   - Go to https://holesky-faucet.pk910.de/
-   - Connect your wallet
-   - Mine blocks in your browser to earn ETH
-   - Rewards based on mining time/hashrate
-   - No external requirements
+The easiest way to deploy the PoA WAVS Service Manager is using the provided deployment tools:
 
-2. Alchemy Faucet (Alternative):
-   - Visit https://www.alchemy.com/faucets/holesky
-   - Requires mainnet ETH balance to use
-   - Connect wallet and verify ownership
-   - Request funds (limits apply)
+### Method 1: Using Environment Variables
+
+```bash
+# Set required environment variables
+export PRIVATE_KEY=0x... # Your deployer's private key
+export OPERATORS=$(cast wallet addr --private-key "$AVS_KEY")  # Comma-separated list of operator addresses
+export REQUIRED_SIGNATURES=2  # Number of required signatures
+export SERVICE_URI="https://example.com/service.json"  # Optional service URI
+export ETHERSCAN_API_KEY=dummy
+
+# Run the deployment script
+forge script script/PoAWavsServiceManager.s.sol --rpc-url $RPC_URL --broadcast
+```
+
+### Method 2: Using Command Line Arguments
+
+```bash
+# Deploy with command line arguments
+forge script script/PoAWavsServiceManager.s.sol \
+  --sig "run(address[],uint256,string)" \
+  "[(0xabc...,0xdef...,0xghi...)]" 2 "https://example.com/service.json" \
+  --rpc-url <YOUR_RPC_URL> \
+  --private-key 0x123... \
+  --broadcast
+```
+
+### Method 3: Deploy First, Configure Later
+
+```bash
+# Deploy with minimal setup
+forge script script/PoAWavsServiceManager.s.sol \
+  --rpc-url <YOUR_RPC_URL> \
+  --private-key 0x123... \
+  --broadcast
+
+# The script will log the deployed contract address
+# Then add operators after deployment using the contract functions
+cast send --private-key 0x123... <DEPLOYED_ADDRESS> "addOperator(address)" 0xabc...
+cast send --private-key 0x123... <DEPLOYED_ADDRESS> "addOperator(address)" 0xdef...
+cast send --private-key 0x123... <DEPLOYED_ADDRESS> "setRequiredSignatures(uint256)" 2
+cast send --private-key 0x123... <DEPLOYED_ADDRESS> "setServiceURI(string)" "https://example.com/service.json"
+```
+
+## Signature Validation Process
+
+The signature validation process requires:
+
+1. Operators must sign a message hash of the envelope
+2. Signatures should be provided in ascending order of operator addresses
+3. Only signatures from registered operators are considered valid
+4. The number of valid signatures must meet or exceed the required threshold
+
+## Testing
+
+Run the included tests using Foundry:
+
+```bash
+forge test
+```
