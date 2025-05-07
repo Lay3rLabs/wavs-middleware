@@ -84,7 +84,7 @@ library WavsMiddlewareDeploymentLib {
     function readDeploymentJson(
         uint256 chainId
     ) internal returns (DeploymentData memory) {
-        return readDeploymentJson("deployments/", chainId);
+        return readDeploymentJson("deployments/wavs-middleware/", chainId);
     }
 
     function readDeploymentJson(

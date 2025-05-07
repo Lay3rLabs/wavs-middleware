@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -x echos all lines for debug
-# set -x
+set -x
 
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
@@ -296,7 +296,7 @@ fi
 
 echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
 
-cd contracts && forge script script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast # /dev/null 2>&1
+cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast # /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run middleware deployment script"
     exit 1

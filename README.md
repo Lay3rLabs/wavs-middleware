@@ -77,16 +77,14 @@ List Operators:
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/list_operator.sh wavs-middleware
 ```
 
-## Deploy Testnet 
+## Deploy Testnet
 
 Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"` and make sure the `FUNDED_KEY` is actually funded on testnet
-
 
 ## References
 
 - [EigenLayer Documentation](https://docs.eigenlayer.xyz/)
 - [Hello World AVS Repository](https://github.com/Layr-Labs/eigenlayer-hello-world)
-
 
 ## Deployment Process Flow
 
@@ -139,11 +137,13 @@ sequenceDiagram
 ## Detailed Process Explanation
 
 ### Initial Setup
+
 - Load environment variables from `.env` file
 - Set `LOCAL_ETHEREUM_RPC_URL` based on environment (TESTNET or LOCAL)
 - Check for required environment variables
 
 ### Deploy Process (deploy.sh)
+
 1. Deploy middleware contracts using Forge script
 2. Read contract addresses from deployment JSON
 3. Update quorum config with strategy weights
@@ -153,6 +153,7 @@ sequenceDiagram
 7. Create operator sets for meta-AVS functionality
 
 ### Set Service URI (set_service_uri.sh)
+
 1. Read deployer private key from file
 2. Get service manager address from deployment JSON
 3. Get owner address from service manager contract
@@ -161,6 +162,7 @@ sequenceDiagram
 6. Stop impersonating owner account
 
 ### Register Operator (register.sh)
+
 1. Read AVS private key from command line
 2. Setup operator with initial configuration
 3. Fund operator account with ETH
@@ -180,6 +182,7 @@ sequenceDiagram
    - Register with signature on stake registry
 
 ### Helper Functions (helpers.sh)
+
 - `wait_for_ethereum`: Check if Ethereum node is ready
 - `impersonate_account`: Impersonate an account (LOCAL only)
 - `execute_transaction`: Run a transaction and handle errors
@@ -201,4 +204,3 @@ To get Holesky ETH for running on testnet:
    - Requires mainnet ETH balance to use
    - Connect wallet and verify ownership
    - Request funds (limits apply)
-

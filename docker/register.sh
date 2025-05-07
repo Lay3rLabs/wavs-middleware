@@ -91,14 +91,15 @@ setup_operator() {
     local private_key=$2
     local public_key=$(cast wallet address $private_key)
 
-    STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' contracts/deployments/core/$CHAIN_ID.json)
+    DEPLOY_FILE="contracts/deployments/eigenlayer-core/$CHAIN_ID.json"
+    STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' "$DEPLOY_FILE")
     if [ -z "$STRATEGY_MANAGER_ADDRESS" ]; then
-        echo "Error: Failed to read strategyManagerAddress from contracts/deployments/core/$CHAIN_ID.json"
+        echo "Error: Failed to read strategyManagerAddress from $DEPLOY_FILE"
         exit 1
     fi
-    DELEGATION_MANAGER_ADDRESS=$(jq -r '.addresses.delegation' contracts/deployments/core/$CHAIN_ID.json)
+    DELEGATION_MANAGER_ADDRESS=$(jq -r '.addresses.delegation' "$DEPLOY_FILE")
     if [ -z "$DELEGATION_MANAGER_ADDRESS" ]; then
-        echo "Error: Failed to read delegationManagerAddress from contracts/deployments/core/$CHAIN_ID.json"
+        echo "Error: Failed to read delegationManagerAddress from $DEPLOY_FILE"
         exit 1
     fi
 
