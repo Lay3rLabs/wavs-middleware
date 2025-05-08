@@ -3,7 +3,7 @@ USER root
 RUN apt update && apt install -yq jq curl
 
 COPY contracts /wavs/contracts
-RUN forge build --root /wavs/contracts
+RUN forge build --root /wavs/contracts ./eigenlayer
 
 RUN rm -rf /tmp
 

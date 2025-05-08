@@ -33,7 +33,7 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
 
-        coreDeployment = ReadCoreLib.readDeploymentJson("deployments/core/", block.chainid);
+        coreDeployment = ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
         // Get the LST strategy address from environment
         helloWorldStrategy = IStrategy(vm.envAddress("LST_STRATEGY_ADDRESS"));
 
