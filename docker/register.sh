@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -x echos all lines for debug
-# set -x
+set -x
 
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
@@ -36,7 +36,7 @@ register_operator_with_avs() {
     echo "Registering operator with AVS..."
     local private_key=$1
     local public_key=$(cast wallet address $private_key)
-    
+
     echo "Registering operator $public_key with AVS..."
     local stake_registry_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.stakeRegistry')
     if [ -z "$stake_registry_address" ]; then
@@ -55,16 +55,16 @@ register_operator_with_avs() {
     fi
     # Generate a random salt (32 bytes)
     local salt=$(openssl rand -hex 32)
-    
+
     # Calculate expiry (current time + 1 hour)
     local expiry=$(($(date +%s) + 3600))
-    
+
     local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$service_manager_address" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     # Remove 0x prefix from digest hash if present
     digest_hash=${digest_hash#0x}
     # Sign the digest hash with the private key
     local signature=$(cast wallet sign $digest_hash --no-hash --private-key "$private_key")
-    
+
     # Register the operator with the signature
     echo "Registering operator with signature..."
     cast c --trace "$stake_registry_address" \
@@ -72,12 +72,12 @@ register_operator_with_avs() {
         "($signature,$salt,$expiry)" "$public_key" \
         --private-key "$private_key" \
         --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
-    
+
     cast send "$stake_registry_address" \
         "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
         "($signature,$salt,$expiry)" "$public_key" \
         --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" 
+        --rpc-url "$LOCAL_ETHEREUM_RPC_URL"
     if [ $? -eq 0 ]; then
         echo "Successfully registered operator $public_key with AVS"
     else
@@ -103,14 +103,15 @@ setup_operator() {
         exit 1
     fi
 
-    
+
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
         # TODO: remove this and replace with a check the AVS key has a balance
-        cast s "$public_key" --value 50000000000000000 --private-key "$FUNDED_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to give operator $index balance"
-            exit 1
-        fi
+        # cast s "$public_key" --value 50000000000000000 --private-key "$FUNDED_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+        # if [ $? -ne 0 ]; then
+        #     echo "Error: Failed to give operator $index balance"
+        #     exit 1
+        # fi
+        echo ""
     else
         cast rpc anvil_setBalance $public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
         if [ $? -ne 0 ]; then
@@ -121,19 +122,21 @@ setup_operator() {
 
     echo "Using LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
     echo "Using LST_STRATEGY_ADDRESS: $LST_STRATEGY_ADDRESS"
-    
+
     # TODO: is this write? need proper LST addr setup in the .env file
-    MINT_FUNCTION="submit(address _referral)"
-    cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
-        --private-key "$private_key" \
-        --value 10000000000000000 \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to mint LST for $ADDRESS"
-        exit 1
-    fi
+    # TODO: Need to be able to change the amount we stETH stake relative to their balance. TRight now it hands for me?
+    AMOUNT=10000
+    # MINT_FUNCTION="submit(address _referral)"
+    # cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
+    #     --private-key "$private_key" \
+    #     --value ${AMOUNT} \
+    #     --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+    # if [ $? -ne 0 ]; then
+    #     echo "Error: Failed to mint LST for $ADDRESS"
+    #     exit 1
+    # fi
     cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
-        "$STRATEGY_MANAGER_ADDRESS" 10000000000000000 \
+        "$STRATEGY_MANAGER_ADDRESS" 1000000000000000 \
         --private-key "$private_key" \
         --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -141,7 +144,7 @@ setup_operator() {
         exit 1
     fi
     cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
-        "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" 10000000000000000 \
+        "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" ${AMOUNT} \
         --private-key "$private_key" \
         --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
