@@ -125,18 +125,18 @@ setup_operator() {
 
     # TODO: is this write? need proper LST addr setup in the .env file
     # TODO: Need to be able to change the amount we stETH stake relative to their balance. TRight now it hands for me?
-    AMOUNT=10000
-    # MINT_FUNCTION="submit(address _referral)"
-    # cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
-    #     --private-key "$private_key" \
-    #     --value ${AMOUNT} \
-    #     --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    # if [ $? -ne 0 ]; then
-    #     echo "Error: Failed to mint LST for $ADDRESS"
-    #     exit 1
-    # fi
+    AMOUNT=10000 # TODO: make this a value set via cli args / env variables to override
+    MINT_FUNCTION="submit(address _referral)"
+    cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
+        --private-key "$private_key" \
+        --value ${AMOUNT} \
+        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to mint LST for $ADDRESS"
+        exit 1
+    fi
     cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
-        "$STRATEGY_MANAGER_ADDRESS" 1000000000000000 \
+        "$STRATEGY_MANAGER_ADDRESS" ${AMOUNT} \
         --private-key "$private_key" \
         --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
