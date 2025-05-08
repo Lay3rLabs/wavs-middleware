@@ -37,7 +37,7 @@ echo "Threshold Weight: $THRESHOLD_WEIGHT"
 
 # Get current block height and calculate range
 LATEST_BLOCK=$(cast block-number --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-FROM_BLOCK=$((LATEST_BLOCK - 2000))
+FROM_BLOCK=$((LATEST_BLOCK - 900))
 
 # Get all OperatorRegistered events
 echo -e "\n=== Registered Operators ==="
