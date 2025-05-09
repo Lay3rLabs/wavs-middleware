@@ -1,7 +1,10 @@
 [submodule "contracts/lib/forge-std"]
 	path = contracts/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+	fetchRecurseSubmodules = true
 [submodule "contracts/lib/eigenlayer-middleware"]
 	path = contracts/lib/eigenlayer-middleware
-	url = https://github.com/BreadchainCoop/eigenlayer-middleware
-	branch = dev 
+	url = https://github.com/Lay3rLabs/eigenlayer-middleware
+	# This commit hash (848032a7e22b2e6a2ab7835a45e9b39bb16d41a5) corresponds to tag v1.1.1-testnet-slashing
+	branch = 848032a7e22b2e6a2ab7835a45e9b39bb16d41a5 
+	fetchRecurseSubmodules = true
