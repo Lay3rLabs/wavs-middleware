@@ -90,6 +90,7 @@ setup_operator() {
     local WAVSServiceManagerAddress=$1
     local private_key=$2
     local public_key=$(cast wallet address $private_key)
+    local amount=$3
 
     DEPLOY_FILE="contracts/deployments/eigenlayer-core/$CHAIN_ID.json"
     STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' "$DEPLOY_FILE")
@@ -103,15 +104,31 @@ setup_operator() {
         exit 1
     fi
 
-
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        # TODO: remove this and replace with a check the AVS key has a balance
-        # cast s "$public_key" --value 50000000000000000 --private-key "$FUNDED_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        # if [ $? -ne 0 ]; then
-        #     echo "Error: Failed to give operator $index balance"
-        #     exit 1
-        # fi
-        echo ""
+        # Balance check the operator registering. if they have funds, skip funding
+        balance=$(cast balance "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to get balance for operator $public_key"
+            exit 1
+        fi
+        if [ "$balance" -eq 0 ]; then
+            # Validate the funded_key address has a balance on testnet (i.e. it's not a default anvil private key)
+            funded_key_balance=$(cast balance `cast wallet address "$FUNDED_KEY"` --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+            if [ "$funded_key_balance" -eq 0 ]; then
+                echo "Error: Funded key `cast wallet address $FUNDED_KEY` has no balance, you must fund this first "
+                exit 1
+            fi
+
+
+            cast s "$public_key" --value ${amount} --private-key "$FUNDED_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                echo "Error: Failed to give operator $index balance"
+                exit 1
+            fi
+            echo "Funded operator $public_key with ${amount}"
+        else
+            echo "Operator $public_key already has a balance of $balance"
+        fi
     else
         cast rpc anvil_setBalance $public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
         if [ $? -ne 0 ]; then
@@ -123,20 +140,17 @@ setup_operator() {
     echo "Using LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
     echo "Using LST_STRATEGY_ADDRESS: $LST_STRATEGY_ADDRESS"
 
-    # TODO: is this write? need proper LST addr setup in the .env file
-    # TODO: Need to be able to change the amount we stETH stake relative to their balance. TRight now it hands for me?
-    AMOUNT=10000 # TODO: make this a value set via cli args / env variables to override
     MINT_FUNCTION="submit(address _referral)"
     cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
         --private-key "$private_key" \
-        --value ${AMOUNT} \
+        --value ${amount} \
         --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: Failed to mint LST for $ADDRESS"
         exit 1
     fi
     cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
-        "$STRATEGY_MANAGER_ADDRESS" ${AMOUNT} \
+        "$STRATEGY_MANAGER_ADDRESS" ${amount} \
         --private-key "$private_key" \
         --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -144,7 +158,7 @@ setup_operator() {
         exit 1
     fi
     cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
-        "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" ${AMOUNT} \
+        "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" ${amount} \
         --private-key "$private_key" \
         --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -190,4 +204,8 @@ if [ -z "$1" ]; then
     echo "Error: Pass private AVS Key as first arg"
     exit 1
 fi
-setup_operator "$WAVSServiceManagerAddress" "$1"
+if [ -z "$2" ]; then
+    echo "Error: Pass amount to deposit as second arg (0.001ether for example)"
+    exit 1
+fi
+setup_operator "$WAVSServiceManagerAddress" "$1" "$2"

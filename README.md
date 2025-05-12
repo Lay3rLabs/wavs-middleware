@@ -67,7 +67,7 @@ AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 # This will show the address, so you can confirm it was properly added when listing operators
 cast wallet addr --private-key "$AVS_KEY"
 
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY"
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY" "0.01ether"
 ```
 
 List Operators:
