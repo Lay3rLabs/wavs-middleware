@@ -25,11 +25,16 @@ if [ -z "$LST_STRATEGY_ADDRESS" ]; then
     echo "Error: LST_STRATEGY_ADDRESS is not set in the environment variables."
     exit 1
 fi
-WAVSServiceManagerAddress=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
-if [ -z "$WAVSServiceManagerAddress" ]; then
-    echo "Error: failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
-    exit 1
-fi
+
+# TODO: make this configurable, only works if contract deploy happens on same machine as the operator registering
+# just hardcoding for now to get by
+#
+# WAVSServiceManagerAddress=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
+# if [ -z "$WAVSServiceManagerAddress" ]; then
+#     echo "Error: failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
+#     exit 1
+# fi
+WAVSServiceManagerAddress=0x542ea0be029d35a1bc83f3046dd753dbc74a26fb
 
 # Function to register operator with AVS using cast commands
 register_operator_with_avs() {
@@ -38,16 +43,18 @@ register_operator_with_avs() {
     local public_key=$(cast wallet address $private_key)
 
     echo "Registering operator $public_key with AVS..."
-    local stake_registry_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.stakeRegistry')
-    if [ -z "$stake_registry_address" ]; then
-        echo "Error: Failed to read StakeRegistry from /root/.nodes/avs_deploy.json"
-        exit 1
-    fi
-    local service_manager_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
-    if [ -z "$service_manager_address" ]; then
-        echo "Error: Failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
-        exit 1
-    fi
+    local stake_registry_address=0xed0fb7a47faf224dcc55751d1ad8d91459a22603
+    # local stake_registry_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.stakeRegistry')
+    # if [ -z "$stake_registry_address" ]; then
+    #     echo "Error: Failed to read StakeRegistry from /root/.nodes/avs_deploy.json"
+    #     exit 1
+    # fi
+    local service_manager_address=0x542ea0be029d35a1bc83f3046dd753dbc74a26fb
+    # local service_manager_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
+    # if [ -z "$service_manager_address" ]; then
+    #     echo "Error: Failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
+    #     exit 1
+    # fi
     local avs_directory_address=$(cast call "$service_manager_address" "avsDirectory()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
     if [ -z "$avs_directory_address" ]; then
         echo "Error: Failed to read AVSDirectory from /root/.nodes/avs_deploy.json"
@@ -177,7 +184,7 @@ setup_operator() {
         exit 1
     fi
 
-    # TODO: what is this magic 0x1234 number here? Maybe we want a real variable for it?
+    # 0x1234 is just arbitrary data which we can input for things like DKG, TEE, etc
     allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
     cast s "$allocationManager" \
         "registerForOperatorSets(address,(address,uint32[],bytes))" \
@@ -191,7 +198,7 @@ setup_operator() {
         echo "Error: Failed to register operator $public_key to operator sets"
         exit 1
     fi
-    register_operator_with_avs "$private_key" > /dev/null 2>&1
+    register_operator_with_avs "$private_key"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to register operator $public_key to AVS"
         exit 1
