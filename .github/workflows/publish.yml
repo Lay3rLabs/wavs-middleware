@@ -150,6 +150,6 @@ jobs:
         shell: bash
         run: | 
           export GIT_HASH=$(git rev-parse --short "$GITHUB_SHA")
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.GIT_HASH }}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.GIT_HASH }}
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$GIT_HASH
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$GIT_HASH
 
