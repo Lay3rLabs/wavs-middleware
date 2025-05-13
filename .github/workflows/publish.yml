@@ -7,9 +7,9 @@ on:
     branches:
       - dev
   # You can enable the below to build on each PR push for testing,
-  pull_request:
-    branches:
-      - dev
+  # pull_request:
+  #   branches:
+  #     - dev
 
 env:
   REGISTRY: ghcr.io
@@ -141,9 +141,6 @@ jobs:
 
       - name: Create and push multi-arch manifest
         run: |
-          echo $GITHUB_SHA
-          echo $GITHUB_REF_NAME
-          git rev-parse --short HEAD
           export GIT_HASH=$(git rev-parse --short "$GITHUB_SHA")
           docker buildx imagetools create \
             --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
