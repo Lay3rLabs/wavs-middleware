@@ -34,7 +34,7 @@ fi
 #     echo "Error: failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
 #     exit 1
 # fi
-WAVSServiceManagerAddress=0x542ea0be029d35a1bc83f3046dd753dbc74a26fb
+WAVSServiceManagerAddress=0x49e6463a9b0872c4e56a4018f8c2c5247d4ea914
 
 # Function to register operator with AVS using cast commands
 register_operator_with_avs() {
@@ -43,13 +43,13 @@ register_operator_with_avs() {
     local public_key=$(cast wallet address $private_key)
 
     echo "Registering operator $public_key with AVS..."
-    local stake_registry_address=0xed0fb7a47faf224dcc55751d1ad8d91459a22603
+    local stake_registry_address=0xf1a4420dadf7a962e7a1ae6ee6f3c522b39c9b69
     # local stake_registry_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.stakeRegistry')
     # if [ -z "$stake_registry_address" ]; then
     #     echo "Error: Failed to read StakeRegistry from /root/.nodes/avs_deploy.json"
     #     exit 1
     # fi
-    local service_manager_address=0x542ea0be029d35a1bc83f3046dd753dbc74a26fb
+    local service_manager_address=${WAVSServiceManagerAddress}
     # local service_manager_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
     # if [ -z "$service_manager_address" ]; then
     #     echo "Error: Failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
