@@ -4,5 +4,5 @@
 [submodule "contracts/lib/eigenlayer-middleware"]
 	path = contracts/lib/eigenlayer-middleware
 	url = https://github.com/Lay3rLabs/eigenlayer-middleware
-	# This commit hash (848032a7e22b2e6a2ab7835a45e9b39bb16d41a5) corresponds to tag v1.1.1-testnet-slashing
-	branch = 848032a7e22b2e6a2ab7835a45e9b39bb16d41a5 
+	# This commit hash (4d63f27247587607beb67f96fdabec4b2c1321ef) corresponds to tag v1.4.0-testnet-holesky
+	branch = 4d63f27247587607beb67f96fdabec4b2c1321ef 
