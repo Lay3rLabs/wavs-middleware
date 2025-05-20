@@ -161,31 +161,36 @@ setup_operator() {
         exit 1
     fi
 
-
-    cast send "$DELEGATION_MANAGER_ADDRESS" \
-        "registerAsOperator(address,uint32,string)" \
-        "$public_key" 0 "foo.bar" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to register as operator for $DELEGATION_MANAGER_ADDRESS"
-        exit 1
-    fi
-
-    # 0x1234 is just arbitrary data which we can input for things like DKG, TEE, etc
     allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
-    cast s "$allocationManager" \
-        "registerForOperatorSets(address,(address,uint32[],bytes))" \
-        "$public_key" \
-        "($WAVSServiceManagerAddress,[1],0x1234)" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        echo "Successfully registered operator $public_key to operator sets [1]"
-    else
-        echo "Error: Failed to register operator $public_key to operator sets"
-        exit 1
+
+    # You can not double register an operator. If they are already registered, skip this step.
+    isDelegated=`cast call "${DELEGATION_MANAGER_ADDRESS}" "isDelegated(address)(bool)" "${public_key}"`
+    if [ "$isDelegated" = "false" ]; then
+        cast send "$DELEGATION_MANAGER_ADDRESS" \
+            "registerAsOperator(address,uint32,string)" \
+            "$public_key" 0 "foo.bar" \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to register as operator for $DELEGATION_MANAGER_ADDRESS"
+            exit 1
+        fi
+
+        # 0x1234 is just arbitrary data which we can input for things like DKG, TEE, etc
+        cast s "$allocationManager" \
+            "registerForOperatorSets(address,(address,uint32[],bytes))" \
+            "$public_key" \
+            "($WAVSServiceManagerAddress,[1],0x1234)" \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            echo "Successfully registered operator $public_key to operator sets [1]"
+        else
+            echo "Error: Failed to register operator $public_key to operator sets"
+            exit 1
+        fi
     fi
+
     register_operator_with_avs "$private_key"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to register operator $public_key to AVS"
