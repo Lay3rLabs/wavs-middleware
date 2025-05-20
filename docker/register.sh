@@ -26,15 +26,14 @@ if [ -z "$LST_STRATEGY_ADDRESS" ]; then
     exit 1
 fi
 
-# TODO: make this configurable, only works if contract deploy happens on same machine as the operator registering
-# just hardcoding for now to get by
-#
-# WAVSServiceManagerAddress=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
-# if [ -z "$WAVSServiceManagerAddress" ]; then
-#     echo "Error: failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
-#     exit 1
-# fi
-WAVSServiceManagerAddress=0x49e6463a9b0872c4e56a4018f8c2c5247d4ea914
+if [ -z "$WAVSServiceManagerAddress" ]; then
+    echo "Error: WAVSServiceManagerAddress is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
+    exit 1
+fi
+if [ -z "$StakeRegistryAddress" ]; then
+    echo "Error: StakeRegistryAddress is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
+    exit 1
+fi
 
 # Function to register operator with AVS using cast commands
 register_operator_with_avs() {
@@ -43,21 +42,10 @@ register_operator_with_avs() {
     local public_key=$(cast wallet address $private_key)
 
     echo "Registering operator $public_key with AVS..."
-    local stake_registry_address=0xf1a4420dadf7a962e7a1ae6ee6f3c522b39c9b69
-    # local stake_registry_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.stakeRegistry')
-    # if [ -z "$stake_registry_address" ]; then
-    #     echo "Error: Failed to read StakeRegistry from /root/.nodes/avs_deploy.json"
-    #     exit 1
-    # fi
-    local service_manager_address=${WAVSServiceManagerAddress}
-    # local service_manager_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
-    # if [ -z "$service_manager_address" ]; then
-    #     echo "Error: Failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
-    #     exit 1
-    # fi
-    local avs_directory_address=$(cast call "$service_manager_address" "avsDirectory()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+
+    local avs_directory_address=$(cast call "${WAVSServiceManagerAddress}" "avsDirectory()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
     if [ -z "$avs_directory_address" ]; then
-        echo "Error: Failed to read AVSDirectory from /root/.nodes/avs_deploy.json"
+        echo "Error: Failed to get AVSDirectory from ${WAVSServiceManagerAddress} avsDirectory()"
         exit 1
     fi
     # Generate a random salt (32 bytes)
@@ -66,7 +54,7 @@ register_operator_with_avs() {
     # Calculate expiry (current time + 1 hour)
     local expiry=$(($(date +%s) + 3600))
 
-    local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$service_manager_address" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$WAVSServiceManagerAddress" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     # Remove 0x prefix from digest hash if present
     digest_hash=${digest_hash#0x}
     # Sign the digest hash with the private key
@@ -74,13 +62,13 @@ register_operator_with_avs() {
 
     # Register the operator with the signature
     echo "Registering operator with signature..."
-    cast c --trace "$stake_registry_address" \
+    cast c --trace "$StakeRegistryAddress" \
         "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
         "($signature,$salt,$expiry)" "$public_key" \
         --private-key "$private_key" \
         --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
 
-    cast send "$stake_registry_address" \
+    cast send "$StakeRegistryAddress" \
         "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
         "($signature,$salt,$expiry)" "$public_key" \
         --private-key "$private_key" \
