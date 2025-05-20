@@ -113,15 +113,15 @@ setup_operator() {
             exit 1
         fi
         if [ "$balance" -eq 0 ]; then
-            # Validate the funded_key address has a balance on testnet (i.e. it's not a default anvil private key)
-            funded_key_balance=$(cast balance `cast wallet address "$FUNDED_KEY"` --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-            if [ "$funded_key_balance" -eq 0 ]; then
-                echo "Error: Funded key `cast wallet address $FUNDED_KEY` has no balance, you must fund this first "
+            # Validate the PRIVATE_KEY address has a balance on testnet (i.e. it's not a default anvil private key)
+            PRIVATE_KEY_balance=$(cast balance `cast wallet address "$PRIVATE_KEY"` --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+            if [ "$PRIVATE_KEY_balance" -eq 0 ]; then
+                echo "Error: Funded key `cast wallet address $PRIVATE_KEY` has no balance, you must fund this first "
                 exit 1
             fi
 
 
-            cast s "$public_key" --value ${amount} --private-key "$FUNDED_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+            cast s "$public_key" --value ${amount} --private-key "$PRIVATE_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
             if [ $? -ne 0 ]; then
                 echo "Error: Failed to give operator $index balance"
                 exit 1
