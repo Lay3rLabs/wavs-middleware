@@ -79,7 +79,7 @@ docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entryp
 
 ## Deploy Testnet
 
-Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"` and make sure the `PRIVATE_KEY` is actually funded on testnet
+Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"` and make sure the `FUNDED_KEY` is actually funded on testnet
 
 ## References
 

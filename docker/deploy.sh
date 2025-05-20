@@ -37,9 +37,8 @@ if [ -z "$METADATA_URI" ]; then
     exit 1
 fi
 
-# Check if PRIVATE_KEY is provided
-if [ -z "$PRIVATE_KEY" ]; then
-    echo "Error: PRIVATE_KEY environment variable must be set"
+if [ -z "$FUNDED_KEY" ]; then
+    echo "Error: FUNDED_KEY environment variable must be set"
     exit 1
 fi
 
@@ -74,7 +73,7 @@ create_operator_set() {
           "cast s '$WavsServiceManagerAddress' \
              'createOperatorSets((uint32,address[])[])' \
              '[($set_id,[$LST_STRATEGY_ADDRESS])]' \
-             --private-key '$PRIVATE_KEY' \
+             --private-key '$FUNDED_KEY' \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "created operator set $set_id with 1 strategy" \
@@ -100,7 +99,7 @@ update_avs_registrar() {
           "cast s '$WavsServiceManagerAddress' \
              'setAVSRegistrar(address)' \
              '$avsRegistrarAddress' \
-             --private-key '$PRIVATE_KEY' \
+             --private-key '$FUNDED_KEY' \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "set up the AVSRegistrar through WavsServiceManager" \
@@ -144,7 +143,7 @@ update_metadata_url() {
       execute_transaction "updated AVS metadata URI" \
         "cast s '$serviceManagerAddress' 'updateAVSMetadataURI(string)' \
          '$METADATA_URI' \
-         --private-key '$PRIVATE_KEY' \
+         --private-key '$FUNDED_KEY' \
          --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
   else
       execute_transaction "updated AVS metadata URI" \
@@ -169,7 +168,7 @@ update_quorum_config() {
              'updateQuorumConfig(((address,uint96)[]),address[])' \
              '([$combined_strategies])' \
              '[]' \
-             --private-key '$PRIVATE_KEY' \
+             --private-key '$FUNDED_KEY' \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "update quorum config" \
@@ -202,7 +201,7 @@ update_minimum_weight() {
              'updateMinimumWeight(uint256,address[])' \
              '$minimumWeight' \
              '[]' \
-             --private-key '$PRIVATE_KEY' \
+             --private-key '$FUNDED_KEY' \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     else
         execute_transaction "update minimum weight" \
@@ -228,7 +227,7 @@ deploy_consumer_contract() {
     offchainMessageConsumerAddress=$(
         forge create --json \
           -r "$LOCAL_ETHEREUM_RPC_URL" \
-          --private-key "$PRIVATE_KEY" \
+          --private-key "$FUNDED_KEY" \
           --broadcast src/example-contracts/OffchainMessageConsumer.sol:OffchainMessageConsumer \
           --constructor-args "$stakeRegistryAddress" \
         | jq -r '.deployedTo'
@@ -253,9 +252,11 @@ deploy_consumer_contract() {
 #############################################
 
 mkdir -p ~/.nodes
-deployer_public_key=$(cast wallet address "$PRIVATE_KEY")
-echo "PRIVATE_KEY=$PRIVATE_KEY" >> contracts/.env
-echo "$PRIVATE_KEY" > ~/.nodes/deployer
+deployer_public_key=$(cast wallet address "$FUNDED_KEY")
+SP=""; if [ "$(uname)" == *"Darwin"* ]; then SP=" "; fi
+sed -i${SP}'' -e "s/^PRIVATE_KEY=.*$/PRIVATE_KEY=$FUNDED_KEY/" contracts/.env
+echo "$FUNDED_KEY" > ~/.nodes/deployer
+# source contracts/.env
 
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
@@ -296,7 +297,20 @@ fi
 
 echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
 
-cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $PRIVATE_KEY --broadcast # /dev/null 2>&1
+FUNDED_KEY_ADDRESS=$(cast wallet address "$FUNDED_KEY")
+FUNDED_KEY_BAL=$(cast balance ${FUNDED_KEY_ADDRESS} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+while true; do
+    if [ "$FUNDED_KEY_BAL" -gt 0 ]; then
+        echo "FUNDED_KEY has a balance of $FUNDED_KEY_BAL"
+        break
+    else
+        echo "Waiting for FUNDED_KEY ${FUNDED_KEY_ADDRESS} to have a balance..."
+        sleep 5
+        FUNDED_KEY_BAL=$(cast balance ${FUNDED_KEY_ADDRESS} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    fi
+done
+
+cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol -vvvvv --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast # /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run middleware deployment script"
     exit 1
