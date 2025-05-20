@@ -62,9 +62,8 @@ register_operator_with_avs() {
 
     local operatorRegistered=$(cast call "$StakeRegistryAddress" "operatorRegistered(address)(bool)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     if [ "$operatorRegistered" = "false" ]; then
-        # Register the operator with the signature
         echo "Registering operator with signature..."
-        cast c --trace "$StakeRegistryAddress" \
+        cast c "$StakeRegistryAddress" \
             "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
             "($signature,$salt,$expiry)" "$public_key" \
             --private-key "$private_key" \
@@ -141,33 +140,54 @@ setup_operator() {
     echo "Using LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
     echo "Using LST_STRATEGY_ADDRESS: $LST_STRATEGY_ADDRESS"
 
-    MINT_FUNCTION="submit(address _referral)"
-    cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
-        --private-key "$private_key" \
-        --value ${amount} \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+    LST_BALANCE=$(cast call "$LST_CONTRACT_ADDRESS" "balanceOf(address)(uint256)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     if [ $? -ne 0 ]; then
-        echo "Error: Failed to mint LST for $ADDRESS"
+        echo "Error: Failed to get LST balance for operator $public_key"
         exit 1
     fi
-    cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
-        "$STRATEGY_MANAGER_ADDRESS" ${amount} \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to approve LST for $STRATEGY_MANAGER_ADDRESS"
-        exit 1
-    fi
-    cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
-        "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" ${amount} \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to deposit into strategy for $LST_STRATEGY_ADDRESS"
-        exit 1
+    if [ "$LST_BALANCE" -ne 0 ]; then
+        echo "Operator $public_key already has LST balance of $LST_BALANCE"
+
+        CURRENT_FUNDS=$(cast balance "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to get balance for operator $public_key"
+            exit 1
+        fi
+        if [ "$CURRENT_FUNDS" -lt "$amount" ]; then
+            echo "Error: Operator $public_key does not have enough funds to deposit ${amount}, only ${CURRENT_FUNDS}. Send some funds to the operator address."
+            exit 1
+        fi
+    else
+        cast send "$LST_CONTRACT_ADDRESS" "submit(address _referral)" "$public_key" "0x0000000000000000000000000000000000000000" \
+            --private-key "$private_key" \
+            --value ${amount} \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to mint LST for $ADDRESS"
+            exit 1
+        fi
+        cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
+            "$STRATEGY_MANAGER_ADDRESS" ${amount} \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to approve LST for $STRATEGY_MANAGER_ADDRESS"
+            exit 1
+        fi
     fi
 
-    allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+    NUM_DEPOSIT=`cast call "$STRATEGY_MANAGER_ADDRESS" "stakerStrategyListLength(address)(uint256)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"`
+    if [ "$NUM_DEPOSIT" -eq 0 ]; then
+        echo "Operator $public_key has no deposits, creating a new deposit"
+        cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
+            "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" ${amount} \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to deposit into strategy for $LST_STRATEGY_ADDRESS"
+            exit 1
+        fi
+    fi
 
     # You can not double register an operator. If they are already registered, skip this step.
     isDelegated=`cast call "${DELEGATION_MANAGER_ADDRESS}" "isDelegated(address)(bool)" "${public_key}" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"`
@@ -181,6 +201,8 @@ setup_operator() {
             echo "Error: Failed to register as operator for $DELEGATION_MANAGER_ADDRESS"
             exit 1
         fi
+
+        allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
         # 0x1234 is just arbitrary data which we can input for things like DKG, TEE, etc
         cast s "$allocationManager" \
