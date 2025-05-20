@@ -112,20 +112,12 @@ setup_operator() {
             exit 1
         fi
         if [ "$balance" -eq 0 ]; then
-            # Validate the PRIVATE_KEY address has a balance on testnet (i.e. it's not a default anvil private key)
-            PRIVATE_KEY_balance=$(cast balance `cast wallet address "$PRIVATE_KEY"` --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-            if [ "$PRIVATE_KEY_balance" -eq 0 ]; then
-                echo "Error: Funded key `cast wallet address $PRIVATE_KEY` has no balance, you must fund this first "
+            # Validate the address has a balance on testnet
+            balance=$(cast balance "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+            if [ "$balance" -eq 0 ]; then
+                echo "Error: Funded key ${public_key} has no balance, you must fund this first with >= ${amount}"
                 exit 1
             fi
-
-
-            cast s "$public_key" --value ${amount} --private-key "$PRIVATE_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                echo "Error: Failed to give operator $index balance"
-                exit 1
-            fi
-            echo "Funded operator $public_key with ${amount}"
         else
             echo "Operator $public_key already has a balance of $balance"
         fi
@@ -145,19 +137,8 @@ setup_operator() {
         echo "Error: Failed to get LST balance for operator $public_key"
         exit 1
     fi
-    if [ "$LST_BALANCE" -ne 0 ]; then
-        echo "Operator $public_key already has LST balance of $LST_BALANCE"
 
-        CURRENT_FUNDS=$(cast balance "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to get balance for operator $public_key"
-            exit 1
-        fi
-        if [ "$CURRENT_FUNDS" -lt "$amount" ]; then
-            echo "Error: Operator $public_key does not have enough funds to deposit ${amount}, only ${CURRENT_FUNDS}. Send some funds to the operator address."
-            exit 1
-        fi
-    else
+    if [ "$LST_BALANCE" -eq 0 ]; then
         cast send "$LST_CONTRACT_ADDRESS" "submit(address _referral)" "$public_key" "0x0000000000000000000000000000000000000000" \
             --private-key "$private_key" \
             --value ${amount} \
@@ -166,6 +147,7 @@ setup_operator() {
             echo "Error: Failed to mint LST for $ADDRESS"
             exit 1
         fi
+
         cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
             "$STRATEGY_MANAGER_ADDRESS" ${amount} \
             --private-key "$private_key" \
@@ -174,6 +156,8 @@ setup_operator() {
             echo "Error: Failed to approve LST for $STRATEGY_MANAGER_ADDRESS"
             exit 1
         fi
+    else
+        echo "Operator $public_key already has LST balance of $LST_BALANCE"
     fi
 
     NUM_DEPOSIT=`cast call "$STRATEGY_MANAGER_ADDRESS" "stakerStrategyListLength(address)(uint256)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"`
