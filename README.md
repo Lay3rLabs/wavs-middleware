@@ -77,6 +77,18 @@ List Operators:
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/list_operator.sh wavs-middleware
 ```
 
+Pause Registration:
+
+```bash
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/pause.sh wavs-middleware
+```
+
+Unpause Registration:
+
+```bash
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/unpause.sh wavs-middleware
+```
+
 ## Deploy Testnet
 
 Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"` and make sure the `FUNDED_KEY` is actually funded on testnet
