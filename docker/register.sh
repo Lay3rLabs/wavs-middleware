@@ -170,7 +170,7 @@ setup_operator() {
     allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
     # You can not double register an operator. If they are already registered, skip this step.
-    isDelegated=`cast call "${DELEGATION_MANAGER_ADDRESS}" "isDelegated(address)(bool)" "${public_key}"`
+    isDelegated=`cast call "${DELEGATION_MANAGER_ADDRESS}" "isDelegated(address)(bool)" "${public_key}" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"`
     if [ "$isDelegated" = "false" ]; then
         cast send "$DELEGATION_MANAGER_ADDRESS" \
             "registerAsOperator(address,uint32,string)" \
