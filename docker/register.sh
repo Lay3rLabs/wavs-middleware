@@ -60,24 +60,30 @@ register_operator_with_avs() {
     # Sign the digest hash with the private key
     local signature=$(cast wallet sign $digest_hash --no-hash --private-key "$private_key")
 
-    # Register the operator with the signature
-    echo "Registering operator with signature..."
-    cast c --trace "$StakeRegistryAddress" \
-        "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
-        "($signature,$salt,$expiry)" "$public_key" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
+    local operatorRegistered=$(cast call "$StakeRegistryAddress" "operatorRegistered(address)(bool)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    if [ "$operatorRegistered" = "false" ]; then
+        # Register the operator with the signature
+        echo "Registering operator with signature..."
+        cast c --trace "$StakeRegistryAddress" \
+            "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
+            "($signature,$salt,$expiry)" "$public_key" \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
 
-    cast send "$StakeRegistryAddress" \
-        "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
-        "($signature,$salt,$expiry)" "$public_key" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL"
-    if [ $? -eq 0 ]; then
-        echo "Successfully registered operator $public_key with AVS"
+        cast send "$StakeRegistryAddress" \
+            "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
+            "($signature,$salt,$expiry)" "$public_key" \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"
+        if [ $? -eq 0 ]; then
+            echo "Successfully registered operator $public_key with AVS"
+        else
+            echo "Error: Failed to register operator with AVS"
+            exit 1
+        fi
     else
-        echo "Error: Failed to register operator with AVS"
-        exit 1
+        echo "Operator $public_key is already registered with AVS"
+        return 0
     fi
 }
 
@@ -196,7 +202,6 @@ setup_operator() {
         echo "Error: Failed to register operator $public_key to AVS"
         exit 1
     fi
-    echo "Successfully registered operator $public_key to AVS"
 
 }
 
