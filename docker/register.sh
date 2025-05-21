@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -x echos all lines for debug
-set -x
+# set -x
 
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
@@ -105,19 +105,14 @@ setup_operator() {
     fi
 
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        # Balance check the operator registering. if they have funds, skip funding
         balance=$(cast balance "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
         if [ $? -ne 0 ]; then
             echo "Error: Failed to get balance for operator $public_key"
             exit 1
         fi
         if [ "$balance" -eq 0 ]; then
-            # Validate the address has a balance on testnet
-            balance=$(cast balance "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-            if [ "$balance" -eq 0 ]; then
-                echo "Error: Funded key ${public_key} has no balance, you must fund this first with > ${amount}"
-                exit 1
-            fi
+            echo "Error: Funded key ${public_key} has no balance, you must fund this first with > ${amount}"
+            exit 1
         else
             echo "Operator $public_key already has a balance of $balance"
         fi
@@ -160,7 +155,6 @@ setup_operator() {
             echo "Operator $public_key already has LST balance of $LST_BALANCE"
         fi
 
-        # We need to approve the LST balance for the strategy manager
         cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
             "$STRATEGY_MANAGER_ADDRESS" "${amount}" \
             --private-key "$private_key" \

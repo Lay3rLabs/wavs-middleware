@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -x echos all lines for debug
-set -x
+# set -x
 
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
@@ -253,10 +253,8 @@ deploy_consumer_contract() {
 
 mkdir -p ~/.nodes
 deployer_public_key=$(cast wallet address "$FUNDED_KEY")
-SP=""; if [ "$(uname)" == *"Darwin"* ]; then SP=" "; fi
-sed -i${SP}'' -e "s/^PRIVATE_KEY=.*$/PRIVATE_KEY=$FUNDED_KEY/" contracts/.env
+echo "PRIVATE_KEY=$FUNDED_KEY" >> contracts/.env
 echo "$FUNDED_KEY" > ~/.nodes/deployer
-# source contracts/.env
 
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
