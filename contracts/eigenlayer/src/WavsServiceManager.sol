@@ -24,7 +24,11 @@ import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
  */
 contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     using ECDSAUpgradeable for bytes32;
+
     string public serviceURI;
+    uint256 public quorumNumerator = 2;
+    uint256 public quorumDenominator = 3;
+
     constructor(
         address _avsDirectory,
         address _stakeRegistry,
@@ -224,20 +228,48 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
      * @param totalWeight The total weight of all operators
      * @dev Requires at least 2/3 of the total weight to have signed
      */
+    /**
+     * @notice Validates that sufficient quorum has been reached
+     * @param signedWeight The total weight of operators who signed
+     * @param totalWeight The total weight of all operators
+     * @dev Requires at least quorumNumerator/quorumDenominator of the total weight to have signed
+     */
     function _validateQuorumSigned(
         uint256 signedWeight,
         uint256 totalWeight
-    ) internal pure {
+    ) internal view {
         // Avoid 0 weight ever passing this check
         if (totalWeight == 0) {
             revert IWavsServiceManager.InsufficientQuorum();
         }
         
-        // Check if signedWeight >= (2/3) * totalWeight
-        // Multiply both sides by 3 to avoid floating point: signedWeight * 3 >= totalWeight * 2
-        if (signedWeight * 3 < totalWeight * 2) {
+        // Check if signedWeight >= (quorumNumerator/quorumDenominator) * totalWeight
+        // Multiply both sides by quorumDenominator to avoid floating point:
+        // signedWeight * quorumDenominator >= totalWeight * quorumNumerator
+        if (signedWeight * quorumDenominator < totalWeight * quorumNumerator) {
             revert IWavsServiceManager.InsufficientQuorum();
         }
+    }
+    
+    /**
+     * @notice Sets a new quorum threshold for signature validation
+     * @param numerator The numerator of the quorum fraction
+     * @param denominator The denominator of the quorum fraction
+     * @dev The fraction numerator/denominator represents the minimum portion of stake
+     *      required for a valid signature (e.g., 2/3 or 51/100)
+     */
+    function setQuorumThreshold(uint256 numerator, uint256 denominator) external onlyOwner {
+        if (denominator == 0) {
+            revert IWavsServiceManager.InvalidQuorumParameters();
+        }
+        if (numerator > denominator) {
+            revert IWavsServiceManager.InvalidQuorumParameters();
+        }
+        
+        quorumNumerator = numerator;
+        quorumDenominator = denominator;
+        
+        emit QuorumThresholdUpdated(numerator, denominator);
     }
 
     /// @inheritdoc IWavsServiceManager
