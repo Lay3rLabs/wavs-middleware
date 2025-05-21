@@ -162,21 +162,81 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         return serviceURI;
     }
 
-    function validate(IWavsServiceHandler.Envelope calldata envelope, IWavsServiceHandler.SignatureData calldata signatureData) external view
-    {
+    /**
+     * @notice Validates an envelope with its associated signatures
+     * @param envelope The envelope containing the data to validate
+     * @param signatureData The signature data including operators, signatures, and reference block
+     * @dev Performs two validations:
+     *      1. Signature validity through ECDSAStakeRegistry
+     *      2. Quorum check to ensure sufficient stake weight signed (2/3 threshold)
+     */
+    function validate(
+        IWavsServiceHandler.Envelope calldata envelope, 
+        IWavsServiceHandler.SignatureData calldata signatureData
+    ) external view {
+        // Input validation
+        if (signatureData.operators.length == 0 || signatureData.operators.length != signatureData.signatures.length) {
+            revert IWavsServiceManager.InvalidSignature();
+        }
+        if (signatureData.referenceBlock >= block.number) {
+            revert IWavsServiceManager.InvalidSignature();
+        }
+
+        // Create message hash
         bytes32 message = keccak256(abi.encode(envelope));
         bytes32 ethSignedMessageHash = ECDSAUpgradeable.toEthSignedMessageHash(message);
+        
+        // Validate signatures through the stake registry
         bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
-
-        bytes memory signatureDataBytes = abi.encode(signatureData.operators, signatureData.signatures, signatureData.referenceBlock);
-        // If the registry returns the magicValue, signature is considered valid
-        if( magicValue !=
-            ECDSAStakeRegistry(stakeRegistry).isValidSignature(
-                ethSignedMessageHash,
-                signatureDataBytes
-            )
-        ) {
+        bytes memory signatureDataBytes = abi.encode(
+            signatureData.operators, 
+            signatureData.signatures, 
+            signatureData.referenceBlock
+        );
+        
+        // Check signature validity
+        if (magicValue != ECDSAStakeRegistry(stakeRegistry).isValidSignature(
+            ethSignedMessageHash,
+            signatureDataBytes
+        )) {
             revert IWavsServiceManager.InvalidSignature();
+        }
+
+        // Calculate the total weight of the operators that signed
+        ECDSAStakeRegistry registry = ECDSAStakeRegistry(stakeRegistry);
+        uint256 signedWeight = 0;
+        for (uint256 i = 0; i < signatureData.operators.length; i++) {
+            signedWeight += registry.getOperatorWeightAtBlock(
+                signatureData.operators[i], 
+                signatureData.referenceBlock
+            );
+        }
+        
+        uint256 totalWeight = registry.getLastCheckpointTotalWeightAtBlock(signatureData.referenceBlock);
+        
+        // Ensure sufficient quorum was reached
+        _validateQuorumSigned(signedWeight, totalWeight);
+    }
+
+    /**
+     * @notice Validates that sufficient quorum has been reached
+     * @param signedWeight The total weight of operators who signed
+     * @param totalWeight The total weight of all operators
+     * @dev Requires at least 2/3 of the total weight to have signed
+     */
+    function _validateQuorumSigned(
+        uint256 signedWeight,
+        uint256 totalWeight
+    ) internal pure {
+        // Avoid 0 weight ever passing this check
+        if (totalWeight == 0) {
+            revert IWavsServiceManager.InsufficientQuorum();
+        }
+        
+        // Check if signedWeight >= (2/3) * totalWeight
+        // Multiply both sides by 3 to avoid floating point: signedWeight * 3 >= totalWeight * 2
+        if (signedWeight * 3 < totalWeight * 2) {
+            revert IWavsServiceManager.InsufficientQuorum();
         }
     }
 

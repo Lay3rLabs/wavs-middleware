@@ -9,6 +9,7 @@ interface IWavsServiceManager {
     // Custom Errors
     // ------------------------------------------------------------------------
     error InvalidSignature();
+    error InsufficientQuorum();
     event ServiceURIUpdated(string serviceURI);
 
     // ------------------------------------------------------------------------
