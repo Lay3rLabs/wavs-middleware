@@ -299,18 +299,21 @@ echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environm
 
 FUNDED_KEY_ADDRESS=$(cast wallet address "$FUNDED_KEY")
 FUNDED_KEY_BAL=$(cast balance ${FUNDED_KEY_ADDRESS} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-while true; do
-    if [ "$FUNDED_KEY_BAL" -gt 0 ]; then
-        echo "FUNDED_KEY has a balance of $FUNDED_KEY_BAL"
-        break
+while [ "$FUNDED_KEY_BAL" = "0" ]; do
+    if [ "$DEPLOY_ENV" = "LOCAL" ]; then
+        cast rpc anvil_setBalance $FUNDED_KEY_ADDRESS 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to set balance for FUNDED_KEY"
+            exit 1
+        fi
     else
-        echo "Waiting for FUNDED_KEY ${FUNDED_KEY_ADDRESS} to have a balance..."
+        echo "Waiting for FUNDED_KEY ${FUNDED_KEY_ADDRESS} to have a balance. Current ${FUNDED_KEY_BAL}..."
         sleep 5
         FUNDED_KEY_BAL=$(cast balance ${FUNDED_KEY_ADDRESS} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     fi
 done
 
-cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol -vvvvv --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast # /dev/null 2>&1
+cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast # /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run middleware deployment script"
     exit 1
