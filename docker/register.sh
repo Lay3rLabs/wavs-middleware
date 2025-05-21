@@ -115,7 +115,7 @@ setup_operator() {
             # Validate the address has a balance on testnet
             balance=$(cast balance "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
             if [ "$balance" -eq 0 ]; then
-                echo "Error: Funded key ${public_key} has no balance, you must fund this first with >= ${amount}"
+                echo "Error: Funded key ${public_key} has no balance, you must fund this first with > ${amount}"
                 exit 1
             fi
         else
@@ -132,36 +132,45 @@ setup_operator() {
     echo "Using LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
     echo "Using LST_STRATEGY_ADDRESS: $LST_STRATEGY_ADDRESS"
 
-    LST_BALANCE=$(cast call "$LST_CONTRACT_ADDRESS" "balanceOf(address)(uint256)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to get LST balance for operator $public_key"
-        exit 1
-    fi
+    NUM_DEPOSIT=$(cast call "$STRATEGY_MANAGER_ADDRESS" "stakerStrategyListLength(address)(uint256)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
-    if [ "$LST_BALANCE" -eq 0 ]; then
-        cast send "$LST_CONTRACT_ADDRESS" "submit(address _referral)" "$public_key" "0x0000000000000000000000000000000000000000" \
-            --private-key "$private_key" \
-            --value ${amount} \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+    # If the operator has deposits, we don't need to do anything
+    if [ "$NUM_DEPOSIT" -gt 0 ]; then
+        echo "Operator $public_key already has deposits, skipping LST operations"
+    else
+        # Check if operator already has LST balance
+        LST_BALANCE=$(cast call "$LST_CONTRACT_ADDRESS" "balanceOf(address)(uint256)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
         if [ $? -ne 0 ]; then
-            echo "Error: Failed to mint LST for $ADDRESS"
+            echo "Error: Failed to get LST balance for operator $public_key"
             exit 1
         fi
 
+        # Only mint LSTs if operator has no balance
+        if [ "$LST_BALANCE" -eq 0 ]; then
+            echo "Operator $public_key has no LST balance, minting new tokens"
+            cast send "$LST_CONTRACT_ADDRESS" "submit(address _referral)" "$public_key" "0x0000000000000000000000000000000000000000" \
+                --private-key "$private_key" \
+                --value "${amount}" \
+                --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                echo "Error: Failed to mint LST for $ADDRESS"
+                exit 1
+            fi
+        else
+            echo "Operator $public_key already has LST balance of $LST_BALANCE"
+        fi
+
+        # We need to approve the LST balance for the strategy manager
         cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
-            "$STRATEGY_MANAGER_ADDRESS" ${amount} \
+            "$STRATEGY_MANAGER_ADDRESS" "${amount}" \
             --private-key "$private_key" \
             --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             echo "Error: Failed to approve LST for $STRATEGY_MANAGER_ADDRESS"
             exit 1
         fi
-    else
-        echo "Operator $public_key already has LST balance of $LST_BALANCE"
-    fi
 
-    NUM_DEPOSIT=`cast call "$STRATEGY_MANAGER_ADDRESS" "stakerStrategyListLength(address)(uint256)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"`
-    if [ "$NUM_DEPOSIT" -eq 0 ]; then
+        # Create a new deposit with the LSTs since we confirmed NUM_DEPOSIT is 0
         echo "Operator $public_key has no deposits, creating a new deposit"
         cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
             "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" ${amount} \
@@ -181,10 +190,6 @@ setup_operator() {
             "$public_key" 0 "foo.bar" \
             --private-key "$private_key" \
             --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to register as operator for $DELEGATION_MANAGER_ADDRESS"
-            exit 1
-        fi
 
         allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
