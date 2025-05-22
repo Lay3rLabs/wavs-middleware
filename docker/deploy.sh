@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -x echos all lines for debug
-set -x
+# set -x
 
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
