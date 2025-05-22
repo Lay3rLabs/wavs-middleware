@@ -244,9 +244,8 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         }
         
         // Check if signedWeight >= (quorumNumerator/quorumDenominator) * totalWeight
-        // Multiply both sides by quorumDenominator to avoid floating point:
-        // signedWeight * quorumDenominator >= totalWeight * quorumNumerator
-        if (signedWeight * quorumDenominator < totalWeight * quorumNumerator) {
+        // This is equivalent but only using division to avoid any potential overflow
+        if (signedWeight / quorumNumerator < totalWeight / quorumDenominator) {
             revert IWavsServiceManager.InsufficientQuorum();
         }
     }
@@ -259,6 +258,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
      *      required for a valid signature (e.g., 2/3 or 51/100)
      */
     function setQuorumThreshold(uint256 numerator, uint256 denominator) external onlyOwner {
+        if (numerator == 0) {
+            revert IWavsServiceManager.InvalidQuorumParameters();
+        }
         if (denominator == 0) {
             revert IWavsServiceManager.InvalidQuorumParameters();
         }
