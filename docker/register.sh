@@ -26,12 +26,12 @@ if [ -z "$LST_STRATEGY_ADDRESS" ]; then
     exit 1
 fi
 
-if [ -z "$WAVSServiceManagerAddress" ]; then
-    echo "Error: WAVSServiceManagerAddress is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
+if [ -z "$WAVS_SERVICE_MANAGER_ADDRESS" ]; then
+    echo "Error: WAVS_SERVICE_MANAGER_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
     exit 1
 fi
-if [ -z "$StakeRegistryAddress" ]; then
-    echo "Error: StakeRegistryAddress is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
+if [ -z "$STAKE_REGISTRY_ADDRESS" ]; then
+    echo "Error: STAKE_REGISTRY_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
     exit 1
 fi
 
@@ -43,9 +43,9 @@ register_operator_with_avs() {
 
     echo "Registering operator $public_key with AVS..."
 
-    local avs_directory_address=$(cast call "${WAVSServiceManagerAddress}" "avsDirectory()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+    local avs_directory_address=$(cast call "${WAVS_SERVICE_MANAGER_ADDRESS}" "avsDirectory()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
     if [ -z "$avs_directory_address" ]; then
-        echo "Error: Failed to get AVSDirectory from ${WAVSServiceManagerAddress} avsDirectory()"
+        echo "Error: Failed to get AVSDirectory from ${WAVS_SERVICE_MANAGER_ADDRESS} avsDirectory()"
         exit 1
     fi
     # Generate a random salt (32 bytes)
@@ -54,22 +54,22 @@ register_operator_with_avs() {
     # Calculate expiry (current time + 1 hour)
     local expiry=$(($(date +%s) + 3600))
 
-    local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$WAVSServiceManagerAddress" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$WAVS_SERVICE_MANAGER_ADDRESS" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     # Remove 0x prefix from digest hash if present
     digest_hash=${digest_hash#0x}
     # Sign the digest hash with the private key
     local signature=$(cast wallet sign $digest_hash --no-hash --private-key "$private_key")
 
-    local operatorRegistered=$(cast call "$StakeRegistryAddress" "operatorRegistered(address)(bool)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    local operatorRegistered=$(cast call "$STAKE_REGISTRY_ADDRESS" "operatorRegistered(address)(bool)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     if [ "$operatorRegistered" = "false" ]; then
         echo "Registering operator with signature..."
-        cast c "$StakeRegistryAddress" \
+        cast c "$STAKE_REGISTRY_ADDRESS" \
             "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
             "($signature,$salt,$expiry)" "$public_key" \
             --private-key "$private_key" \
             --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
 
-        cast send "$StakeRegistryAddress" \
+        cast send "$STAKE_REGISTRY_ADDRESS" \
             "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
             "($signature,$salt,$expiry)" "$public_key" \
             --private-key "$private_key" \
@@ -87,7 +87,7 @@ register_operator_with_avs() {
 }
 
 setup_operator() {
-    local WAVSServiceManagerAddress=$1
+    local WAVS_SERVICE_MANAGER_ADDRESS=$1
     local private_key=$2
     local public_key=$(cast wallet address $private_key)
     local amount=$3
@@ -185,13 +185,13 @@ setup_operator() {
             --private-key "$private_key" \
             --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
 
-        allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+        allocationManager=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
         # 0x1234 is just arbitrary data which we can input for things like DKG, TEE, etc
         cast s "$allocationManager" \
             "registerForOperatorSets(address,(address,uint32[],bytes))" \
             "$public_key" \
-            "($WAVSServiceManagerAddress,[1],0x1234)" \
+            "($WAVS_SERVICE_MANAGER_ADDRESS,[1],0x1234)" \
             --private-key "$private_key" \
             --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
         if [ $? -eq 0 ]; then
@@ -218,4 +218,4 @@ if [ -z "$2" ]; then
     echo "Error: Pass amount to deposit as second arg (0.001ether for example)"
     exit 1
 fi
-setup_operator "$WAVSServiceManagerAddress" "$1" "$2"
+setup_operator "$WAVS_SERVICE_MANAGER_ADDRESS" "$1" "$2"
