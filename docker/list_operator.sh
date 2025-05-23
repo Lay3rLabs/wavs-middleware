@@ -17,10 +17,12 @@ else
     LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
 fi
 
-if [ -z "$STAKE_REGISTRY_ADDRESS" ]; then
-    echo "Error: STAKE_REGISTRY_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
+if [ -z "$WAVS_SERVICE_MANAGER_ADDRESS" ]; then
+    echo "Error: WAVS_SERVICE_MANAGER_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
     exit 1
 fi
+
+export STAKE_REGISTRY_ADDRESS=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "stakeRegistry()(address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
 echo "=== ECDSA Stake Registry Status ==="
 echo "Contract Address: $STAKE_REGISTRY_ADDRESS"

@@ -30,10 +30,8 @@ if [ -z "$WAVS_SERVICE_MANAGER_ADDRESS" ]; then
     echo "Error: WAVS_SERVICE_MANAGER_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
     exit 1
 fi
-if [ -z "$STAKE_REGISTRY_ADDRESS" ]; then
-    echo "Error: STAKE_REGISTRY_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
-    exit 1
-fi
+
+export STAKE_REGISTRY_ADDRESS=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "stakeRegistry()(address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
 # Function to register operator with AVS using cast commands
 register_operator_with_avs() {
@@ -63,12 +61,6 @@ register_operator_with_avs() {
     local operatorRegistered=$(cast call "$STAKE_REGISTRY_ADDRESS" "operatorRegistered(address)(bool)" "$public_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     if [ "$operatorRegistered" = "false" ]; then
         echo "Registering operator with signature..."
-        cast c "$STAKE_REGISTRY_ADDRESS" \
-            "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
-            "($signature,$salt,$expiry)" "$public_key" \
-            --private-key "$private_key" \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
-
         cast send "$STAKE_REGISTRY_ADDRESS" \
             "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
             "($signature,$salt,$expiry)" "$public_key" \
