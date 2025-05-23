@@ -26,8 +26,8 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     using ECDSAUpgradeable for bytes32;
 
     string public serviceURI;
-    uint256 public quorumNumerator = 2;
-    uint256 public quorumDenominator = 3;
+    uint256 public quorumNumerator;
+    uint256 public quorumDenominator;
 
     constructor(
         address _avsDirectory,
@@ -35,7 +35,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager
-    )
+    )        
         ECDSAServiceManagerBase(
             _avsDirectory,
             _stakeRegistry,
@@ -50,6 +50,8 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         address _rewardsInitiator
     ) public initializer {
         __ServiceManagerBase_init(_initialOwner, _rewardsInitiator);
+        quorumNumerator = 2;
+        quorumDenominator = 3;
     }
 
     /// NOTE: All OperatorSet functions are `onlyOwner`

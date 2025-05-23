@@ -8,9 +8,6 @@
 To run the test suite, make sure you have [Foundry](https://book.getfoundry.sh/) installed. Then run:
 
 ```bash
-# Install dependencies
-forge install
-
 # Run all tests
 cd contracts
 forge test -C ./eigenlayer -vvv
