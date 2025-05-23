@@ -252,7 +252,7 @@ deploy_consumer_contract() {
 #############################################
 
 mkdir -p ~/.nodes
-deployer_public_key=$(cast wallet address "$FUNDED_KEY")
+deployer_address=$(cast wallet address "$FUNDED_KEY")
 echo "PRIVATE_KEY=$FUNDED_KEY" >> contracts/.env
 echo "$FUNDED_KEY" > ~/.nodes/deployer
 
@@ -272,7 +272,7 @@ if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     fi
 else
     wait_for_ethereum
-    cast rpc anvil_setBalance $deployer_public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
+    cast rpc anvil_setBalance $deployer_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: Failed to set balance for deployer"
         exit 1
@@ -293,20 +293,20 @@ else
     fi
 fi
 
-echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
+echo "Deployer address: $deployer_address configured for $DEPLOY_ENV environment"
 
-FUNDED_KEY_BAL=$(cast balance ${deployer_public_key} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+FUNDED_KEY_BAL=$(cast balance ${deployer_address} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 while [ "$FUNDED_KEY_BAL" = "0" ]; do
     if [ "$DEPLOY_ENV" = "LOCAL" ]; then
-        cast rpc anvil_setBalance $deployer_public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
+        cast rpc anvil_setBalance $deployer_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             echo "Error: Failed to set balance for FUNDED_KEY"
             exit 1
         fi
     else
-        echo "Waiting for FUNDED_KEY ${deployer_public_key} to have a balance. Current ${FUNDED_KEY_BAL}..."
+        echo "Waiting for FUNDED_KEY ${deployer_address} to have a balance. Current ${FUNDED_KEY_BAL}..."
         sleep 5
-        FUNDED_KEY_BAL=$(cast balance ${deployer_public_key} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+        FUNDED_KEY_BAL=$(cast balance ${deployer_address} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     fi
 done
 
