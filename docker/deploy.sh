@@ -272,11 +272,7 @@ if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     fi
 else
     wait_for_ethereum
-    cast rpc anvil_setBalance $deployer_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to set balance for deployer"
-        exit 1
-    fi
+    cast rpc anvil_setBalance $deployer_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for deployer" && exit 1)
 
     # This is needed for LST minting and depositing to work in local mode
     if [ -z "$LST_STRATEGY_ADDRESS" ]; then
@@ -298,11 +294,7 @@ echo "Deployer address: $deployer_address configured for $DEPLOY_ENV environment
 FUNDED_KEY_BAL=$(cast balance ${deployer_address} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 while [ "$FUNDED_KEY_BAL" = "0" ]; do
     if [ "$DEPLOY_ENV" = "LOCAL" ]; then
-        cast rpc anvil_setBalance $deployer_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to set balance for FUNDED_KEY"
-            exit 1
-        fi
+        cast rpc anvil_setBalance $deployer_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for FUNDED_KEY" && exit 1)
     else
         echo "Waiting for FUNDED_KEY ${deployer_address} to have a balance. Current ${FUNDED_KEY_BAL}..."
         sleep 5
@@ -310,11 +302,7 @@ while [ "$FUNDED_KEY_BAL" = "0" ]; do
     fi
 done
 
-cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast # /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to run middleware deployment script"
-    exit 1
-fi
+cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast || (echo "Error: Failed to deploy WavsMiddlewareDeployer" && exit 1)
 
 stakeRegistryAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.stakeRegistry')
 WavsServiceManagerAddress=$(cat deployments/wavs-middleware/$CHAIN_ID.json | jq -r '.addresses.WavsServiceManager')
