@@ -22,7 +22,7 @@ if [ -z "$WAVS_SERVICE_MANAGER_ADDRESS" ]; then
     exit 1
 fi
 
-export STAKE_REGISTRY_ADDRESS=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "stakeRegistry()(address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+STAKE_REGISTRY_ADDRESS=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "stakeRegistry()(address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
 echo "=== ECDSA Stake Registry Status ==="
 echo "Contract Address: $STAKE_REGISTRY_ADDRESS"

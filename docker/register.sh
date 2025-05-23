@@ -31,7 +31,7 @@ if [ -z "$WAVS_SERVICE_MANAGER_ADDRESS" ]; then
     exit 1
 fi
 
-export STAKE_REGISTRY_ADDRESS=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "stakeRegistry()(address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+STAKE_REGISTRY_ADDRESS=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "stakeRegistry()(address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
 # Function to register operator with AVS using cast commands
 register_operator_with_avs() {
