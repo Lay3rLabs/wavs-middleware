@@ -23,7 +23,7 @@ STRATEGY_ADDRESSES='[
   "0x70eb4d3c164a6b4a5f908d4fbb5a9caffb66bab6",
   "0x7673a47463f80c6a3553db9e54c8cdcd5313d0ac",
   "0x78dbcbef8ff94ec7f631c23d38d197744a323868",
-  "0x7d704507b76571a51d9cae8addabbfd0ba0e63d3", 
+  "0x7d704507b76571a51d9cae8addabbfd0ba0e63d3",
   "0x80528d6e9a2babfc766965e0e26d5ab08d9cfaf9",
   "0x9281ff96637710cd9a5cacce9c6fad8c9f54631c",
   "0xaccc5a86732be85b5012e8614af237801636f8e5",
@@ -37,14 +37,13 @@ if [ -z "$METADATA_URI" ]; then
     exit 1
 fi
 
-# Check if FUNDED_KEY is provided
 if [ -z "$FUNDED_KEY" ]; then
     echo "Error: FUNDED_KEY environment variable must be set"
     exit 1
 fi
 
 # Build the `strategies` array as a Solidity-compatible input
-# This is a workaround to get to a valid BPS value, in production strategies need to be weighed and maintained by an oracle 
+# This is a workaround to get to a valid BPS value, in production strategies need to be weighed and maintained by an oracle
 declare -g combined_strategies=""
 first_strategy=true
 
@@ -162,7 +161,7 @@ update_quorum_config() {
     local owner="$1"
     local stakeRegistryAddress="$2"
     impersonate_account "$owner"
-    
+
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
         execute_transaction "update quorum config" \
           "cast s '$stakeRegistryAddress' \
@@ -193,9 +192,9 @@ update_minimum_weight() {
     local owner="$1"
     local stakeRegistryAddress="$2"
     local minimumWeight="$3"  # Very small value to ensure operators have enough stake
-    
+
     impersonate_account "$owner"
-    
+
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
         execute_transaction "update minimum weight" \
           "cast s '$stakeRegistryAddress' \
@@ -214,7 +213,7 @@ update_minimum_weight() {
              --unlocked \
              --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
     fi
-    
+
     if [ $? -eq 0 ]; then
         stop_impersonating "$owner"
     else
@@ -278,14 +277,14 @@ else
         echo "Error: Failed to set balance for deployer"
         exit 1
     fi
-    
+
     # This is needed for LST minting and depositing to work in local mode
     if [ -z "$LST_STRATEGY_ADDRESS" ]; then
         LST_STRATEGY_ADDRESS=$(echo "$STRATEGY_ADDRESSES" | jq -r '.[0]')
         echo "Using default LST_STRATEGY_ADDRESS for LOCAL mode: $LST_STRATEGY_ADDRESS"
         export LST_STRATEGY_ADDRESS
     fi
-    
+
     if [ -z "$LST_CONTRACT_ADDRESS" ]; then
         # Get the LST contract address from the strategy
         LST_CONTRACT_ADDRESS=$(cast call "$LST_STRATEGY_ADDRESS" "underlyingToken()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
@@ -295,6 +294,21 @@ else
 fi
 
 echo "Deployer address: $deployer_public_key configured for $DEPLOY_ENV environment"
+
+FUNDED_KEY_BAL=$(cast balance ${deployer_public_key} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+while [ "$FUNDED_KEY_BAL" = "0" ]; do
+    if [ "$DEPLOY_ENV" = "LOCAL" ]; then
+        cast rpc anvil_setBalance $deployer_public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to set balance for FUNDED_KEY"
+            exit 1
+        fi
+    else
+        echo "Waiting for FUNDED_KEY ${deployer_public_key} to have a balance. Current ${FUNDED_KEY_BAL}..."
+        sleep 5
+        FUNDED_KEY_BAL=$(cast balance ${deployer_public_key} --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    fi
+done
 
 cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $FUNDED_KEY --broadcast # /dev/null 2>&1
 if [ $? -ne 0 ]; then

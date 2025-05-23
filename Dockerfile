@@ -8,7 +8,7 @@ RUN forge build --root /wavs/contracts ./eigenlayer
 RUN rm -rf /tmp
 
 WORKDIR /wavs
-COPY ./docker/*.sh /wavs
+COPY ./docker/*.sh /wavs/
 RUN chmod +x /wavs/*.sh
 
 CMD ["/wavs/deploy.sh"]

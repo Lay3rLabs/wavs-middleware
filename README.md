@@ -67,14 +67,22 @@ AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 # This will show the address, so you can confirm it was properly added when listing operators
 cast wallet addr --private-key "$AVS_KEY"
 
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes  --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY"
+export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+export STAKE_REGISTRY_ADDRESS=$(jq -r '.addresses.stakeRegistry' .nodes/avs_deploy.json)
+
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e STAKE_REGISTRY_ADDRESS=${STAKE_REGISTRY_ADDRESS} \
+   --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY" "0.01ether"
 ```
 
 List Operators:
 
 ```bash
 # View stake registry status, including registered operators and their weights
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/list_operator.sh wavs-middleware
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+   -e STAKE_REGISTRY_ADDRESS=${STAKE_REGISTRY_ADDRESS} \
+   --entrypoint /wavs/list_operator.sh wavs-middleware
 ```
 
 Pause Registration:

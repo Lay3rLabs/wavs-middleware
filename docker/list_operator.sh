@@ -17,32 +17,29 @@ else
     LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
 fi
 
-# Read deployment info
-# ECDSAStakeRegistryAddress=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.stakeRegistryImpl')
-ECDSAStakeRegistryAddress=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.stakeRegistry')
-if [ -z "$ECDSAStakeRegistryAddress" ]; then
-    echo "Error: failed to read ECDSAStakeRegistry from /root/.nodes/avs_deploy.json"
+if [ -z "$STAKE_REGISTRY_ADDRESS" ]; then
+    echo "Error: STAKE_REGISTRY_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
     exit 1
 fi
 
 echo "=== ECDSA Stake Registry Status ==="
-echo "Contract Address: $ECDSAStakeRegistryAddress"
+echo "Contract Address: $STAKE_REGISTRY_ADDRESS"
 
 # Get total weight and threshold
 echo -e "\n=== Quorum Information ==="
-TOTAL_WEIGHT=$(cast call "$ECDSAStakeRegistryAddress" "getLastCheckpointTotalWeight()(uint256)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-THRESHOLD_WEIGHT=$(cast call "$ECDSAStakeRegistryAddress" "getLastCheckpointThresholdWeight()(uint256)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+TOTAL_WEIGHT=$(cast call "$STAKE_REGISTRY_ADDRESS" "getLastCheckpointTotalWeight()(uint256)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+THRESHOLD_WEIGHT=$(cast call "$STAKE_REGISTRY_ADDRESS" "getLastCheckpointThresholdWeight()(uint256)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 echo "Total Weight: $TOTAL_WEIGHT"
 echo "Threshold Weight: $THRESHOLD_WEIGHT"
 
 # Get current block height and calculate range
 LATEST_BLOCK=$(cast block-number --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-FROM_BLOCK=$((LATEST_BLOCK - 2000))
+FROM_BLOCK=$((LATEST_BLOCK - 900))
 
 # Get all OperatorRegistered events
 echo -e "\n=== Registered Operators ==="
 echo "Querying events from block $FROM_BLOCK to $LATEST_BLOCK"
-OPERATOR_EVENTS=$(cast logs --address "$ECDSAStakeRegistryAddress" --from-block "$FROM_BLOCK" --to-block latest "OperatorRegistered(address, address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+OPERATOR_EVENTS=$(cast logs --address "$STAKE_REGISTRY_ADDRESS" --from-block "$FROM_BLOCK" --to-block latest "OperatorRegistered(address, address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
 if [ -z "$OPERATOR_EVENTS" ]; then
     echo "No OperatorRegistered events found in the specified block range."
@@ -73,7 +70,7 @@ done <<< "$RAW_OPS"
 # Query weight for each operator
 echo -e "\n=== Operator Weights ==="
 for OPERATOR in "${OPERATORS[@]}"; do
-    WEIGHT=$(cast call "$ECDSAStakeRegistryAddress" "getOperatorWeight(address)(uint256)" "$OPERATOR" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    WEIGHT=$(cast call "$STAKE_REGISTRY_ADDRESS" "getOperatorWeight(address)(uint256)" "$OPERATOR" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     echo "Operator $OPERATOR weight: $WEIGHT"
 done
 
