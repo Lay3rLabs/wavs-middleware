@@ -26,8 +26,8 @@ fi
 if [ -f "$HOME/.nodes/deployer" ]; then
     deployer_private_key=$(cat "$HOME/.nodes/deployer")
     echo "Read deployer key from file."
-    deployer_public_key=$(cast wallet address "$deployer_private_key")
-    echo "Deployer address: $deployer_public_key"
+    deployer_address=$(cast wallet address "$deployer_private_key")
+    echo "Deployer address: $deployer_address"
 else
     echo "Error: Deployer key file not found at $HOME/.nodes/deployer"
     exit 1

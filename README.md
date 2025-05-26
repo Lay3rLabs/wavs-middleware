@@ -67,7 +67,6 @@ OPERATOR_ADDRESS=$(cast wallet addr --private-key "$OPERATOR_KEY")
 echo "Operator address: $OPERATOR_ADDRESS"
 
 export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
-export STAKE_REGISTRY_ADDRESS=$(jq -r '.addresses.stakeRegistry' .nodes/avs_deploy.json)
 
 # Generate or use an existing AVS signing key address
 # Option 1: Generate a new AVS signing key
@@ -81,7 +80,6 @@ echo "AVS signing address: $AVS_SIGNING_ADDRESS"
 # Register the operator using the operator key and AVS signing address
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   -e STAKE_REGISTRY_ADDRESS=${STAKE_REGISTRY_ADDRESS} \
    --entrypoint /wavs/register.sh wavs-middleware "$OPERATOR_KEY" "$AVS_SIGNING_ADDRESS" "0.01ether"
 ```
 
@@ -90,7 +88,7 @@ List Operators:
 ```bash
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
-   -e STAKE_REGISTRY_ADDRESS=${STAKE_REGISTRY_ADDRESS} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    --entrypoint /wavs/list_operator.sh wavs-middleware
 ```
 
