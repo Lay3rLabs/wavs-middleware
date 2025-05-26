@@ -32,3 +32,5 @@ debug/
 yarn.lock
 docker/.nodes
 
+
+**/.claude/settings.local.json

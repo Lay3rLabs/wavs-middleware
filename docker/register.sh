@@ -25,71 +25,59 @@ if [ -z "$LST_STRATEGY_ADDRESS" ]; then
     echo "Error: LST_STRATEGY_ADDRESS is not set in the environment variables."
     exit 1
 fi
-WAVSServiceManagerAddress=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
-if [ -z "$WAVSServiceManagerAddress" ]; then
-    echo "Error: failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
+
+if [ -z "$WAVS_SERVICE_MANAGER_ADDRESS" ]; then
+    echo "Error: WAVS_SERVICE_MANAGER_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
     exit 1
 fi
+
+STAKE_REGISTRY_ADDRESS=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "stakeRegistry()(address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
 # Function to register operator with AVS using cast commands
 register_operator_with_avs() {
     echo "Registering operator with AVS..."
     local private_key=$1
-    local public_key=$(cast wallet address $private_key)
-    
-    echo "Registering operator $public_key with AVS..."
-    local stake_registry_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.stakeRegistry')
-    if [ -z "$stake_registry_address" ]; then
-        echo "Error: Failed to read StakeRegistry from /root/.nodes/avs_deploy.json"
-        exit 1
-    fi
-    local service_manager_address=$(cat /root/.nodes/avs_deploy.json | jq -r '.addresses.WavsServiceManager')
-    if [ -z "$service_manager_address" ]; then
-        echo "Error: Failed to read WavsServiceManager from /root/.nodes/avs_deploy.json"
-        exit 1
-    fi
-    local avs_directory_address=$(cast call "$service_manager_address" "avsDirectory()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+    local address=$(cast wallet address $private_key)
+
+    echo "Registering operator $address with AVS..."
+
+    local avs_directory_address=$(cast call "${WAVS_SERVICE_MANAGER_ADDRESS}" "avsDirectory()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
     if [ -z "$avs_directory_address" ]; then
-        echo "Error: Failed to read AVSDirectory from /root/.nodes/avs_deploy.json"
+        echo "Error: Failed to get AVSDirectory from ${WAVS_SERVICE_MANAGER_ADDRESS} avsDirectory()"
         exit 1
     fi
     # Generate a random salt (32 bytes)
     local salt=$(openssl rand -hex 32)
-    
+
     # Calculate expiry (current time + 1 hour)
     local expiry=$(($(date +%s) + 3600))
-    
-    local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$public_key" "$service_manager_address" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+
+    local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$address" "$WAVS_SERVICE_MANAGER_ADDRESS" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
     # Remove 0x prefix from digest hash if present
     digest_hash=${digest_hash#0x}
     # Sign the digest hash with the private key
     local signature=$(cast wallet sign $digest_hash --no-hash --private-key "$private_key")
-    
-    # Register the operator with the signature
-    echo "Registering operator with signature..."
-    cast c --trace "$stake_registry_address" \
-        "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
-        "($signature,$salt,$expiry)" "$public_key" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" \
-    
-    cast send "$stake_registry_address" \
-        "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
-        "($signature,$salt,$expiry)" "$public_key" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" 
-    if [ $? -eq 0 ]; then
-        echo "Successfully registered operator $public_key with AVS"
+
+    local operatorRegistered=$(cast call "$STAKE_REGISTRY_ADDRESS" "operatorRegistered(address)(bool)" "$address" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    if [ "$operatorRegistered" = "false" ]; then
+        echo "Registering operator with signature..."
+        cast send "$STAKE_REGISTRY_ADDRESS" \
+            "registerOperatorWithSignature((bytes,bytes32,uint256),address)" \
+            "($signature,$salt,$expiry)" "$address" \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" || (echo "Error: Failed to register operator with AVS" && exit 1)
+        echo "Successfully registered operator $address with AVS"
     else
-        echo "Error: Failed to register operator with AVS"
-        exit 1
+        echo "Operator $address is already registered with AVS"
+        return 0
     fi
 }
 
 setup_operator() {
-    local WAVSServiceManagerAddress=$1
+    local WAVS_SERVICE_MANAGER_ADDRESS=$1
     local private_key=$2
-    local public_key=$(cast wallet address $private_key)
+    local address=$(cast wallet address $private_key)
+    local amount=$3
 
     DEPLOY_FILE="contracts/deployments/eigenlayer-core/$CHAIN_ID.json"
     STRATEGY_MANAGER_ADDRESS=$(jq -r '.addresses.strategyManager' "$DEPLOY_FILE")
@@ -103,88 +91,89 @@ setup_operator() {
         exit 1
     fi
 
-    
     if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        # TODO: remove this and replace with a check the AVS key has a balance
-        cast s "$public_key" --value 50000000000000000 --private-key "$FUNDED_KEY" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to give operator $index balance"
+        balance=$(cast balance "$address" --rpc-url "$LOCAL_ETHEREUM_RPC_URL") || (echo "Error: Failed to get balance for operator $address" && exit 1)
+        if [ "$balance" -eq 0 ]; then
+            echo "Error: Funded key ${address} has no balance, you must fund this first with > ${amount}"
             exit 1
+        else
+            echo "Operator $address already has a balance of $balance"
         fi
     else
-        cast rpc anvil_setBalance $public_key 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Failed to set balance for operator"
-            exit 1
-        fi
+        cast rpc anvil_setBalance $address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for operator $address" && exit 1)
     fi
 
     echo "Using LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
     echo "Using LST_STRATEGY_ADDRESS: $LST_STRATEGY_ADDRESS"
-    
-    # TODO: is this write? need proper LST addr setup in the .env file
-    MINT_FUNCTION="submit(address _referral)"
-    cast send "$LST_CONTRACT_ADDRESS" "$MINT_FUNCTION" "$public_key" "0x0000000000000000000000000000000000000000" \
-        --private-key "$private_key" \
-        --value 10000000000000000 \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to mint LST for $ADDRESS"
-        exit 1
-    fi
-    cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
-        "$STRATEGY_MANAGER_ADDRESS" 10000000000000000 \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to approve LST for $STRATEGY_MANAGER_ADDRESS"
-        exit 1
-    fi
-    cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
-        "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" 10000000000000000 \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to deposit into strategy for $LST_STRATEGY_ADDRESS"
-        exit 1
-    fi
 
+    NUM_DEPOSIT=$(cast call "$STRATEGY_MANAGER_ADDRESS" "stakerStrategyListLength(address)(uint256)" "$address" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
-    cast send "$DELEGATION_MANAGER_ADDRESS" \
-        "registerAsOperator(address,uint32,string)" \
-        "$public_key" 0 "foo.bar" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to register as operator for $DELEGATION_MANAGER_ADDRESS"
-        exit 1
-    fi
-
-    # TODO: what is this magic 0x1234 number here? Maybe we want a real variable for it?
-    allocationManager=$(cast call "$WAVSServiceManagerAddress" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
-    cast s "$allocationManager" \
-        "registerForOperatorSets(address,(address,uint32[],bytes))" \
-        "$public_key" \
-        "($WAVSServiceManagerAddress,[1],0x1234)" \
-        --private-key "$private_key" \
-        --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        echo "Successfully registered operator $public_key to operator sets [1]"
+    # If the operator has deposits, we don't need to do anything
+    if [ "$NUM_DEPOSIT" -gt 0 ]; then
+        echo "Operator $address already has deposits, skipping LST operations"
     else
-        echo "Error: Failed to register operator $public_key to operator sets"
-        exit 1
-    fi
-    register_operator_with_avs "$private_key" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to register operator $public_key to AVS"
-        exit 1
-    fi
-    echo "Successfully registered operator $public_key to AVS"
+        # Check if operator already has LST balance
+        LST_BALANCE=$(cast call "$LST_CONTRACT_ADDRESS" "balanceOf(address)(uint256)" "$address" --rpc-url "$LOCAL_ETHEREUM_RPC_URL") || (echo "Error: Failed to get LST balance for operator $address" && exit 1)
 
+        # Only mint LSTs if operator has no balance
+        if [ "$LST_BALANCE" -eq 0 ]; then
+            echo "Operator $address has no LST balance, minting new tokens"
+            cast send "$LST_CONTRACT_ADDRESS" "submit(address _referral)" "$address" "0x0000000000000000000000000000000000000000" \
+                --private-key "$private_key" \
+                --value "${amount}" \
+                --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1 || (echo "Error: Failed to mint LST for $address" && exit 1)
+        else
+            echo "Operator $address already has LST balance of $LST_BALANCE"
+        fi
+
+        cast send "$LST_CONTRACT_ADDRESS" "approve(address,uint256)" \
+            "$STRATEGY_MANAGER_ADDRESS" "${amount}" \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1 || (echo "Error: Failed to approve LST for $address" && exit 1)
+
+        # Create a new deposit with the LSTs since we confirmed NUM_DEPOSIT is 0
+        echo "Operator $address has no deposits, creating a new deposit"
+        cast send "$STRATEGY_MANAGER_ADDRESS" "depositIntoStrategy(address,address,uint256)" \
+            "$LST_STRATEGY_ADDRESS" "$LST_CONTRACT_ADDRESS" ${amount} \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1 || (echo "Error: Failed to create deposit for $address" && exit 1)
+    fi
+
+    # You can not double register an operator. If they are already registered, skip this step.
+    isDelegated=`cast call "${DELEGATION_MANAGER_ADDRESS}" "isDelegated(address)(bool)" "${address}" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"`
+    if [ "$isDelegated" = "false" ]; then
+        cast send "$DELEGATION_MANAGER_ADDRESS" \
+            "registerAsOperator(address,uint32,string)" \
+            "$address" 0 "foo.bar" \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
+
+        allocationManager=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
+
+        # 0x1234 is just arbitrary data which we can input for things like DKG, TEE, etc
+        cast s "$allocationManager" \
+            "registerForOperatorSets(address,(address,uint32[],bytes))" \
+            "$address" \
+            "($WAVS_SERVICE_MANAGER_ADDRESS,[1],0x1234)" \
+            --private-key "$private_key" \
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            echo "Successfully registered operator $address to operator sets [1]"
+        else
+            echo "Error: Failed to register operator $address to operator sets"
+            exit 1
+        fi
+    fi
+
+    register_operator_with_avs "$private_key" || ( echo "Error: Failed to register operator with AVS" && exit 1 )
 }
 
 if [ -z "$1" ]; then
     echo "Error: Pass private AVS Key as first arg"
     exit 1
 fi
-setup_operator "$WAVSServiceManagerAddress" "$1"
+if [ -z "$2" ]; then
+    echo "Error: Pass amount to deposit as second arg (0.001ether for example)"
+    exit 1
+fi
+setup_operator "$WAVS_SERVICE_MANAGER_ADDRESS" "$1" "$2"
