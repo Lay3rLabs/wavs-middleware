@@ -147,7 +147,7 @@ setup_operator() {
             "registerAsOperator(address,uint32,string)" \
             "$address" 0 "foo.bar" \
             --private-key "$private_key" \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1 || (echo "Error: Failed to register operator as on delegation manager" && exit 1)
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1 || (echo "Error: Failed to register operator on delegation manager" && exit 1)
 
         allocationManager=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
