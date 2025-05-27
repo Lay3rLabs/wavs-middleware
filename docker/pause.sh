@@ -33,7 +33,7 @@ echo "Pausing AVS Registrar..."
 cast send --private-key "$DEPLOYER_KEY" \
     "$AVS_REGISTRAR_ADDRESS" \
     "pause()" \
-    --rpc-url "$LOCAL_ETHEREUM_RPC_URL"
+    --rpc-url "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1 || (echo "Error: Failed to pause AVS Registrar" && exit 1)
 
 # Verify that the AVS Registrar is paused
 echo "Verifying AVS Registrar is paused..."
