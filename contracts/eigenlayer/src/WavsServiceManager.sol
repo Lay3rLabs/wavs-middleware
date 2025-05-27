@@ -228,12 +228,6 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
      * @notice Validates that sufficient quorum has been reached
      * @param signedWeight The total weight of operators who signed
      * @param totalWeight The total weight of all operators
-     * @dev Requires at least 2/3 of the total weight to have signed
-     */
-    /**
-     * @notice Validates that sufficient quorum has been reached
-     * @param signedWeight The total weight of operators who signed
-     * @param totalWeight The total weight of all operators
      * @dev Requires at least quorumNumerator/quorumDenominator of the total weight to have signed
      */
     function _validateQuorumSigned(

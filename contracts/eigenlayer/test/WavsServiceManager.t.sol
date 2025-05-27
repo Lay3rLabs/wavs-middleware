@@ -117,7 +117,7 @@ contract WavsServiceManagerTest is Test {
                 ordering: bytes12(0),
                 payload: ""
             }),
-            createSignatureData(4 * OPERATOR_WEIGHT, 0)
+            createSignatureData(4, 0)
         );
         
         // Test should not revert
@@ -133,7 +133,7 @@ contract WavsServiceManagerTest is Test {
                 ordering: bytes12(0),
                 payload: ""
             }),
-            createSignatureData(3 * OPERATOR_WEIGHT, 0)
+            createSignatureData(3, 0)
         );
     }
     
@@ -150,7 +150,7 @@ contract WavsServiceManagerTest is Test {
                 ordering: bytes12(0),
                 payload: ""
             }),
-            createSignatureData(3 * OPERATOR_WEIGHT, 0)
+            createSignatureData(3, 0)
         );
         
         // Test should not revert
@@ -168,7 +168,7 @@ contract WavsServiceManagerTest is Test {
                 ordering: bytes12(0),
                 payload: ""
             }),
-            createSignatureData(100, 0)
+            createSignatureData(5, 0)
         );
     }
     
@@ -188,7 +188,7 @@ contract WavsServiceManagerTest is Test {
                 ordering: bytes12(0),
                 payload: ""
             }),
-            createSignatureData(3 * OPERATOR_WEIGHT, 0)
+            createSignatureData(3, 0)
         );
 
         // Now 200/500 (40%) should fail (needs 255)
@@ -199,7 +199,7 @@ contract WavsServiceManagerTest is Test {
                 ordering: bytes12(0),
                 payload: ""
             }),
-            createSignatureData(2 * OPERATOR_WEIGHT, 0)
+            createSignatureData(2, 0)
         );
     }
     
@@ -249,17 +249,14 @@ contract WavsServiceManagerTest is Test {
     
     // Helper function to create signature data with a specific total weight
     function createSignatureData(
-        uint256 totalWeight,
+        uint256 numOperators,
         uint32 referenceBlockOffset
     ) internal view returns (IWavsServiceHandler.SignatureData memory) {
-        // Create enough signatures to reach the desired total weight
-        uint256 numOperators = (totalWeight + OPERATOR_WEIGHT - 1) / OPERATOR_WEIGHT; // Ceiling division
-        
         address[] memory operators = new address[](numOperators);
         bytes[] memory signatures = new bytes[](numOperators);
         
         for (uint256 i = 0; i < numOperators; i++) {
-            operators[i] = address(uint160(i + 1)); // Use different addresses
+            operators[i] = address(uint160(i + 1)); // Operators registered 0x1 to 0x5
             signatures[i] = ""; // Empty signature since we're mocking the validation
         }
         
