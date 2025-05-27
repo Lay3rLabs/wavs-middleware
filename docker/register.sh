@@ -100,7 +100,7 @@ setup_operator() {
             echo "Operator $address already has a balance of $balance"
         fi
     else
-        cast rpc anvil_setBalance $operator_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for operator $address" && exit 1)
+        cast rpc anvil_setBalance $operator_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for operator $operator_address" && exit 1)
     fi
 
     echo "Using LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
