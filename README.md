@@ -47,7 +47,7 @@ cd docker/
 Deploy:
 
 ```bash
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware deploy
 ```
 
 Set Service URI:
@@ -55,7 +55,7 @@ Set Service URI:
 ```bash
 SERVICE_URI="https://ipfs.url/for-custom-service.json"
 
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/set_service_uri.sh wavs-middleware "$SERVICE_URI"
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware set_service_uri "$SERVICE_URI"
 ```
 
 Register:
@@ -69,30 +69,30 @@ cast wallet addr --private-key "$AVS_KEY"
 
 export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
 
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   --entrypoint /wavs/register.sh wavs-middleware "$AVS_KEY" "0.01ether"
+   wavs-middleware register "$AVS_KEY" "0.01ether"
 ```
 
 List Operators:
 
 ```bash
 # View stake registry status, including registered operators and their weights
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host  --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   --entrypoint /wavs/list_operator.sh wavs-middleware
+   wavs-middleware list_operator
 ```
 
 Pause Registration:
 
 ```bash
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/pause.sh wavs-middleware
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware pause
 ```
 
 Unpause Registration:
 
 ```bash
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes --entrypoint /wavs/unpause.sh wavs-middleware
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware unpause
 ```
 
 ## Deploy Testnet
