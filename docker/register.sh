@@ -66,7 +66,12 @@ register_operator_with_avs() {
             "($signature,$salt,$expiry)" "$signing_key_address" \
             --private-key "$operator_key" \
             --rpc-url "$LOCAL_ETHEREUM_RPC_URL" || (echo "Error: Failed to register operator with AVS" && exit 1)
+<<<<<<< HEAD
         echo "Successfully registered operator $operator_address with AVS using signing key $signing_key_address"
+=======
+        echo ""
+        echo "Successfully registered operator $address with AVS"
+>>>>>>> origin/dev
     else
         echo "Operator $operator_address is already registered with AVS"
         return 0
@@ -146,7 +151,7 @@ setup_operator() {
             "registerAsOperator(address,uint32,string)" \
             "$operator_address" 0 "foo.bar" \
             --private-key "$operator_key" \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1 || (echo "Error: Failed to register operator on delegation manager" && exit 1)
 
         allocationManager=$(cast call "$WAVS_SERVICE_MANAGER_ADDRESS" "allocationManager()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
 
@@ -156,7 +161,7 @@ setup_operator() {
             "$operator_address" \
             "($WAVS_SERVICE_MANAGER_ADDRESS,[1],0x1234)" \
             --private-key "$operator_key" \
-            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1
+            --rpc-url "$LOCAL_ETHEREUM_RPC_URL"  > /dev/null 2>&1 || (echo "Error: Failed to register for operator set on allocation manager" && exit 1)
         if [ $? -eq 0 ]; then
             echo "Successfully registered operator $operator_address to operator sets [1]"
         else

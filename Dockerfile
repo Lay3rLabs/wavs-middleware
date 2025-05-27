@@ -11,4 +11,4 @@ WORKDIR /wavs
 COPY ./docker/*.sh /wavs/
 RUN chmod +x /wavs/*.sh
 
-CMD ["/wavs/deploy.sh"]
+ENTRYPOINT ["/wavs/cli.sh"]
