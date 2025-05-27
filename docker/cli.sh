@@ -1,6 +1,6 @@
 #!/bin/bash
 # This command is one entrypoint that delegates to the concrete scripts to make the docker interface nicer.
-# It includes no business logic on it's own, only argument parsing and delegation.
+# It includes no business logic on its own, only argument parsing and delegation.
 #
 # Usage: cli.sh <command> [args...]
 # 
