@@ -11,6 +11,8 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/helpers.sh
 
+PAST_BLOCKS=${PAST_BLOCKS:-1000}
+
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
 else
@@ -36,10 +38,11 @@ echo "Threshold Weight: $THRESHOLD_WEIGHT"
 
 # Get current block height and calculate range
 LATEST_BLOCK=$(cast block-number --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
-FROM_BLOCK=$((LATEST_BLOCK - 900))
+FROM_BLOCK=$((LATEST_BLOCK - PAST_BLOCKS))
 
 # Get all OperatorRegistered events
 echo -e "\n=== Registered Operators ==="
+echo "Using a look-back period of $PAST_BLOCKS blocks"
 echo "Querying events from block $FROM_BLOCK to $LATEST_BLOCK"
 OPERATOR_EVENTS=$(cast logs --address "$STAKE_REGISTRY_ADDRESS" --from-block "$FROM_BLOCK" --to-block latest "OperatorRegistered(address, address)" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
 
