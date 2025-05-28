@@ -1,6 +1,20 @@
 ## Prerequisites
 
 - Docker and Docker Compose
+- Foundry (Forge and Cast) for local development and testing
+
+## Testing
+
+To run the test suite, make sure you have [Foundry](https://book.getfoundry.sh/) installed. Then run:
+
+```bash
+# Run all tests
+cd contracts
+forge test -C ./eigenlayer -vvv
+
+# Run a specific test function
+forge test -C ./eigenlayer --match-test test_pause -vvv
+```
 
 # Docker Quick start
 
