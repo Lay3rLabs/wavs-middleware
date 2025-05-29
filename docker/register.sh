@@ -66,12 +66,8 @@ register_operator_with_avs() {
             "($signature,$salt,$expiry)" "$signing_key_address" \
             --private-key "$operator_key" \
             --rpc-url "$LOCAL_ETHEREUM_RPC_URL" || (echo "Error: Failed to register operator with AVS" && exit 1)
-<<<<<<< HEAD
-        echo "Successfully registered operator $operator_address with AVS using signing key $signing_key_address"
-=======
         echo ""
-        echo "Successfully registered operator $address with AVS"
->>>>>>> origin/dev
+        echo "Successfully registered operator $operator_address with AVS using signing key $signing_key_address"
     else
         echo "Operator $operator_address is already registered with AVS"
         return 0
