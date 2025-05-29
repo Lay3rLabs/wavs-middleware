@@ -24,14 +24,18 @@ import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
  */
 contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     using ECDSAUpgradeable for bytes32;
+
     string public serviceURI;
+    uint256 public quorumNumerator;
+    uint256 public quorumDenominator;
+
     constructor(
         address _avsDirectory,
         address _stakeRegistry,
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager
-    )
+    )        
         ECDSAServiceManagerBase(
             _avsDirectory,
             _stakeRegistry,
@@ -46,6 +50,8 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         address _rewardsInitiator
     ) public initializer {
         __ServiceManagerBase_init(_initialOwner, _rewardsInitiator);
+        quorumNumerator = 2;
+        quorumDenominator = 3;
     }
 
     /// NOTE: All OperatorSet functions are `onlyOwner`
@@ -162,22 +168,106 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         return serviceURI;
     }
 
-    function validate(IWavsServiceHandler.Envelope calldata envelope, IWavsServiceHandler.SignatureData calldata signatureData) external view
-    {
-        bytes32 message = keccak256(abi.encode(envelope));
-        bytes32 ethSignedMessageHash = ECDSAUpgradeable.toEthSignedMessageHash(message);
-        bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
-
-        bytes memory signatureDataBytes = abi.encode(signatureData.operators, signatureData.signatures, signatureData.referenceBlock);
-        // If the registry returns the magicValue, signature is considered valid
-        if( magicValue !=
-            ECDSAStakeRegistry(stakeRegistry).isValidSignature(
-                ethSignedMessageHash,
-                signatureDataBytes
-            )
-        ) {
+    /**
+     * @notice Validates an envelope with its associated signatures
+     * @param envelope The envelope containing the data to validate
+     * @param signatureData The signature data including operators, signatures, and reference block
+     * @dev Performs two validations:
+     *      1. Signature validity through ECDSAStakeRegistry
+     *      2. Quorum check to ensure sufficient stake weight signed (2/3 threshold)
+     */
+    function validate(
+        IWavsServiceHandler.Envelope calldata envelope, 
+        IWavsServiceHandler.SignatureData calldata signatureData
+    ) external view {
+        // Input validation
+        if (signatureData.operators.length == 0 || signatureData.operators.length != signatureData.signatures.length) {
             revert IWavsServiceManager.InvalidSignature();
         }
+        if (signatureData.referenceBlock >= block.number) {
+            revert IWavsServiceManager.InvalidSignature();
+        }
+
+        // Create message hash
+        bytes32 message = keccak256(abi.encode(envelope));
+        bytes32 ethSignedMessageHash = ECDSAUpgradeable.toEthSignedMessageHash(message);
+        
+        // Validate signatures through the stake registry
+        bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
+        bytes memory signatureDataBytes = abi.encode(
+            signatureData.operators, 
+            signatureData.signatures, 
+            signatureData.referenceBlock
+        );
+        
+        // Check signature validity
+        if (magicValue != ECDSAStakeRegistry(stakeRegistry).isValidSignature(
+            ethSignedMessageHash,
+            signatureDataBytes
+        )) {
+            revert IWavsServiceManager.InvalidSignature();
+        }
+
+        // Calculate the total weight of the operators that signed
+        ECDSAStakeRegistry registry = ECDSAStakeRegistry(stakeRegistry);
+        uint256 signedWeight = 0;
+        for (uint256 i = 0; i < signatureData.operators.length; i++) {
+            signedWeight += registry.getOperatorWeightAtBlock(
+                signatureData.operators[i], 
+                signatureData.referenceBlock
+            );
+        }
+        
+        uint256 totalWeight = registry.getLastCheckpointTotalWeightAtBlock(signatureData.referenceBlock);
+        
+        // Ensure sufficient quorum was reached
+        _validateQuorumSigned(signedWeight, totalWeight);
+    }
+
+    /**
+     * @notice Validates that sufficient quorum has been reached
+     * @param signedWeight The total weight of operators who signed
+     * @param totalWeight The total weight of all operators
+     * @dev Requires at least quorumNumerator/quorumDenominator of the total weight to have signed
+     */
+    function _validateQuorumSigned(
+        uint256 signedWeight,
+        uint256 totalWeight
+    ) internal view {
+        // Avoid 0 weight ever passing this check
+        if (totalWeight == 0) {
+            revert IWavsServiceManager.InsufficientQuorum();
+        }
+        
+        // Check if signedWeight >= (quorumNumerator/quorumDenominator) * totalWeight
+        // This is equivalent but only using division to avoid any potential overflow
+        if (signedWeight / quorumNumerator < totalWeight / quorumDenominator) {
+            revert IWavsServiceManager.InsufficientQuorum();
+        }
+    }
+    
+    /**
+     * @notice Sets a new quorum threshold for signature validation
+     * @param numerator The numerator of the quorum fraction
+     * @param denominator The denominator of the quorum fraction
+     * @dev The fraction numerator/denominator represents the minimum portion of stake
+     *      required for a valid signature (e.g., 2/3 or 51/100)
+     */
+    function setQuorumThreshold(uint256 numerator, uint256 denominator) external onlyOwner {
+        if (numerator == 0) {
+            revert IWavsServiceManager.InvalidQuorumParameters();
+        }
+        if (denominator == 0) {
+            revert IWavsServiceManager.InvalidQuorumParameters();
+        }
+        if (numerator > denominator) {
+            revert IWavsServiceManager.InvalidQuorumParameters();
+        }
+        
+        quorumNumerator = numerator;
+        quorumDenominator = denominator;
+        
+        emit QuorumThresholdUpdated(numerator, denominator);
     }
 
     /// @inheritdoc IWavsServiceManager
