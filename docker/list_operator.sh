@@ -76,4 +76,12 @@ for OPERATOR in "${OPERATORS[@]}"; do
     echo "Operator $OPERATOR weight: $WEIGHT"
 done
 
+# Query signing key for each operator
+echo -e "\n=== Operator Signing Key ==="
+for OPERATOR in "${OPERATORS[@]}"; do
+    SIGNING_KEY=$(cast call "$STAKE_REGISTRY_ADDRESS" "getLatestOperatorSigningKey(address)(address)" "$OPERATOR" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+    echo "Operator $OPERATOR signing key: $SIGNING_KEY"
+done
+
 echo
+

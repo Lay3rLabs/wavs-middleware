@@ -4,5 +4,5 @@
 [submodule "contracts/lib/eigenlayer-middleware"]
 	path = contracts/lib/eigenlayer-middleware
 	url = https://github.com/Lay3rLabs/eigenlayer-middleware
-	# This commit hash (4d63f27247587607beb67f96fdabec4b2c1321ef) corresponds to tag v1.4.0-testnet-holesky
-	branch = 4d63f27247587607beb67f96fdabec4b2c1321ef 
+	# This commit hash (5d309a7fdf12872bbe14b0852eea08fe4188166f) corresponds to wavs-1.4 branch (based on tag v1.4.0-testnet-holesky)
+	branch = 5d309a7fdf12872bbe14b0852eea08fe4188166f 

@@ -75,17 +75,26 @@ docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-mid
 Register:
 
 ```bash
-# TODO: get the private AVS key (0x...) for this service from the WAVS node
-# Generate a new private key for the AVS
-AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
-# This will show the address, so you can confirm it was properly added when listing operators
-cast wallet addr --private-key "$AVS_KEY"
+# Generate a new private key for the operator (needs ETH for transactions)
+OPERATOR_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+OPERATOR_ADDRESS=$(cast wallet addr --private-key "$OPERATOR_KEY")
+echo "Operator address: $OPERATOR_ADDRESS"
 
 export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
 
+# Generate or use an existing AVS signing key address
+# Option 1: Generate a new AVS signing key
+AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+AVS_SIGNING_ADDRESS=$(cast wallet addr --private-key "$AVS_KEY")
+echo "AVS signing address: $AVS_SIGNING_ADDRESS"
+
+# Option 2: Use an existing AVS signing address from your AVS node
+# AVS_SIGNING_ADDRESS="0x..." # Address of the key that will sign for the AVS
+
+# Register the operator using the operator key and AVS signing address
 docker run --rm --network host --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware register "$AVS_KEY" "0.01ether"
+   wavs-middleware register "$OPERATOR_KEY" "$AVS_SIGNING_ADDRESS" "0.01ether"
 ```
 
 List Operators:
@@ -148,7 +157,7 @@ sequenceDiagram
     Service->>Contracts: Set Service URI
     Service->>Contracts: Stop Impersonating
 
-    Register->>Register: Read AVS Key
+    Register->>Register: Read Operator Key and AVS Signing Address
     Register->>Register: Setup Operator
     Register->>Register: Fund Operator Account
     Register->>Contracts: Mint LST Tokens
@@ -162,8 +171,8 @@ sequenceDiagram
     Register->>Register: Generate Random Salt
     Register->>Register: Calculate Expiry
     Register->>Register: Calculate Digest Hash
-    Register->>Register: Sign Digest Hash
-    Register->>Contracts: Register with Signature
+    Register->>Register: Sign Digest Hash with Operator Key
+    Register->>Contracts: Register with Signature using AVS Signing Address
 ```
 
 ## Detailed Process Explanation
@@ -195,7 +204,7 @@ sequenceDiagram
 
 ### Register Operator (register.sh)
 
-1. Read AVS private key from command line
+1. Read operator private key and AVS signing address from command line
 2. Setup operator with initial configuration
 3. Fund operator account with ETH
 4. Mint LST tokens for operator
@@ -210,8 +219,8 @@ sequenceDiagram
    - Generate random salt
    - Calculate expiry time
    - Calculate digest hash
-   - Sign digest hash with private key
-   - Register with signature on stake registry
+   - Sign digest hash with operator's private key
+   - Register with signature on stake registry, using the AVS signing address as the signing key
 
 ### Helper Functions (helpers.sh)
 
