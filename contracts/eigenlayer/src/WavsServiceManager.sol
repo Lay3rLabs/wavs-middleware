@@ -274,4 +274,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     function getOperatorWeight(address operator) external view returns (uint256) {
         return ECDSAStakeRegistry(stakeRegistry).getLastCheckpointOperatorWeight(operator);
     }
+
+    /// @inheritdoc IWavsServiceManager
+    function getLatestOperatorForSigningKey(address signingKey) external view returns(address) {
+        return ECDSAStakeRegistry(stakeRegistry).getLatestOperatorForSigningKey(signingKey);
+    }
 }
