@@ -103,6 +103,7 @@ List Operators:
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host  --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e PAST_BLOCKS=1000 \
    wavs-middleware list_operator
 ```
 
@@ -125,7 +126,7 @@ Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPL
 ## References
 
 - [EigenLayer Documentation](https://docs.eigenlayer.xyz/)
-- [Hello World AVS Repository](https://github.com/Layr-Labs/eigenlayer-hello-world)
+- [Hello World AVS Repository](https://github.com/Layr-Labs/hello-world-avs)
 
 ## Deployment Process Flow
 
