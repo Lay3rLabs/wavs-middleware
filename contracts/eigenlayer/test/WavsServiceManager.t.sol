@@ -205,7 +205,7 @@ contract WavsServiceManagerTest is Test {
         bytes[] memory signatures = new bytes[](1);
         signers[0] = signer1; // Operators registered 0x1 to 0x5
         signatures[0] = ""; // Empty signature since we're mocking the validation
-                IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
+        IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
             signers: signers,
             signatures: signatures,
             referenceBlock: uint32(block.number) - 1
