@@ -17,13 +17,13 @@ contract SimpleServiceManager is IWavsServiceManager {
     ) external view override {
         // Input validation
         if (signatureData.signers.length == 0 || signatureData.signers.length != signatureData.signatures.length) {
-            revert IWavsServiceManager.InvalidSignature();
+            revert IWavsServiceManager.InvalidSignatureLength();
         }
         if (signatureData.referenceBlock >= block.number) {
-            revert IWavsServiceManager.InvalidSignature();
+            revert IWavsServiceManager.InvalidSignatureBlock();
         }
         if (!_validateOperatorSorting(signatureData.signers)) {
-            revert IWavsServiceManager.InvalidSignature();
+            revert IWavsServiceManager.InvalidSignatureOrder();
         }
 
         // Get the total operator weight of these signatures

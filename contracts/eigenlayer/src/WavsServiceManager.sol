@@ -184,10 +184,10 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     ) external view {
         // Input validation
         if (signatureData.signers.length == 0 || signatureData.signers.length != signatureData.signatures.length) {
-            revert IWavsServiceManager.InvalidSignature();
+            revert IWavsServiceManager.InvalidSignatureLength();
         }
         if (signatureData.referenceBlock >= block.number) {
-            revert IWavsServiceManager.InvalidSignature();
+            revert IWavsServiceManager.InvalidSignatureBlock();
         }
 
         // Create message hash

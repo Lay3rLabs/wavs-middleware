@@ -299,7 +299,7 @@ contract WavsServiceManagerTest is Test {
         address[] memory emptySigners = new address[](0);
         bytes[] memory emptySignatures = new bytes[](0);
         
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidSignature.selector));
+        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidSignatureLength.selector));
         serviceManager.validate(
             IWavsServiceHandler.Envelope({
                 eventId: bytes20(0),
