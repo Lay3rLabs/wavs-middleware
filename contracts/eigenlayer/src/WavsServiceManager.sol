@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 import {ECDSAServiceManagerBase} from
     "@eigenlayer-middleware/src/unaudited/ECDSAServiceManagerBase.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
+import {IECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistryStorage.sol";
+
 import {IServiceManager} from "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
 import {ECDSAUpgradeable} from
     "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
@@ -209,11 +211,15 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         }
 
         // Calculate the total weight of the operators that signed
-        ECDSAStakeRegistry registry = ECDSAStakeRegistry(stakeRegistry);
+        IECDSAStakeRegistry registry = IECDSAStakeRegistry(stakeRegistry);
         uint256 signedWeight = 0;
         for (uint256 i = 0; i < signatureData.signers.length; i++) {
-            signedWeight += registry.getOperatorWeightAtBlock(
+            address operator = registry.getOperatorForSigningKeyAtBlock(
                 signatureData.signers[i], 
+                signatureData.referenceBlock
+            );
+            signedWeight += registry.getOperatorWeightAtBlock(
+                operator, 
                 signatureData.referenceBlock
             );
         }

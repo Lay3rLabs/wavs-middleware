@@ -55,6 +55,22 @@ contract MockStakeRegistry {
     function getLastCheckpointOperatorWeight(address operator) external view returns (uint256) {
         return operatorWeights[operator];
     }
+
+    function getOperatorSigningKeyAtBlock(address operator, uint256) external view returns (address) {
+        return operatorToSigning[operator];
+    }
+
+    function getLatestOperatorSigningKey(address operator) external view returns (address) {
+        return operatorToSigning[operator];
+    }
+
+    function getOperatorForSigningKeyAtBlock(address signing, uint256) external view returns (address) {
+        return signingToOperator[signing];
+    }
+
+    function getLatestOperatorForSigningKey(address signing) external view returns (address) {
+        return signingToOperator[signing];
+    }
 }
 
 contract WavsServiceManagerTest is Test {
@@ -119,6 +135,11 @@ contract WavsServiceManagerTest is Test {
         // Test initial state
         assertEq(serviceManager.quorumNumerator(), 2, "Initial quorum numerator should be 2");
         assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
+
+        address signer = mockStakeRegistry.getLatestOperatorSigningKey(operator1);
+        assertEq(signer, operator1, "Initial signer should match operator");
+        signer = mockStakeRegistry.getOperatorSigningKeyAtBlock(operator1, block.number - 1);
+        assertEq(signer, operator1, "At block query should match operator");
     }
     
     function test_validateQuorumSigned_success() public view {
