@@ -229,7 +229,7 @@ contract WavsServiceManagerTest is Test {
     
     function test_validate_invalid_signature_length() public {
         // Empty operators array
-        address[] memory emptyOperators = new address[](0);
+        address[] memory emptySigners = new address[](0);
         bytes[] memory emptySignatures = new bytes[](0);
         
         vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidSignature.selector));
@@ -240,7 +240,7 @@ contract WavsServiceManagerTest is Test {
                 payload: ""
             }),
             IWavsServiceHandler.SignatureData({
-                operators: emptyOperators,
+                signers: emptySigners,
                 signatures: emptySignatures,
                 referenceBlock: 1
             })
@@ -252,16 +252,16 @@ contract WavsServiceManagerTest is Test {
         uint256 numOperators,
         uint32 referenceBlockOffset
     ) internal view returns (IWavsServiceHandler.SignatureData memory) {
-        address[] memory operators = new address[](numOperators);
+        address[] memory signers = new address[](numOperators);
         bytes[] memory signatures = new bytes[](numOperators);
         
         for (uint256 i = 0; i < numOperators; i++) {
-            operators[i] = address(uint160(i + 1)); // Operators registered 0x1 to 0x5
+            signers[i] = address(uint160(i + 1)); // Operators registered 0x1 to 0x5
             signatures[i] = ""; // Empty signature since we're mocking the validation
         }
         
         return IWavsServiceHandler.SignatureData({
-            operators: operators,
+            signers: signers,
             signatures: signatures,
             referenceBlock: uint32(block.number) - 1 - referenceBlockOffset
         });

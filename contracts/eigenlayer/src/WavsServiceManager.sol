@@ -181,7 +181,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         IWavsServiceHandler.SignatureData calldata signatureData
     ) external view {
         // Input validation
-        if (signatureData.operators.length == 0 || signatureData.operators.length != signatureData.signatures.length) {
+        if (signatureData.signers.length == 0 || signatureData.signers.length != signatureData.signatures.length) {
             revert IWavsServiceManager.InvalidSignature();
         }
         if (signatureData.referenceBlock >= block.number) {
@@ -195,7 +195,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         // Validate signatures through the stake registry
         bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
         bytes memory signatureDataBytes = abi.encode(
-            signatureData.operators, 
+            signatureData.signers, 
             signatureData.signatures, 
             signatureData.referenceBlock
         );
@@ -211,9 +211,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         // Calculate the total weight of the operators that signed
         ECDSAStakeRegistry registry = ECDSAStakeRegistry(stakeRegistry);
         uint256 signedWeight = 0;
-        for (uint256 i = 0; i < signatureData.operators.length; i++) {
+        for (uint256 i = 0; i < signatureData.signers.length; i++) {
             signedWeight += registry.getOperatorWeightAtBlock(
-                signatureData.operators[i], 
+                signatureData.signers[i], 
                 signatureData.referenceBlock
             );
         }
