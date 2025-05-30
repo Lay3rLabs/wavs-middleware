@@ -15,11 +15,16 @@ contract SimpleServiceManager is IWavsServiceManager {
         IWavsServiceHandler.Envelope calldata /* envelope */,
         IWavsServiceHandler.SignatureData calldata signatureData
     ) external view override {
-        // Validate that operators are sorted in ascending byte order
-        require(
-            _validateOperatorSorting(signatureData.signers),
-            "Operators are not properly sorted"
-        );
+        // Input validation
+        if (signatureData.signers.length == 0 || signatureData.signers.length != signatureData.signatures.length) {
+            revert IWavsServiceManager.InvalidSignature();
+        }
+        if (signatureData.referenceBlock >= block.number) {
+            revert IWavsServiceManager.InvalidSignature();
+        }
+        if (!_validateOperatorSorting(signatureData.signers)) {
+            revert IWavsServiceManager.InvalidSignature();
+        }
 
         // Get the total operator weight of these signatures
         uint256 totalWeight = 0;
@@ -27,11 +32,15 @@ contract SimpleServiceManager is IWavsServiceManager {
             totalWeight += operatorWeights[signatureData.signers[i]];
         }
 
-        // Check if total weight is above threshold
-        require(
-            totalWeight >= lastCheckpointThresholdWeight,
-            "Not enough operator weight"
-        );
+        // Avoid 0 weight ever passing this check
+        if (totalWeight == 0) {
+            revert IWavsServiceManager.InsufficientQuorum();
+        }
+
+        // Check if the total weight meets the last checkpoint threshold 
+        if (totalWeight < lastCheckpointThresholdWeight) {
+            revert IWavsServiceManager.InsufficientQuorum();
+        }
     }
 
     /**
