@@ -24,9 +24,9 @@ contract MockStakeRegistry {
     }
 
     function setOperatorSigner(address operator, address signer) external {
-        operatorToSigning[operator] = signer;
         address oldSigner = operatorToSigning[operator];
         delete signingToOperator[oldSigner];
+        operatorToSigning[operator] = signer;
         signingToOperator[signer] = operator;
     }
 
