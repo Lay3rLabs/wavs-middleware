@@ -11,13 +11,25 @@ import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 uint256 constant OPERATOR_WEIGHT = 100; 
 
 contract MockStakeRegistry {
+    mapping(address => address) public operatorToSigning;
+    mapping(address => address) public signingToOperator;
     mapping(address => uint256) public operatorWeights;
     uint256 public totalWeight;
     
     function setOperatorWeight(address operator, uint256 weight) external {
         operatorWeights[operator] = weight;
+        // set this to self
+        operatorToSigning[operator] = operator;
+        signingToOperator[operator] = operator;
     }
-    
+
+    function setOperatorSigner(address operator, address signer) external {
+        operatorToSigning[operator] = signer;
+        address oldSigner = operatorToSigning[operator];
+        delete signingToOperator[oldSigner];
+        signingToOperator[signer] = operator;
+    }
+
     function setTotalWeight(uint256 _totalWeight) external {
         totalWeight = _totalWeight;
     }
@@ -157,6 +169,40 @@ contract WavsServiceManagerTest is Test {
         assertTrue(true, "Validation should pass with exact quorum");
     }
     
+    function test_validateQuorumSigned_explicitSigningKeys() public {
+        address signer1 = address(0x13579);
+
+        vm.startPrank(owner);
+        // Change quorum to 1 of 5, so we just test one signer
+        serviceManager.setQuorumThreshold(1, 5);
+        // Set the signing key to something else
+        mockStakeRegistry.setOperatorSigner(operator1, signer1);
+        vm.stopPrank();
+
+        // Create signature data with signer not operator
+        address[] memory signers = new address[](1);
+        bytes[] memory signatures = new bytes[](1);
+        signers[0] = signer1; // Operators registered 0x1 to 0x5
+        signatures[0] = ""; // Empty signature since we're mocking the validation
+                IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
+            signers: signers,
+            signatures: signatures,
+            referenceBlock: uint32(block.number) - 1
+        });
+
+        serviceManager.validate(
+            IWavsServiceHandler.Envelope({
+                eventId: bytes20(0),
+                ordering: bytes12(0),
+                payload: ""
+            }),
+            signatureData
+        );
+        
+        // Test should not revert
+        assertTrue(true, "Validation should pass when signer is set");
+    }
+
     function test_validateQuorumSigned_zero_total_weight() public {
         // Set total weight to 0, which should always fail
         mockStakeRegistry.setTotalWeight(0);
