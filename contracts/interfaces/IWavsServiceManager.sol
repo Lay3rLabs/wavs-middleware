@@ -12,6 +12,7 @@ interface IWavsServiceManager {
     error InvalidSignatureBlock();
     error InvalidSignatureOrder();
     error InvalidSignature();
+    error InsufficientQuorumZero();
     error InsufficientQuorum();
     error InvalidQuorumParameters();
     

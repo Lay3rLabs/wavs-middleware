@@ -242,7 +242,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     ) internal view {
         // Avoid 0 weight ever passing this check
         if (totalWeight == 0) {
-            revert IWavsServiceManager.InsufficientQuorum();
+            revert IWavsServiceManager.InsufficientQuorumZero();
         }
         
         // Check if signedWeight >= (quorumNumerator/quorumDenominator) * totalWeight

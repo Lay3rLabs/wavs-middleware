@@ -34,7 +34,7 @@ contract SimpleServiceManager is IWavsServiceManager {
 
         // Avoid 0 weight ever passing this check
         if (totalWeight == 0) {
-            revert IWavsServiceManager.InsufficientQuorum();
+            revert IWavsServiceManager.InsufficientQuorumZero();
         }
 
         // Check if the total weight meets the last checkpoint threshold 

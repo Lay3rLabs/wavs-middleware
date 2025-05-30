@@ -228,7 +228,7 @@ contract WavsServiceManagerTest is Test {
         // Set total weight to 0, which should always fail
         mockStakeRegistry.setTotalWeight(0);
         
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector));
+        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorumZero.selector));
         serviceManager.validate(
             IWavsServiceHandler.Envelope({
                 eventId: bytes20(0),
