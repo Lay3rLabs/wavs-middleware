@@ -184,10 +184,10 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     ) external view {
         // Input validation
         if (signatureData.signers.length == 0 || signatureData.signers.length != signatureData.signatures.length) {
-            revert IWavsServiceManager.InvalidSignature();
+            revert IWavsServiceManager.InvalidSignatureLength();
         }
         if (signatureData.referenceBlock >= block.number) {
-            revert IWavsServiceManager.InvalidSignature();
+            revert IWavsServiceManager.InvalidSignatureBlock();
         }
 
         // Create message hash
@@ -242,13 +242,15 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     ) internal view {
         // Avoid 0 weight ever passing this check
         if (totalWeight == 0) {
-            revert IWavsServiceManager.InsufficientQuorum();
+            revert IWavsServiceManager.InsufficientQuorumZero();
         }
         
-        // Check if signedWeight >= (quorumNumerator/quorumDenominator) * totalWeight
-        // This is equivalent but only using division to avoid any potential overflow
-        if (signedWeight / quorumNumerator < totalWeight / quorumDenominator) {
-            revert IWavsServiceManager.InsufficientQuorum();
+        // Calculate threshold weight
+        uint256 thresholdWeight = (totalWeight * quorumNumerator) / quorumDenominator;
+        
+        // Check if signedWeight >= thresholdWeight
+        if (signedWeight < thresholdWeight) {
+            revert IWavsServiceManager.InsufficientQuorum(signedWeight, thresholdWeight, totalWeight);
         }
     }
     

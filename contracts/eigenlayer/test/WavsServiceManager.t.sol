@@ -159,7 +159,7 @@ contract WavsServiceManagerTest is Test {
     
     function test_validateQuorumSigned_insufficient() public {
         // 2/3 of 500 is 333, so 300 should fail
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector));
+        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 300, 333, 500));
         serviceManager.validate(
             IWavsServiceHandler.Envelope({
                 eventId: bytes20(0),
@@ -228,7 +228,7 @@ contract WavsServiceManagerTest is Test {
         // Set total weight to 0, which should always fail
         mockStakeRegistry.setTotalWeight(0);
         
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector));
+        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorumZero.selector));
         serviceManager.validate(
             IWavsServiceHandler.Envelope({
                 eventId: bytes20(0),
@@ -259,7 +259,7 @@ contract WavsServiceManagerTest is Test {
         );
 
         // Now 200/500 (40%) should fail (needs 255)
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector));
+        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 200, 255, 500));
         serviceManager.validate(
             IWavsServiceHandler.Envelope({
                 eventId: bytes20(0),
@@ -299,7 +299,7 @@ contract WavsServiceManagerTest is Test {
         address[] memory emptySigners = new address[](0);
         bytes[] memory emptySignatures = new bytes[](0);
         
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidSignature.selector));
+        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidSignatureLength.selector));
         serviceManager.validate(
             IWavsServiceHandler.Envelope({
                 eventId: bytes20(0),
