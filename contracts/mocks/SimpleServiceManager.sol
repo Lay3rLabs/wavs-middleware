@@ -17,14 +17,14 @@ contract SimpleServiceManager is IWavsServiceManager {
     ) external view override {
         // Validate that operators are sorted in ascending byte order
         require(
-            _validateOperatorSorting(signatureData.operators),
+            _validateOperatorSorting(signatureData.signers),
             "Operators are not properly sorted"
         );
 
         // Get the total operator weight of these signatures
         uint256 totalWeight = 0;
-        for (uint256 i = 0; i < signatureData.operators.length; i++) {
-            totalWeight += operatorWeights[signatureData.operators[i]];
+        for (uint256 i = 0; i < signatureData.signers.length; i++) {
+            totalWeight += operatorWeights[signatureData.signers[i]];
         }
 
         // Check if total weight is above threshold

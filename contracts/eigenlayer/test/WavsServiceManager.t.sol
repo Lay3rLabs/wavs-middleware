@@ -11,13 +11,25 @@ import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 uint256 constant OPERATOR_WEIGHT = 100; 
 
 contract MockStakeRegistry {
+    mapping(address => address) public operatorToSigning;
+    mapping(address => address) public signingToOperator;
     mapping(address => uint256) public operatorWeights;
     uint256 public totalWeight;
     
     function setOperatorWeight(address operator, uint256 weight) external {
         operatorWeights[operator] = weight;
+        // set this to self
+        operatorToSigning[operator] = operator;
+        signingToOperator[operator] = operator;
     }
-    
+
+    function setOperatorSigner(address operator, address signer) external {
+        address oldSigner = operatorToSigning[operator];
+        delete signingToOperator[oldSigner];
+        operatorToSigning[operator] = signer;
+        signingToOperator[signer] = operator;
+    }
+
     function setTotalWeight(uint256 _totalWeight) external {
         totalWeight = _totalWeight;
     }
@@ -42,6 +54,22 @@ contract MockStakeRegistry {
     
     function getLastCheckpointOperatorWeight(address operator) external view returns (uint256) {
         return operatorWeights[operator];
+    }
+
+    function getOperatorSigningKeyAtBlock(address operator, uint256) external view returns (address) {
+        return operatorToSigning[operator];
+    }
+
+    function getLatestOperatorSigningKey(address operator) external view returns (address) {
+        return operatorToSigning[operator];
+    }
+
+    function getOperatorForSigningKeyAtBlock(address signing, uint256) external view returns (address) {
+        return signingToOperator[signing];
+    }
+
+    function getLatestOperatorForSigningKey(address signing) external view returns (address) {
+        return signingToOperator[signing];
     }
 }
 
@@ -107,6 +135,11 @@ contract WavsServiceManagerTest is Test {
         // Test initial state
         assertEq(serviceManager.quorumNumerator(), 2, "Initial quorum numerator should be 2");
         assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
+
+        address signer = mockStakeRegistry.getLatestOperatorSigningKey(operator1);
+        assertEq(signer, operator1, "Initial signer should match operator");
+        signer = mockStakeRegistry.getOperatorSigningKeyAtBlock(operator1, block.number - 1);
+        assertEq(signer, operator1, "At block query should match operator");
     }
     
     function test_validateQuorumSigned_success() public view {
@@ -157,6 +190,40 @@ contract WavsServiceManagerTest is Test {
         assertTrue(true, "Validation should pass with exact quorum");
     }
     
+    function test_validateQuorumSigned_explicitSigningKeys() public {
+        address signer1 = address(0x13579);
+
+        vm.startPrank(owner);
+        // Change quorum to 1 of 5, so we just test one signer
+        serviceManager.setQuorumThreshold(1, 5);
+        // Set the signing key to something else
+        mockStakeRegistry.setOperatorSigner(operator1, signer1);
+        vm.stopPrank();
+
+        // Create signature data with signer not operator
+        address[] memory signers = new address[](1);
+        bytes[] memory signatures = new bytes[](1);
+        signers[0] = signer1; // Operators registered 0x1 to 0x5
+        signatures[0] = ""; // Empty signature since we're mocking the validation
+        IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
+            signers: signers,
+            signatures: signatures,
+            referenceBlock: uint32(block.number) - 1
+        });
+
+        serviceManager.validate(
+            IWavsServiceHandler.Envelope({
+                eventId: bytes20(0),
+                ordering: bytes12(0),
+                payload: ""
+            }),
+            signatureData
+        );
+        
+        // Test should not revert
+        assertTrue(true, "Validation should pass when signer is set");
+    }
+
     function test_validateQuorumSigned_zero_total_weight() public {
         // Set total weight to 0, which should always fail
         mockStakeRegistry.setTotalWeight(0);
@@ -229,7 +296,7 @@ contract WavsServiceManagerTest is Test {
     
     function test_validate_invalid_signature_length() public {
         // Empty operators array
-        address[] memory emptyOperators = new address[](0);
+        address[] memory emptySigners = new address[](0);
         bytes[] memory emptySignatures = new bytes[](0);
         
         vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidSignature.selector));
@@ -240,7 +307,7 @@ contract WavsServiceManagerTest is Test {
                 payload: ""
             }),
             IWavsServiceHandler.SignatureData({
-                operators: emptyOperators,
+                signers: emptySigners,
                 signatures: emptySignatures,
                 referenceBlock: 1
             })
@@ -252,16 +319,16 @@ contract WavsServiceManagerTest is Test {
         uint256 numOperators,
         uint32 referenceBlockOffset
     ) internal view returns (IWavsServiceHandler.SignatureData memory) {
-        address[] memory operators = new address[](numOperators);
+        address[] memory signers = new address[](numOperators);
         bytes[] memory signatures = new bytes[](numOperators);
         
         for (uint256 i = 0; i < numOperators; i++) {
-            operators[i] = address(uint160(i + 1)); // Operators registered 0x1 to 0x5
+            signers[i] = address(uint160(i + 1)); // Operators registered 0x1 to 0x5
             signatures[i] = ""; // Empty signature since we're mocking the validation
         }
         
         return IWavsServiceHandler.SignatureData({
-            operators: operators,
+            signers: signers,
             signatures: signatures,
             referenceBlock: uint32(block.number) - 1 - referenceBlockOffset
         });
