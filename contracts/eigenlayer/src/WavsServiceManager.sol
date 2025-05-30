@@ -245,10 +245,12 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
             revert IWavsServiceManager.InsufficientQuorumZero();
         }
         
-        // Check if signedWeight >= (quorumNumerator/quorumDenominator) * totalWeight
-        // This is equivalent but only using division to avoid any potential overflow
-        if (signedWeight / quorumNumerator < totalWeight / quorumDenominator) {
-            revert IWavsServiceManager.InsufficientQuorum();
+        // Calculate threshold weight
+        uint256 thresholdWeight = (totalWeight * quorumNumerator) / quorumDenominator;
+        
+        // Check if signedWeight >= thresholdWeight
+        if (signedWeight < thresholdWeight) {
+            revert IWavsServiceManager.InsufficientQuorum(signedWeight, thresholdWeight, totalWeight);
         }
     }
     

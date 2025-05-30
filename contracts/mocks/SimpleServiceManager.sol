@@ -27,19 +27,19 @@ contract SimpleServiceManager is IWavsServiceManager {
         }
 
         // Get the total operator weight of these signatures
-        uint256 totalWeight = 0;
+        uint256 signedWeight = 0;
         for (uint256 i = 0; i < signatureData.signers.length; i++) {
-            totalWeight += operatorWeights[signatureData.signers[i]];
+            signedWeight += operatorWeights[signatureData.signers[i]];
         }
 
         // Avoid 0 weight ever passing this check
-        if (totalWeight == 0) {
+        if (signedWeight == 0) {
             revert IWavsServiceManager.InsufficientQuorumZero();
         }
 
         // Check if the total weight meets the last checkpoint threshold 
-        if (totalWeight < lastCheckpointThresholdWeight) {
-            revert IWavsServiceManager.InsufficientQuorum();
+        if (signedWeight < lastCheckpointThresholdWeight) {
+            revert IWavsServiceManager.InsufficientQuorum(signedWeight, lastCheckpointThresholdWeight, lastCheckpointTotalWeight);
         }
     }
 

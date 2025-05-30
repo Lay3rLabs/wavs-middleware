@@ -13,7 +13,7 @@ interface IWavsServiceManager {
     error InvalidSignatureOrder();
     error InvalidSignature();
     error InsufficientQuorumZero();
-    error InsufficientQuorum();
+    error InsufficientQuorum(uint256 signerWeight, uint256 thresholdWeight, uint256 totalWeight);
     error InvalidQuorumParameters();
     
     // ------------------------------------------------------------------------
