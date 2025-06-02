@@ -17,6 +17,19 @@ usage() {
     exit 2
 }
 
+check() {
+    if [ ! -f "$SCRIPT_DIR/$1" ]; then
+        # If no file, return error so checks continue
+        return 1
+    fi
+    if [ ! -x "$SCRIPT_DIR/$1" ]; then
+        # If found but not executable, this is a dev error, and flag it rather than silently retrying, to help debug
+        echo "Script not executable $1"
+        exit 1
+    fi
+    PATH="$SCRIPT_DIR/$1"
+}
+
 # Parse out the option flags
 SIG=ecdsa
 MODE=eigen
@@ -34,18 +47,15 @@ shift $(($OPTIND - 1))
 if [ "$#" -eq 0 ]; then
     usage
 fi
-CMD="$SIG/$MODE/$1.sh"
+CMD="$1.sh"
 shift
 
-# Ensure command path exists and is executable
-if [ ! -f "$SCRIPT_DIR/$CMD" ]; then
-    echo "Error: Command $CMD not found"
-    exit 1
-fi
-if [ ! -x "$SCRIPT_DIR/$CMD" ]; then
-    echo "Error: Command $CMD is not executable"
-    exit 1
-fi
+# Allow some generic ones over multiple modes. Try in this order:
+# "$SIG/$MODE/$1.sh"
+# "$SIG/$1.sh"
+# "$1.sh"
 
-# echo "Calling:" "$SCRIPT_DIR/$CMD" "$@"
-exec "$SCRIPT_DIR/$CMD" "$@"
+check "$SIG/$MODE/$CMD" || check "$SIG/$CMD" || check "$CMD" ||  (echo "Error: Command $CMD not found"  && exit 1)
+
+echo "Calling:" "$PATH" "$@"
+exec "$PATH" "$@"
