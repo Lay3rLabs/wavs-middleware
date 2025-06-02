@@ -27,7 +27,7 @@ check() {
         echo "Script not executable $1"
         exit 1
     fi
-    PATH="$SCRIPT_DIR/$1"
+    EXEC_FILE="$SCRIPT_DIR/$1"
 }
 
 # Parse out the option flags
@@ -57,5 +57,8 @@ shift
 
 check "$SIG/$MODE/$CMD" || check "$SIG/$CMD" || check "$CMD" ||  (echo "Error: Command $CMD not found"  && exit 1)
 
-echo "Calling:" "$PATH" "$@"
-exec "$PATH" "$@"
+# go to the top-level dir, above scripts, for standard location to run from
+cd $SCRIPT_DIR/..
+
+echo "Calling:" "$EXEC_FILE" "$@"
+exec "$EXEC_FILE" "$@"
