@@ -8,7 +8,7 @@ RUN forge build --root /wavs/contracts ./eigenlayer
 RUN rm -rf /tmp
 
 WORKDIR /wavs
-COPY ./docker/*.sh /wavs/
-RUN chmod +x /wavs/*.sh
+COPY ./scripts /wavs/scripts
+RUN chmod +x /wavs/scripts/*.sh
 
-ENTRYPOINT ["/wavs/cli.sh"]
+ENTRYPOINT ["/wavs/scripts/cli.sh"]
