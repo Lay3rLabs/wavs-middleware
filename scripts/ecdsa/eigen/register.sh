@@ -39,7 +39,7 @@ register_operator_with_avs() {
     local operator_key=$1
     local operator_address=$(cast wallet address $operator_key)
     local signing_key_address=$2
-    
+
     echo "Registering operator $operator_address with AVS using signing key $signing_key_address..."
     local avs_directory_address=$(cast call "${WAVS_SERVICE_MANAGER_ADDRESS}" "avsDirectory()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
     if [ -z "$avs_directory_address" ]; then
@@ -98,7 +98,7 @@ setup_operator() {
             echo "Error: Operator key ${operator_address} has no balance, you must fund this first with > ${amount}"
             exit 1
         else
-            echo "Operator $address already has a balance of $balance"
+            echo "Operator $operator_address already has a balance of $balance"
         fi
     else
         cast rpc anvil_setBalance $operator_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for operator $operator_address" && exit 1)
