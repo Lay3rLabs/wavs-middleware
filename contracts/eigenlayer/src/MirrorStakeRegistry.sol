@@ -6,6 +6,8 @@ import {IDelegationManager} from
 import {ECDSAStakeRegistry, IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
 import {ISignatureUtilsMixinTypes} from "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
+import {CheckpointsUpgradeable} from
+    "@openzeppelin-upgrades/contracts/utils/CheckpointsUpgradeable.sol";
 
 /**
  * @title Mirror Stake Registry
@@ -13,6 +15,8 @@ import {ISignatureUtilsMixinTypes} from "eigenlayer-contracts/src/contracts/inte
  * @dev This contract overrides external registration methods to revert and provides an owner-only method to set lookups
  */
 contract MirrorStakeRegistry is ECDSAStakeRegistry {
+    using CheckpointsUpgradeable for CheckpointsUpgradeable.History;
+
     /// @notice Error thrown when attempting to register an operator through the public method
     error RegistrationNotSupported();
     
@@ -28,14 +32,15 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
     /// @notice Error thrown when attempting to update operators for quorum through the public method
     error QuorumOperatorUpdateNotSupported();
 
+    /// @notice Error thrown when array lengths don't match in batch operations
+    error InvalidArrayLengths();
+
     /// @dev Constructor to create MirrorStakeRegistry.
     constructor() ECDSAStakeRegistry(IDelegationManager(address(0))) {
-
+        // Empty constructor
     }
 
-/*
-TODO: overrdie this
-        /// @notice Initializes the contract with the given parameters.
+    /// @notice Initializes the contract with the given parameters.
     /// @param _serviceManager The address of the service manager.
     /// @param thresholdWeight The threshold weight in basis points.
     /// @param quorum The quorum struct containing the details of the quorum thresholds.
@@ -43,11 +48,11 @@ TODO: overrdie this
         address _serviceManager,
         uint256 thresholdWeight,
         IECDSAStakeRegistryTypes.Quorum memory quorum
-    ) external initializer {
-        // TODO
-        // __ECDSAStakeRegistry_init(_serviceManager, thresholdWeight, quorum);
+    ) external override initializer {
+        // We can't override initialize since it's not virtual in the parent contract
+        // But we can still call the internal initialization function
+        __ECDSAStakeRegistry_init(_serviceManager, thresholdWeight, quorum);
     }
-*/
 
     /// @notice Override the registerOperatorWithSignature method to revert
     /// @dev This operation is not supported in the mock implementation
@@ -91,23 +96,23 @@ TODO: overrdie this
 
     /// @dev This operation is not supported in the mock implementation
     function updateQuorumConfig(
-         IECDSAStakeRegistryTypes.Quorum memory quorum,
-         address[] memory operators
+         IECDSAStakeRegistryTypes.Quorum memory,
+         address[] memory
     ) external override onlyOwner {
         revert QuorumOperatorUpdateNotSupported();
     }
 
     /// @dev This operation is not supported in the mock implementation
     function updateMinimumWeight(
-         uint256 newMinimumWeight,
-         address[] memory operators
+         uint256,
+         address[] memory
     ) external override onlyOwner {
         revert OperatorUpdateNotSupported();
     }
 
     /// @dev This operation is not supported in the mock implementation
     function updateStakeThreshold(
-         uint256 thresholdWeight
+         uint256
     ) external override onlyOwner {
         revert OperatorUpdateNotSupported();
     }
@@ -116,8 +121,7 @@ TODO: overrdie this
     function getOperatorWeight(
         address operator
     ) public view override returns (uint256) {
-        // TODO
-        return 0;
+        return _operatorWeightHistory[operator].latest();
     }
 
     /**
@@ -132,8 +136,7 @@ TODO: overrdie this
         address signingKey,
         uint256 weight
     ) external onlyOwner {
-        // This is a no-op implementation as specified in the requirements
-        // It will be expanded in the final implementation
+        _setOperatorDetails(operator, signingKey, weight);
     }
 
     /**
@@ -148,7 +151,78 @@ TODO: overrdie this
         address[] calldata signingKeys,
         uint256[] calldata weights
     ) external onlyOwner {
-        // This is a no-op implementation as specified in the requirements
-        // It will be expanded in the final implementation
+        // Validate array lengths match
+        if (operators.length != signingKeys.length || operators.length != weights.length) {
+            revert InvalidArrayLengths();
+        }
+
+        uint256 length = operators.length;
+        for (uint256 i = 0; i < length; i++) {
+            _setOperatorDetails(operators[i], signingKeys[i], weights[i]);
+        }
+    }
+
+    /**
+     * @dev Internal function to set operator details
+     * @param operator The operator address
+     * @param signingKey The signing key to associate with the operator
+     * @param weight The weight to assign to the operator
+     */
+    /**
+     * @notice Returns the service manager address
+     * @return The address of the service manager
+     */
+    function serviceManager() external view returns (address) {
+        return _serviceManager;
+    }
+
+    function _setOperatorDetails(
+        address operator,
+        address signingKey,
+        uint256 weight
+    ) internal {
+        // Get the current weight of the operator
+        uint256 currentWeight = _operatorWeightHistory[operator].latest();
+        
+        // Calculate the weight delta
+        int256 weightDelta = int256(weight) - int256(currentWeight);
+        
+        // Update the operator weight
+        _operatorWeightHistory[operator].push(weight);
+        
+        // Update the total weight
+        (uint256 oldTotalWeight, uint256 newTotalWeight) = _updateTotalWeight(weightDelta);
+        
+        // Get the current signing key for the operator
+        address currentSigningKey = address(uint160(_operatorSigningKeyHistory[operator].latest()));
+        
+        // If the signing key is different, update the mappings
+        if (currentSigningKey != signingKey) {
+            // Remove the old signing key mapping if it exists
+            if (currentSigningKey != address(0)) {
+                // Clear the old signing key to operator mapping in history
+                _signingKeyToOperatorHistory[currentSigningKey].push(0); // Set to 0 to indicate no operator
+            }
+            
+            // Set the new signing key mapping
+            _operatorSigningKeyHistory[operator].push(uint256(uint160(signingKey)));
+            _signingKeyToOperatorHistory[signingKey].push(uint256(uint160(operator)));
+        }
+        
+        // Mark the operator as registered
+        _operatorRegistered[operator] = true;
+        
+        // Emit events
+        emit OperatorWeightUpdated(operator, currentWeight, weight);
+        emit TotalWeightUpdated(oldTotalWeight, newTotalWeight);
+        
+        if (currentSigningKey != signingKey) {
+            emit SigningKeyUpdate(
+                operator,
+                block.number,
+                signingKey,
+                currentSigningKey
+            );
+        }
     }
 }
