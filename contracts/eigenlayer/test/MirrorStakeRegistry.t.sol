@@ -7,6 +7,8 @@ import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/unaudited/ECD
 import {ISignatureUtilsMixinTypes} from "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
 import {IERC1271Upgradeable} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+import {SignatureCheckerUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/SignatureCheckerUpgradeable.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract MirrorStakeRegistryTest is Test {
     MirrorStakeRegistry public registry;
@@ -333,8 +335,80 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test isValidSignature functionality
+    // Private keys for signing (using deterministic keys for testing)
+    uint256 private constant SIGNER_PK1 = 1;
+    uint256 private constant SIGNER_PK2 = 2;
+    uint256 private constant SIGNER_PK3 = 3;
+    
+    /**
+     * @notice Helper function to sort signers and their corresponding signatures in ascending order by signer address
+     * @dev ECDSAStakeRegistry requires signers to be sorted in ascending order
+     * @param signers Array of signer addresses
+     * @param signatures Array of signatures that correspond to signers at the same index
+     */
+    function sortSignersAndSignatures(
+        address[] memory signers,
+        bytes[] memory signatures
+    ) internal pure {
+        // Simple bubble sort since we're working with small arrays
+        uint256 length = signers.length;
+        for (uint256 i = 0; i < length - 1; i++) {
+            for (uint256 j = 0; j < length - i - 1; j++) {
+                if (signers[j] > signers[j + 1]) {
+                    // Swap signers
+                    address tempAddr = signers[j];
+                    signers[j] = signers[j + 1];
+                    signers[j + 1] = tempAddr;
+                    
+                    // Swap corresponding signatures
+                    bytes memory tempSig = signatures[j];
+                    signatures[j] = signatures[j + 1];
+                    signatures[j + 1] = tempSig;
+                }
+            }
+        }
+    }
+    
+    /**
+     * @notice Helper function to generate an ECDSA signature using a private key
+     * @param privateKey The private key to sign with
+     * @param digest The message hash to sign
+     * @return The signature in bytes format ready for validation
+     */
+    function generateSignature(
+        uint256 privateKey,
+        bytes32 digest
+    ) internal pure returns (bytes memory) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+        return abi.encodePacked(r, s, v);
+    }
+    
+    /**
+     * @notice Helper function to verify that signatures can be recovered to the expected signers
+     * @param digest Message hash that was signed
+     * @param signers Array of signer addresses (should be sorted)
+     * @param signatures Array of signatures corresponding to signers
+     */
+    function verifySignatures(
+        bytes32 digest,
+        address[] memory signers,
+        bytes[] memory signatures
+    ) internal pure {
+        require(signers.length == signatures.length, "Arrays length mismatch");
+        
+        for (uint256 i = 0; i < signers.length; i++) {
+            address recovered = ECDSA.recover(digest, signatures[i]);
+            require(recovered == signers[i], "Signature recovery failed");
+        }
+    }
+    
+    // Test isValidSignature functionality with real signatures
     function test_isValidSignature() public {
+        // Generate signing keys from private keys
+        signingKey1 = vm.addr(SIGNER_PK1);
+        signingKey2 = vm.addr(SIGNER_PK2);
+        signingKey3 = vm.addr(SIGNER_PK3);
+                
         vm.startPrank(owner);
         
         // Set up operators with weights
@@ -356,6 +430,7 @@ contract MirrorStakeRegistryTest is Test {
         
         // Batch set operator details
         registry.batchSetOperatorDetails(operators, signingKeys, weights);
+        vm.stopPrank();
         
         // Create a message to sign
         bytes32 digest = keccak256("test message");
@@ -363,50 +438,40 @@ contract MirrorStakeRegistryTest is Test {
         // Roll to the next block to make the checkpoint available
         vm.roll(block.number + 1);
         
-        // Create signature data - ECDSAStakeRegistry.isValidSignature expects (address[] signers, bytes[] signatures, uint32 referenceBlock)
-        // The signers should be the signing keys, not the operators
-        address[] memory signers = new address[](3); // Include all three signing keys to meet the threshold
+        // Create signature data for all signing keys
+        address[] memory signers = new address[](3);
         bytes[] memory signatures = new bytes[](3);
         uint32 referenceBlock = uint32(block.number - 1); // Use the previous block as reference
         
-        // Use all signing keys to meet the threshold weight
+        // Add signing keys to signers array
         signers[0] = signingKey1;
         signers[1] = signingKey2;
         signers[2] = signingKey3;
+                
+        // Generate actual signatures using the private keys
+        signatures[0] = generateSignature(SIGNER_PK1, digest);
+        signatures[1] = generateSignature(SIGNER_PK2, digest);
+        signatures[2] = generateSignature(SIGNER_PK3, digest);
+
+        // Sort the signers and signatures arrays to ensure signers are in ascending order
+        // ECDSAStakeRegistry requires this for validation
+        sortSignersAndSignatures(signers, signatures);
         
-        // Mock signatures (in a real scenario these would be valid signatures)
-        signatures[0] = abi.encodePacked(bytes32(0), bytes32(0), uint8(27));
-        signatures[1] = abi.encodePacked(bytes32(0), bytes32(0), uint8(28));
-        signatures[2] = abi.encodePacked(bytes32(0), bytes32(0), uint8(29));
+        // Verify signers are properly sorted
+        for (uint256 i = 0; i < signers.length - 1; i++) {
+            assertTrue(signers[i] < signers[i + 1], "Signers not properly sorted");
+        }
+
+        // Verify our signatures are valid and match the expected signers
+        verifySignatures(digest, signers, signatures);
         
         // Encode the signature data as expected by isValidSignature
         bytes memory signatureData = abi.encode(signers, signatures, referenceBlock);
         
-        // Mock the signature verification for all signing keys
-        vm.mockCall(
-            signingKey1,
-            abi.encodeWithSelector(IERC1271Upgradeable.isValidSignature.selector, digest, signatures[0]),
-            abi.encode(IERC1271Upgradeable.isValidSignature.selector)
-        );
-        
-        vm.mockCall(
-            signingKey2,
-            abi.encodeWithSelector(IERC1271Upgradeable.isValidSignature.selector, digest, signatures[1]),
-            abi.encode(IERC1271Upgradeable.isValidSignature.selector)
-        );
-        
-        vm.mockCall(
-            signingKey3,
-            abi.encodeWithSelector(IERC1271Upgradeable.isValidSignature.selector, digest, signatures[2]),
-            abi.encode(IERC1271Upgradeable.isValidSignature.selector)
-        );
-        
-        // Call isValidSignature
+        // Call isValidSignature with real signatures
         bytes4 result = registry.isValidSignature(digest, signatureData);
         
         // Verify the result
         assertEq(result, IERC1271Upgradeable.isValidSignature.selector, "isValidSignature should return the correct selector");
-        
-        vm.stopPrank();
     }
 }
