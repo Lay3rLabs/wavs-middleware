@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/Test.sol";
-import {WavsMirrorDeploymentLib} from "./utils/WavsMirrorDeplomentLib.sol";
+import {WavsMirrorDeploymentLib} from "./utils/WavsMirrorDeploymentLib.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";

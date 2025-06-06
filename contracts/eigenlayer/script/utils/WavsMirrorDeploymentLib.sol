@@ -36,8 +36,14 @@ library WavsMirrorDeploymentLib {
     ) internal returns (DeploymentData memory) {
         DeploymentData memory result;
 
-        // use an empty quorum just to fill the sapace, we don't use it internally
-        IECDSAStakeRegistryTypes.StrategyParams[] memory strategies = new IECDSAStakeRegistryTypes.StrategyParams[](0);
+        // use an mock quorum so checks pass, we don't use it internally
+        IStrategy mockStrategyInstance = IStrategy(address(1)); // Using address(1) instead of address(0)
+        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams = IECDSAStakeRegistryTypes.StrategyParams({
+            strategy: mockStrategyInstance,
+            multiplier: 10000 // 100% in basis points
+        });
+        IECDSAStakeRegistryTypes.StrategyParams[] memory strategies = new IECDSAStakeRegistryTypes.StrategyParams[](1);
+        strategies[0] = strategyParams;
         IECDSAStakeRegistryTypes.Quorum memory quorum = IECDSAStakeRegistryTypes.Quorum({strategies: strategies});
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.
