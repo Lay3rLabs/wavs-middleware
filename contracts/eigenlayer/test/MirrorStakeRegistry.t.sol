@@ -19,6 +19,9 @@ contract MirrorStakeRegistryTest is Test {
     address public signingKey1;
     address public signingKey2;
     address public signingKey3;
+    uint256 public privateKey1;
+    uint256 public privateKey2;
+    uint256 public privateKey3;
     address public serviceManager;
     // these should sum to around 9,0000 (so 2/3 can pass)
     uint256 public constant WEIGHT_1 = 1500;
@@ -31,9 +34,12 @@ contract MirrorStakeRegistryTest is Test {
         operator1 = address(0x1);
         operator2 = address(0x2);
         operator3 = address(0x3);
-        signingKey1 = address(0x11);
-        signingKey2 = address(0x22);
-        signingKey3 = address(0x33);
+        privateKey1 = 0x11;
+        privateKey2 = 0x22;
+        privateKey3 = 0x33;
+        signingKey1 = vm.addr(privateKey1);
+        signingKey2 = vm.addr(privateKey2);
+        signingKey3 = vm.addr(privateKey3);
         serviceManager = address(0x456);
 
         // Deploy the MirrorStakeRegistry contract
@@ -334,11 +340,6 @@ contract MirrorStakeRegistryTest is Test {
         
         vm.stopPrank();
     }
-
-    // Private keys for signing (using deterministic keys for testing)
-    uint256 private constant SIGNER_PK1 = 1;
-    uint256 private constant SIGNER_PK2 = 2;
-    uint256 private constant SIGNER_PK3 = 3;
     
     /**
      * @notice Helper function to sort signers and their corresponding signatures in ascending order by signer address
@@ -403,12 +404,7 @@ contract MirrorStakeRegistryTest is Test {
     }
     
     // Test isValidSignature functionality with real signatures
-    function test_isValidSignature() public {
-        // Generate signing keys from private keys
-        signingKey1 = vm.addr(SIGNER_PK1);
-        signingKey2 = vm.addr(SIGNER_PK2);
-        signingKey3 = vm.addr(SIGNER_PK3);
-                
+    function test_isValidSignature() public {                
         vm.startPrank(owner);
         
         // Set up operators with weights
@@ -449,9 +445,9 @@ contract MirrorStakeRegistryTest is Test {
         signers[2] = signingKey3;
                 
         // Generate actual signatures using the private keys
-        signatures[0] = generateSignature(SIGNER_PK1, digest);
-        signatures[1] = generateSignature(SIGNER_PK2, digest);
-        signatures[2] = generateSignature(SIGNER_PK3, digest);
+        signatures[0] = generateSignature(privateKey1, digest);
+        signatures[1] = generateSignature(privateKey2, digest);
+        signatures[2] = generateSignature(privateKey3, digest);
 
         // Sort the signers and signatures arrays to ensure signers are in ascending order
         // ECDSAStakeRegistry requires this for validation
