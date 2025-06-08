@@ -6,7 +6,7 @@ import {IWavsServiceManager} from "../../../interfaces/IWavsServiceManager.sol";
 import { MirrorStakeRegistry } from "../MirrorStakeRegistry.sol";
 
 
-interface ITypes {
+interface IMirrorUpdateTypes {
     error InvalidTriggerId(uint64 expectedTriggerId);
 
     /// @notice DataWithId is a struct containing a trigger ID and updated operator info
@@ -19,7 +19,7 @@ interface ITypes {
 }
 
 
-contract MirrorServiceHandler is ITypes, IWavsServiceHandler {
+contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
     /// @notice Ensures all updates are deployed in order and no duplicates.
     uint64 public lastTriggerId;
 
@@ -37,7 +37,7 @@ contract MirrorServiceHandler is ITypes, IWavsServiceHandler {
 
     function handleSignedEnvelope(Envelope calldata envelope, SignatureData calldata signatureData) external {
         // Quick check this is valid trigger id before validating signatures
-        UpdateWithId memory updateData = abi.decode(envelope.payload, (UpdateWithId));
+        IMirrorUpdateTypes.UpdateWithId memory updateData = abi.decode(envelope.payload, (IMirrorUpdateTypes.UpdateWithId));
         uint64 expectedTrigger = lastTriggerId + 1;
         if (updateData.triggerId != expectedTrigger) {
             revert InvalidTriggerId(expectedTrigger);

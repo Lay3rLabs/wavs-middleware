@@ -6,14 +6,13 @@ import {WavsMirrorDeploymentLib} from "../script/utils/WavsMirrorDeploymentLib.s
 import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 import {MirrorStakeRegistry} from "../src/MirrorStakeRegistry.sol";
 import {WavsServiceManager} from "../src/WavsServiceManager.sol";
-import {MirrorServiceHandler, ITypes} from "../src/handlers/MirrorServiceHandler.sol";
+import {MirrorServiceHandler, IMirrorUpdateTypes} from "../src/handlers/MirrorServiceHandler.sol";
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
 import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
 import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from
-    "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 contract MirrorServiceHandlerTest is Test {
     using UpgradeableProxyLib for address;
@@ -140,7 +139,7 @@ contract MirrorServiceHandlerTest is Test {
         newWeights[0] = 10000;
         
         // Create the UpdateWithId struct with triggerId = 2
-        ITypes.UpdateWithId memory updateData = ITypes.UpdateWithId({
+        IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
             triggerId: 2,  // Invalid, should be 1
             operators: newOperators,
             signingKeys: newSigningKeys,
@@ -158,7 +157,7 @@ contract MirrorServiceHandlerTest is Test {
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 5);
         
         // Call handleSignedEnvelope should fail with InvalidTriggerId
-        vm.expectRevert(abi.encodeWithSelector(ITypes.InvalidTriggerId.selector, 1));
+        vm.expectRevert(abi.encodeWithSelector(IMirrorUpdateTypes.InvalidTriggerId.selector, 1));
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
@@ -173,7 +172,7 @@ contract MirrorServiceHandlerTest is Test {
         newWeights[0] = 10000;
         
         // Create the UpdateWithId struct with triggerId = 1
-        ITypes.UpdateWithId memory updateData = ITypes.UpdateWithId({
+        IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
             triggerId: 1,
             operators: newOperators,
             signingKeys: newSigningKeys,
@@ -203,6 +202,106 @@ contract MirrorServiceHandlerTest is Test {
         ));
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
+
+    function test_successful_update_weight() public {
+        // let's change the weights and a public key
+        // now op1 and op2 have 2/3 and can pass a future round
+        address[] memory newOperators = new address[](2);
+        address[] memory newSigningKeys = new address[](2);
+        uint256[] memory newWeights = new uint256[](2);
+
+        // after this, we have 30k, 30k, 10k, 10k, 10k    
+        for (uint256 i = 0; i < 2; i++) {
+            newOperators[i] = operators[i];
+            newSigningKeys[i] = signingKeys[i];
+            newWeights[i] = OPERATOR_WEIGHT * 3;
+        }   
+        
+        // Create the UpdateWithId struct with triggerId = 1
+        IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
+            triggerId: 1,
+            operators: newOperators,
+            signingKeys: newSigningKeys,
+            weights: newWeights
+        });
+        
+        // Create envelope with the encoded payload
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+
+        // 4/5 can pass this with > 2/3        
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 0);
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+        // Check that the lastTriggerId was incremented
+        assertEq(serviceHandler.lastTriggerId(), 1, "lastTriggerId not incremented");
+
+        // Move forward in blocks to ensure the previous update is finalized
+        uint256 startBlock = vm.getBlockNumber();
+        uint256 stepOne = startBlock + 10;
+        vm.roll(stepOne + 1);
+        
+        // Check the weights were updated at the block of the first update
+        for (uint256 i = 0; i < 2; i++) {
+            uint256 weight = stakeRegistry.getOperatorWeightAtBlock(newOperators[i], uint32(stepOne));
+            assertEq(weight, newWeights[i], "Operator weight not updated");
+        }
+
+        uint256 totalWeight = stakeRegistry.getLastCheckpointTotalWeightAtBlock(uint32(stepOne));
+        assertEq(totalWeight, 90000, "Total weight not updated");
+
+        newOperators = new address[](3);
+        newSigningKeys = new address[](3);
+        newWeights = new uint256[](3);
+
+        // Set up the next update - setting weights to 0 for the last 3 operators
+        for (uint256 i = 0; i < 3; i++) {
+            newOperators[i] = operators[i + 2];
+            newSigningKeys[i] = signingKeys[i + 2];
+            newWeights[i] = 0;
+        }
+
+        // Create the UpdateWithId struct with triggerId = 2
+        updateData = IMirrorUpdateTypes.UpdateWithId({
+            triggerId: 2,
+            operators: newOperators,
+            signingKeys: newSigningKeys,
+            weights: newWeights
+        });
+        
+        // Create envelope with the encoded payload
+        envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+
+        // First 2 operators now have 2/3 and can pass
+        signatureData = createSignatureData(envelope, 2, 0);
+
+        // Call handleSignedEnvelope
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+        
+        // Move forward in blocks to ensure the previous update is finalized
+        uint256 stepTwo = startBlock + 20;
+        vm.roll(stepTwo + 1);
+
+        // Check that the lastTriggerId was incremented
+        assertEq(serviceHandler.lastTriggerId(), 2, "lastTriggerId not incremented to 2");
+
+        uint256 newTotalWeight = stakeRegistry.getLastCheckpointTotalWeightAtBlock(uint32(stepTwo));
+        assertEq(newTotalWeight, 60000, "Total weight not updated");
+
+        // Check that the operator weights were properly updated (0s for the other operators)
+        for (uint256 i = 0; i < 3; i++) {
+            uint256 weight = stakeRegistry.getOperatorWeightAtBlock(newOperators[i], uint32(stepTwo));
+            assertEq(weight, 0, "Operator weight not set to 0");
+        }
+    }
+
 
     // Helper function to create signature data with a specific number of operators and real signatures
     function createSignatureData(
