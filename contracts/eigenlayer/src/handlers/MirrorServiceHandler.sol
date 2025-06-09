@@ -38,14 +38,13 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
     function handleSignedEnvelope(Envelope calldata envelope, SignatureData calldata signatureData) external {
         // Quick check this is valid trigger id before validating signatures
         IMirrorUpdateTypes.UpdateWithId memory updateData = abi.decode(envelope.payload, (IMirrorUpdateTypes.UpdateWithId));
-        uint64 expectedTrigger = lastTriggerId + 1;
-        if (updateData.triggerId != expectedTrigger) {
-            revert InvalidTriggerId(expectedTrigger);
+        if (updateData.triggerId <= lastTriggerId) {
+            revert InvalidTriggerId(lastTriggerId);
         }
 
         // Validate the signatures and update trigger id at this point
         serviceManager.validate(envelope, signatureData);
-        lastTriggerId = expectedTrigger;
+        lastTriggerId = updateData.triggerId;
 
         // call stake registry to update
         stakeRegistry.batchSetOperatorDetails(updateData.operators, updateData.signingKeys, updateData.weights);

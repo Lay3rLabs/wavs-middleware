@@ -128,24 +128,20 @@ contract MirrorServiceHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
+    // Update trigger ID and ensure proper
     function test_invalid_trigger_id() public {
-        // Create a valid UpdateWithId payload with triggerId = 2 (but we expect 1)
-        address[] memory newOperators = new address[](1);
-        address[] memory newSigningKeys = new address[](1);
-        uint256[] memory newWeights = new uint256[](1);
-        
-        newOperators[0] = address(0x123);
-        newSigningKeys[0] = address(0x456);
-        newWeights[0] = 10000;
-        
-        // Create the UpdateWithId struct with triggerId = 2
+        // Keep the same operators
+        address[] memory newOperators = operators;
+        address[] memory newSigningKeys = signingKeys;
+        uint256[] memory newWeights = weights;
+
+        // Update to triggerId 5                
         IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
-            triggerId: 2,  // Invalid, should be 1
+            triggerId: 5,
             operators: newOperators,
             signingKeys: newSigningKeys,
             weights: newWeights
         });
-        
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
@@ -155,10 +151,36 @@ contract MirrorServiceHandlerTest is Test {
         
         // Create signature data with 4 operators (more than enough to pass quorum)
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 5);
-        
-        // Call handleSignedEnvelope should fail with InvalidTriggerId
-        vm.expectRevert(abi.encodeWithSelector(IMirrorUpdateTypes.InvalidTriggerId.selector, 1));
+        // Will pass and update to 5
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
+        
+        // ensure it is updated
+        assertEq(serviceHandler.lastTriggerId(), 5, "Initial trigger ID should be 5");
+
+        // Try again will fail (reply)
+        vm.expectRevert(abi.encodeWithSelector(IMirrorUpdateTypes.InvalidTriggerId.selector, 5));
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+        // Previous trigger id will fail
+        updateData = IMirrorUpdateTypes.UpdateWithId({
+            triggerId: 3, // 3 < 5
+            operators: newOperators,
+            signingKeys: newSigningKeys,
+            weights: newWeights
+        });
+        // Create envelope with the encoded payload
+        envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(2)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+        // Create signature data with 4 operators (more than enough to pass quorum)
+        signatureData = createSignatureData(envelope, 4, 5);
+
+        // but fails
+        vm.expectRevert(abi.encodeWithSelector(IMirrorUpdateTypes.InvalidTriggerId.selector, 5));
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
     }
 
     function test_insufficient_quorum() public {
