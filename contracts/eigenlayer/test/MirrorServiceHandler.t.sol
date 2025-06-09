@@ -19,7 +19,6 @@ contract MirrorServiceHandlerTest is Test {
 
     address private deployer;
     address private proxyAdmin;
-    WavsMirrorDeploymentLib.DeploymentData private deployment;
     
     // Contract references
     MirrorStakeRegistry private stakeRegistry;
@@ -44,7 +43,7 @@ contract MirrorServiceHandlerTest is Test {
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
         
         // Deploy contracts
-        deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
+        WavsMirrorDeploymentLib.DeploymentData memory deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
         
         // Create references to deployed contracts
         serviceManager = WavsServiceManager(deployment.WavsServiceManager);
@@ -75,13 +74,8 @@ contract MirrorServiceHandlerTest is Test {
 
         // Deploy MirrorServiceHandler
         vm.startPrank(actualOwner);
-        serviceHandler = new MirrorServiceHandler(stakeRegistry);
-                
-        // The owner check in the test is actually checking the owner() function
-        // Since MirrorStakeRegistry inherits from OwnableUpgradeable, we need to transfer ownership
-        // using the transferOwnership function
-        stakeRegistry.transferOwnership(address(serviceHandler));
-        
+        deployment = WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
+        serviceHandler = MirrorServiceHandler(deployment.MirrorServiceHandler);
         vm.stopPrank();
 
         // Roll to block 10 to ensure we have enough blocks for reference blocks

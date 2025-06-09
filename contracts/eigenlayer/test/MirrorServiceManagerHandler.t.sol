@@ -75,13 +75,8 @@ contract MirrorServiceManagerHandlerTest is Test {
 
         // Deploy MirrorServiceManagerHandler
         vm.startPrank(actualOwner);
-        serviceHandler = new MirrorServiceManagerHandler(serviceManager);
-                
-        // The owner check in the test is actually checking the owner() function
-        // Since MirrorStakeRegistry inherits from OwnableUpgradeable, we need to transfer ownership
-        // using the transferOwnership function
-        serviceManager.transferOwnership(address(serviceHandler));
-        
+        deployment = WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
+        serviceHandler = MirrorServiceManagerHandler(deployment.MirrorServiceManagerHandler);
         vm.stopPrank();
 
         // Roll to block 10 to ensure we have enough blocks for reference blocks
@@ -92,6 +87,8 @@ contract MirrorServiceManagerHandlerTest is Test {
         // Test initial state of the service handler
         assertEq(serviceHandler.lastTriggerId(), 0, "Initial trigger ID should be 0");
         assertEq(address(serviceHandler.serviceManager()), address(serviceManager), "Service manager address should be set");
+        assertEq(serviceManager.quorumNumerator(), 2, "Initial quorum numerator should be 2");
+        assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
     }
     
     function test_invalid_trigger_id() public {
@@ -190,6 +187,53 @@ contract MirrorServiceManagerHandlerTest is Test {
     }
     */
     
+    function test_successful_update_quorum() public {
+        // let's change quorum so 2/5 (4/10)can pass, not 2/3
+        // Create the UpdateWithId struct with triggerId = 1
+        IManagerUpdateTypes.UpdateWithId memory updateData = IManagerUpdateTypes.UpdateWithId({
+            triggerId: 1,
+            numerator: 4,
+            denominator: 10
+        });
+        
+        // Create envelope with the encoded payload
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+
+        // 4/5 can pass this with > 2/3        
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 0);
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+        // Check that the lastTriggerId was incremented
+        assertEq(serviceHandler.lastTriggerId(), 1, "lastTriggerId not incremented");
+        assertEq(serviceManager.quorumNumerator(), 4, "Initial quorum numerator should be 4");
+        assertEq(serviceManager.quorumDenominator(), 10, "Initial quorum denominator should be 10");
+
+        updateData = IManagerUpdateTypes.UpdateWithId({
+            triggerId: 2,
+            numerator: 1,
+            denominator: 6
+        });
+        
+        // Create envelope with the encoded payload
+        envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+
+        // 2/5 is now enough to pass
+        signatureData = createSignatureData(envelope, 2, 0);
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+        // Check that the lastTriggerId was incremented
+        assertEq(serviceHandler.lastTriggerId(), 2, "lastTriggerId not incremented to 2");
+        assertEq(serviceManager.quorumNumerator(), 1, "Initial quorum numerator should be 1");
+        assertEq(serviceManager.quorumDenominator(), 6, "Initial quorum denominator should be 6");
+    }
 
     // Helper function to create signature data with a specific number of operators and real signatures
     function createSignatureData(
