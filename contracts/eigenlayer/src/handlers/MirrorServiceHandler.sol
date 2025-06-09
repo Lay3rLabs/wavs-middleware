@@ -12,6 +12,7 @@ interface IMirrorUpdateTypes {
     /// @notice DataWithId is a struct containing a trigger ID and updated operator info
     struct UpdateWithId {
         uint64 triggerId;
+        uint256 thresholdWeight;
         address[] operators;
         address[] signingKeys;
         uint256[] weights;
@@ -47,6 +48,7 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
         lastTriggerId = updateData.triggerId;
 
         // call stake registry to update
+        stakeRegistry.updateStakeThreshold(updateData.thresholdWeight);
         stakeRegistry.batchSetOperatorDetails(updateData.operators, updateData.signingKeys, updateData.weights);
   }
 

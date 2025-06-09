@@ -132,6 +132,7 @@ contract MirrorServiceHandlerTest is Test {
         // Update to triggerId 5                
         IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
             triggerId: 5,
+            thresholdWeight: 5000,
             operators: newOperators,
             signingKeys: newSigningKeys,
             weights: newWeights
@@ -158,6 +159,7 @@ contract MirrorServiceHandlerTest is Test {
         // Previous trigger id will fail
         updateData = IMirrorUpdateTypes.UpdateWithId({
             triggerId: 3, // 3 < 5
+            thresholdWeight: 5000,
             operators: newOperators,
             signingKeys: newSigningKeys,
             weights: newWeights
@@ -190,6 +192,7 @@ contract MirrorServiceHandlerTest is Test {
         // Create the UpdateWithId struct with triggerId = 1
         IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
             triggerId: 1,
+            thresholdWeight: 5000,
             operators: newOperators,
             signingKeys: newSigningKeys,
             weights: newWeights
@@ -236,6 +239,7 @@ contract MirrorServiceHandlerTest is Test {
         // Create the UpdateWithId struct with triggerId = 1
         IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
             triggerId: 1,
+            thresholdWeight: 8000,
             operators: newOperators,
             signingKeys: newSigningKeys,
             weights: newWeights
@@ -253,6 +257,7 @@ contract MirrorServiceHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
 
         // Check that the lastTriggerId was incremented
+        assertEq(stakeRegistry.getLastCheckpointThresholdWeight(), 8000, "stakeThreshold not updated");
         assertEq(serviceHandler.lastTriggerId(), 1, "lastTriggerId not incremented");
 
         // Move forward in blocks to ensure the previous update is finalized
@@ -283,6 +288,7 @@ contract MirrorServiceHandlerTest is Test {
         // Create the UpdateWithId struct with triggerId = 2
         updateData = IMirrorUpdateTypes.UpdateWithId({
             triggerId: 2,
+            thresholdWeight: 6500,
             operators: newOperators,
             signingKeys: newSigningKeys,
             weights: newWeights
@@ -306,6 +312,7 @@ contract MirrorServiceHandlerTest is Test {
         vm.roll(stepTwo + 1);
 
         // Check that the lastTriggerId was incremented
+        assertEq(stakeRegistry.getLastCheckpointThresholdWeight(), 6500, "stakeThreshold not updated");
         assertEq(serviceHandler.lastTriggerId(), 2, "lastTriggerId not incremented to 2");
 
         uint256 newTotalWeight = stakeRegistry.getLastCheckpointTotalWeightAtBlock(uint32(stepTwo));
