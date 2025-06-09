@@ -2,29 +2,21 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/Test.sol";
 import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeplomentLib.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
-import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
-import {StrategyManager} from "@eigenlayer/contracts/core/StrategyManager.sol";
-
-
 import {
     IECDSAStakeRegistryTypes,
     IStrategy
 } from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
-    using ReadCoreLib for *;
+    // using ReadCoreLib for *;
     using UpgradeableProxyLib for address;
 
     address private deployer;
     address proxyAdmin;
-    IStrategy helloWorldStrategy;
+    IStrategy avsStrategy;
     ReadCoreLib.DeploymentData coreDeployment;
     WavsMiddlewareDeploymentLib.DeploymentData wavsMiddlewareDeployment;
     Quorum internal quorum;
@@ -35,10 +27,10 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
 
         coreDeployment = ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
         // Get the LST strategy address from environment
-        helloWorldStrategy = IStrategy(vm.envAddress("LST_STRATEGY_ADDRESS"));
+        avsStrategy = IStrategy(vm.envAddress("LST_STRATEGY_ADDRESS"));
 
         quorum.strategies.push(
-            StrategyParams({strategy: helloWorldStrategy, multiplier: 10_000})
+            StrategyParams({strategy: avsStrategy, multiplier: 10_000})
         );
     }
 
@@ -49,7 +41,7 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         wavsMiddlewareDeployment =
             WavsMiddlewareDeploymentLib.deployContracts(proxyAdmin, coreDeployment, quorum);
 
-        wavsMiddlewareDeployment.strategy = address(helloWorldStrategy);
+        wavsMiddlewareDeployment.strategy = address(avsStrategy);
         vm.stopBroadcast();
 
         verifyDeployment();
