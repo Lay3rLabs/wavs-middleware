@@ -10,6 +10,8 @@ import {console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {MirrorStakeRegistry} from "../../src/MirrorStakeRegistry.sol";
+import {MirrorServiceHandler} from "../../src/handlers/MirrorServiceHandler.sol";
+import {MirrorServiceManagerHandler} from "../../src/handlers/MirrorServiceManagerHandler.sol";
 import {WavsServiceManager} from "../../src/WavsServiceManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {
@@ -29,6 +31,8 @@ library WavsMirrorDeploymentLib {
     struct DeploymentData {
         address WavsServiceManager;
         address stakeRegistry;
+        address MirrorServiceHandler;
+        address MirrorServiceManagerHandler;
     }
 
     function deployContracts(
@@ -82,6 +86,30 @@ library WavsMirrorDeploymentLib {
         return result;
     }
 
+    // deploy service handlers to run mirroring and transfer ownership
+    // must be called by the owner of the service manager
+    function deployServiceHandlers(
+        DeploymentData memory deployment
+    ) internal returns (DeploymentData memory) {
+        if (deployment.MirrorServiceHandler != address(0) || deployment.MirrorServiceManagerHandler != address(0)) {
+            revert("Service handlers already deployed");
+        }
+
+        DeploymentData memory result = deployment;
+
+        // deploy the stake registry handler
+        MirrorStakeRegistry stakeRegistry = MirrorStakeRegistry(result.stakeRegistry);
+        result.MirrorServiceHandler = address(new MirrorServiceHandler(stakeRegistry));
+        stakeRegistry.transferOwnership(result.MirrorServiceHandler);
+
+        // deploy the service manager handler
+        WavsServiceManager serviceManager = WavsServiceManager(result.WavsServiceManager);
+        result.MirrorServiceManagerHandler = address(new MirrorServiceManagerHandler(serviceManager));
+        serviceManager.transferOwnership(result.MirrorServiceManagerHandler);
+
+        return result;
+    }
+
     function readDeploymentJson(
         uint256 chainId
     ) internal returns (DeploymentData memory) {
@@ -99,9 +127,10 @@ library WavsMirrorDeploymentLib {
         string memory json = vm.readFile(fileName);
 
         DeploymentData memory data;
-        /// TODO: 2 Step for reading deployment json.  Read to the core and the AVS data
         data.WavsServiceManager = json.readAddress(".contracts.WavsServiceManager");
         data.stakeRegistry = json.readAddress(".contracts.stakeRegistry");
+        data.MirrorServiceHandler = json.readAddress(".contracts.MirrorServiceHandler");
+        data.MirrorServiceManagerHandler = json.readAddress(".contracts.MirrorServiceManagerHandler");
         
         return data;
     }
@@ -163,6 +192,10 @@ library WavsMirrorDeploymentLib {
             data.stakeRegistry.toHexString(),
             '","stakeRegistryImpl":"',
             data.stakeRegistry.getImplementation().toHexString(),
+            '","MirrorServiceHandler":"',
+            data.MirrorServiceHandler.toHexString(),
+            '","MirrorServiceManagerHandler":"',
+            data.MirrorServiceManagerHandler.toHexString(),
             '"}'
         );
     }

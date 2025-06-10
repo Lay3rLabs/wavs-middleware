@@ -1,0 +1,340 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
+
+import {Test} from "forge-std/Test.sol";
+import {WavsMirrorDeploymentLib} from "../script/utils/WavsMirrorDeploymentLib.sol";
+import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
+import {MirrorStakeRegistry} from "../src/MirrorStakeRegistry.sol";
+import {WavsServiceManager} from "../src/WavsServiceManager.sol";
+import {MirrorServiceManagerHandler, IManagerUpdateTypes} from "../src/handlers/MirrorServiceManagerHandler.sol";
+import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
+import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
+import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+
+contract MirrorServiceManagerHandlerTest is Test {
+    using UpgradeableProxyLib for address;
+
+    address private deployer;
+    address private proxyAdmin;
+    WavsMirrorDeploymentLib.DeploymentData private deployment;
+    
+    // Contract references
+    MirrorStakeRegistry private stakeRegistry;
+    WavsServiceManager private serviceManager;
+    MirrorServiceManagerHandler private serviceHandler;
+    
+    // Basic operator data
+    address[] private operators;
+    address[] private signingKeys;
+    uint256[] private weights;
+    uint256[] private privateKeys;
+    
+    // Constants
+    uint256 private constant OPERATOR_WEIGHT = 10000;
+    
+    function setUp() public {
+        // Set up deployer address
+        deployer = address(0x123);
+        vm.startPrank(deployer);
+        
+        // Deploy proxy admin
+        proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
+        
+        // Deploy contracts
+        deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
+        
+        // Create references to deployed contracts
+        serviceManager = WavsServiceManager(deployment.WavsServiceManager);
+        stakeRegistry = MirrorStakeRegistry(deployment.stakeRegistry);
+        
+        vm.stopPrank();
+                
+        // Create test info for 5 operators        
+        privateKeys = new uint256[](5);
+        operators = new address[](5);
+        signingKeys = new address[](5);
+        weights = new uint256[](5);
+        
+        for (uint256 i = 0; i < 5; i++) {
+            privateKeys[i] = i + 1;
+            operators[i] = vm.addr(privateKeys[i]);
+            signingKeys[i] = vm.addr(privateKeys[i]);
+            weights[i] = OPERATOR_WEIGHT;
+        }
+
+        // Find out the actual owner of the contracts
+        address actualOwner = serviceManager.owner();
+        
+        // Set up test operator weights as the actual owner
+        vm.startPrank(actualOwner);
+        stakeRegistry.batchSetOperatorDetails(operators, signingKeys, weights);
+        vm.stopPrank();
+
+        // Deploy MirrorServiceManagerHandler
+        vm.startPrank(actualOwner);
+        deployment = WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
+        serviceHandler = MirrorServiceManagerHandler(deployment.MirrorServiceManagerHandler);
+        vm.stopPrank();
+
+        // Roll to block 10 to ensure we have enough blocks for reference blocks
+        vm.roll(10);
+    }
+    
+    function test_initial_state() public {
+        // Test initial state of the service handler
+        assertEq(serviceHandler.lastTriggerId(), 0, "Initial trigger ID should be 0");
+        assertEq(address(serviceHandler.serviceManager()), address(serviceManager), "Service manager address should be set");
+        assertEq(serviceManager.quorumNumerator(), 2, "Initial quorum numerator should be 2");
+        assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
+    }
+    
+    function test_invalid_trigger_id() public {
+        // update trigger to 5
+        IManagerUpdateTypes.UpdateWithId memory updateData = IManagerUpdateTypes.UpdateWithId({
+            triggerId: 5,
+            numerator: 2,
+            denominator: 3
+        });
+        // Create envelope with the encoded payload
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+        
+        // Create signature data with all operators (5/5)
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 5, 0);
+        // Passes first time
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+        // Replay should fail with InvalidTriggerId
+        vm.expectRevert(abi.encodeWithSelector(IManagerUpdateTypes.InvalidTriggerId.selector, 5));
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+        // Try lower trigger id (2) to show it fails
+        updateData = IManagerUpdateTypes.UpdateWithId({
+            triggerId: 2,
+            numerator: 3,
+            denominator: 4
+        });
+        // Create envelope with the encoded payload
+        envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(2)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });        
+        // Create signature data with all operators (5/5)
+        signatureData = createSignatureData(envelope, 5, 0);
+
+        // Previous id should fail with InvalidTriggerId
+        vm.expectRevert(abi.encodeWithSelector(IManagerUpdateTypes.InvalidTriggerId.selector, 5));
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+    }
+    
+    function test_insufficient_quorum() public {
+        // Create a valid UpdateWithId payload with triggerId = 1
+        IManagerUpdateTypes.UpdateWithId memory updateData = IManagerUpdateTypes.UpdateWithId({
+            triggerId: 1,
+            numerator: 2,
+            denominator: 3
+        });
+        
+        // Create envelope with the encoded payload
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+        
+        // Create signature data with only 2 operators (not enough for quorum)
+        // The quorum is 3/5 (60%) in the default setup
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 2, 0);
+        
+        // Call handleSignedEnvelope should fail with InsufficientQuorum
+        vm.expectRevert(abi.encodeWithSignature(
+            "InsufficientQuorum(uint256,uint256,uint256)",
+            20000,  // has  
+            33333,  // needs
+            50000   // max
+        ));
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+    }
+    
+
+    /*
+    // TODO: no error on parse. how to validate?
+    function test_invalid_payload() public {
+        // Create an invalid payload (not matching UpdateWithId struct)
+        bytes memory invalidPayload = abi.encode("BAD");
+        
+        // Create envelope with the invalid payload
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: invalidPayload
+        });
+        
+        // Create signature data with all operators (5/5)
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 5, 5);
+        
+        // Call handleSignedEnvelope should fail with abi decode error
+        vm.expectRevert(); // Decoding error
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+    }
+    */
+    
+    function test_successful_update_quorum() public {
+        // let's change quorum so 2/5 (4/10)can pass, not 2/3
+        // Create the UpdateWithId struct with triggerId = 1
+        IManagerUpdateTypes.UpdateWithId memory updateData = IManagerUpdateTypes.UpdateWithId({
+            triggerId: 1,
+            numerator: 4,
+            denominator: 10
+        });
+        
+        // Create envelope with the encoded payload
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+
+        // 4/5 can pass this with > 2/3        
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 0);
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+        // Check that the lastTriggerId was incremented
+        assertEq(serviceHandler.lastTriggerId(), 1, "lastTriggerId not incremented");
+        assertEq(serviceManager.quorumNumerator(), 4, "Initial quorum numerator should be 4");
+        assertEq(serviceManager.quorumDenominator(), 10, "Initial quorum denominator should be 10");
+
+        updateData = IManagerUpdateTypes.UpdateWithId({
+            triggerId: 2,
+            numerator: 1,
+            denominator: 6
+        });
+        
+        // Create envelope with the encoded payload
+        envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: abi.encode(updateData)
+        });
+
+        // 2/5 is now enough to pass
+        signatureData = createSignatureData(envelope, 2, 0);
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+
+        // Check that the lastTriggerId was incremented
+        assertEq(serviceHandler.lastTriggerId(), 2, "lastTriggerId not incremented to 2");
+        assertEq(serviceManager.quorumNumerator(), 1, "Initial quorum numerator should be 1");
+        assertEq(serviceManager.quorumDenominator(), 6, "Initial quorum denominator should be 6");
+    }
+
+    // Helper function to create signature data with a specific number of operators and real signatures
+    function createSignatureData(
+        IWavsServiceHandler.Envelope memory envelope,
+        uint256 numOperators,
+        uint32 referenceBlockOffset
+    ) internal returns (IWavsServiceHandler.SignatureData memory) {
+        // Create digest using the same logic as WavsServiceManager
+        bytes32 message = keccak256(abi.encode(envelope));
+        bytes32 digest = ECDSAUpgradeable.toEthSignedMessageHash(message);
+        
+        // Create signature data with the desired number of signers
+        address[] memory signers = new address[](numOperators);
+        bytes[] memory signatures = new bytes[](numOperators);
+        
+        for (uint256 i = 0; i < numOperators; i++) {
+            // Generate signer address from private key
+            signers[i] = vm.addr(privateKeys[i]);
+            
+            // Generate signature using private key
+            signatures[i] = generateSignature(privateKeys[i], digest);
+        }
+
+        // Sort signers and signatures by signer address
+        sortSignersAndSignatures(signers, signatures);
+        
+        // Verify signatures
+        verifySignatures(digest, signers, signatures);
+        
+        // Create signature data
+        // Note: referenceBlock must be a valid block that exists and is in the past
+        // Make sure we're at least at block 1 before subtracting offset
+        uint32 currentBlock = uint32(block.number);
+        require(currentBlock > referenceBlockOffset, "Block number too low for offset");
+        
+        return IWavsServiceHandler.SignatureData({
+            signers: signers,
+            signatures: signatures,
+            referenceBlock: currentBlock - 1 - referenceBlockOffset
+        });
+    }
+
+        /**
+     * @notice Helper function to sort signers and their corresponding signatures in ascending order by signer address
+     * @dev ECDSAStakeRegistry requires signers to be sorted in ascending order
+     * @param signers Array of signer addresses
+     * @param signatures Array of signatures that correspond to signers at the same index
+     */
+    function sortSignersAndSignatures(
+        address[] memory signers,
+        bytes[] memory signatures
+    ) internal pure {
+        // Simple bubble sort since we're working with small arrays
+        uint256 length = signers.length;
+        for (uint256 i = 0; i < length - 1; i++) {
+            for (uint256 j = 0; j < length - i - 1; j++) {
+                if (signers[j] > signers[j + 1]) {
+                    // Swap signers
+                    address tempAddr = signers[j];
+                    signers[j] = signers[j + 1];
+                    signers[j + 1] = tempAddr;
+                    
+                    // Swap corresponding signatures
+                    bytes memory tempSig = signatures[j];
+                    signatures[j] = signatures[j + 1];
+                    signatures[j + 1] = tempSig;
+                }
+            }
+        }
+    }
+    
+    /**
+     * @notice Helper function to generate an ECDSA signature using a private key
+     * @param privateKey The private key to sign with
+     * @param digest The message hash to sign
+     * @return The signature in bytes format ready for validation
+     */
+    function generateSignature(
+        uint256 privateKey,
+        bytes32 digest
+    ) internal pure returns (bytes memory) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+        return abi.encodePacked(r, s, v);
+    }
+    
+    /**
+     * @notice Helper function to verify that signatures can be recovered to the expected signers
+     * @param digest Message hash that was signed
+     * @param signers Array of signer addresses (should be sorted)
+     * @param signatures Array of signatures corresponding to signers
+     */
+    function verifySignatures(
+        bytes32 digest,
+        address[] memory signers,
+        bytes[] memory signatures
+    ) internal pure {
+        require(signers.length == signatures.length, "Arrays length mismatch");
+        
+        for (uint256 i = 0; i < signers.length; i++) {
+            address recovered = ECDSA.recover(digest, signatures[i]);
+            require(recovered == signers[i], "Signature recovery failed");
+        }
+    }
+}

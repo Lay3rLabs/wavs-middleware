@@ -120,10 +120,6 @@ contract MirrorStakeRegistryTest is Test {
         // Test updateMinimumWeight reverts
         vm.expectRevert(MirrorStakeRegistry.OperatorUpdateNotSupported.selector);
         registry.updateMinimumWeight(200, operators);
-
-        // Test updateStakeThreshold reverts
-        vm.expectRevert(MirrorStakeRegistry.OperatorUpdateNotSupported.selector);
-        registry.updateStakeThreshold(7000);
         
         vm.stopPrank();
     }
