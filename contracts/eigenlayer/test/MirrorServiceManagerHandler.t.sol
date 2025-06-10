@@ -257,7 +257,7 @@ contract MirrorServiceManagerHandlerTest is Test {
             signatures[i] = generateSignature(privateKeys[i], digest);
         }
 
-        // Sort signers and signatures by signer address11
+        // Sort signers and signatures by signer address
         sortSignersAndSignatures(signers, signatures);
         
         // Verify signatures
