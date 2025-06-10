@@ -18,12 +18,10 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     // Environment variables for deployContracts
     string public constant ENV_LST_STRATEGY = "LST_STRATEGY_ADDRESS";
     // Environment variables for configureContracts
-    string public constant ENV_LST_CONTRACT = "LST_CONTRACT_ADDRESS";
     string public constant ENV_METADATA_URI = "METADATA_URI";
 
    // Deployment configuration
     address private lstStrategyAddress;
-    address private lstContractAddress;
     string private metadataUri;
 
     address proxyAdmin;
@@ -36,7 +34,6 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
 
         // Get the configuration from environment
         lstStrategyAddress = vm.envAddress(ENV_LST_STRATEGY);
-        lstContractAddress = vm.envAddress(ENV_LST_CONTRACT);
         metadataUri = vm.envString(ENV_METADATA_URI);
 
         // Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
@@ -52,10 +49,12 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         // first deploy (from eigenlayer)
         wavsMiddlewareDeployment =
             WavsMiddlewareDeploymentLib.deployContracts(proxyAdmin, coreDeployment, quorum);
-        // WAVS configuration
-        // WavsMiddlewareDeploymentLib.configureContracts(wavsMiddlewareDeployment, coreDeployment, lstContractAddress, metadataUri);
 
+        // WAVS configuration
+        uint256 minimumWeight = 100;
         wavsMiddlewareDeployment.strategy = lstStrategyAddress;
+        WavsMiddlewareDeploymentLib.configureContracts(wavsMiddlewareDeployment, metadataUri, minimumWeight);
+
         vm.stopBroadcast();
 
         verifyDeployment();
