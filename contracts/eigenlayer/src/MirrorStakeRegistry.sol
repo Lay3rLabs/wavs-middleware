@@ -110,13 +110,6 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
         revert OperatorUpdateNotSupported();
     }
 
-    /// @dev This operation is not supported in the mock implementation
-    function updateStakeThreshold(
-         uint256
-    ) external override onlyOwner {
-        revert OperatorUpdateNotSupported();
-    }
-
     /// @inheritdoc ECDSAStakeRegistry
     function getOperatorWeight(
         address operator
