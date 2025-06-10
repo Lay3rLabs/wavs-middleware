@@ -11,26 +11,6 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/helpers.sh
 
-# source contracts/.env
-
-# Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
-# https://github.com/layr-labs/eigenlayer-contracts In the README.md
-STRATEGY_ADDRESSES='[
-  "0x05037a81bd7b4c9e0f7b430f1f2a22c31a2fd943",
-  "0x31b6f59e1627cefc9fa174ad03859fc337666af7",
-  "0x3a8fbdf9e77dfc25d09741f51d3e181b25d0c4e0",
-  "0x46281e3b7fdcacdba44cadf069a94a588fd4c6ef",
-  "0x70eb4d3c164a6b4a5f908d4fbb5a9caffb66bab6",
-  "0x7673a47463f80c6a3553db9e54c8cdcd5313d0ac",
-  "0x78dbcbef8ff94ec7f631c23d38d197744a323868",
-  "0x7d704507b76571a51d9cae8addabbfd0ba0e63d3",
-  "0x80528d6e9a2babfc766965e0e26d5ab08d9cfaf9",
-  "0x9281ff96637710cd9a5cacce9c6fad8c9f54631c",
-  "0xaccc5a86732be85b5012e8614af237801636f8e5",
-  "0xad76d205564f955a9c18103c4422d1cd94016899"
-]'
-# 0x7d704507b76571a51d9cae8addabbfd0ba0e63d3 is sETH on Holesky
-
 # Check if METADATA_URI is provided
 if [ -z "$METADATA_URI" ]; then
     echo "Error: METADATA_URI environment variable must be set"
@@ -41,21 +21,6 @@ if [ -z "$FUNDED_KEY" ]; then
     echo "Error: FUNDED_KEY environment variable must be set"
     exit 1
 fi
-
-# Build the `strategies` array as a Solidity-compatible input
-# This is a workaround to get to a valid BPS value, in production strategies need to be weighed and maintained by an oracle
-declare -g combined_strategies=""
-first_strategy=true
-
-for strategy in $(echo "$STRATEGY_ADDRESSES" | jq -r '.[]'); do
-    if [ "$first_strategy" = true ]; then
-        combined_strategies+="(${strategy},837),"
-        first_strategy=false
-    else
-        combined_strategies+="(${strategy},833),"
-    fi
-done
-combined_strategies=${combined_strategies%,}
 
 # prevents error where local run fails in rust script if you dont comment out TESTNET_RPC_URL in the env
 if [ "$DEPLOY_ENV" = "LOCAL" ]; then
@@ -155,37 +120,6 @@ update_metadata_url() {
   fi
   stop_impersonating "$owner"
 
-}
-
-update_quorum_config() {
-    local owner="$1"
-    local stakeRegistryAddress="$2"
-    impersonate_account "$owner"
-
-    if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-        execute_transaction "update quorum config" \
-          "cast s '$stakeRegistryAddress' \
-             'updateQuorumConfig(((address,uint96)[]),address[])' \
-             '([$combined_strategies])' \
-             '[]' \
-             --private-key '$FUNDED_KEY' \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
-    else
-        execute_transaction "update quorum config" \
-          "cast s '$stakeRegistryAddress' \
-             'updateQuorumConfig(((address,uint96)[]),address[])' \
-             '([$combined_strategies])' \
-             '[]' \
-             --from '$owner' \
-             --unlocked \
-             --rpc-url '$LOCAL_ETHEREUM_RPC_URL' > /dev/null 2>&1"
-    fi
-    if [ $? -eq 0 ]; then
-    stop_impersonating "$owner"
-    else
-        echo "Error: Failed to update quorum config."
-        exit 1
-    fi
 }
 
 update_minimum_weight() {
@@ -312,12 +246,6 @@ echo "Middleware contracts deployed with addresses: WavsServiceManager: $WavsSer
 cp deployments/wavs-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
 
 owner=$(cast call "$stakeRegistryAddress" "owner()" --rpc-url "$LOCAL_ETHEREUM_RPC_URL" | cast parse-bytes32-address)
-
-# This function is used to deploy the consumer contract for e2e testing via signature validation
-# deploy_consumer_contract
-
-# This function is used to update the quorum config for the stake registry, defining the strategies and their BPS weights
-update_quorum_config "$owner" "$stakeRegistryAddress"
 
 # This function is used to set a very low minimum weight to ensure operators have enough stake
 update_minimum_weight "$owner" "$stakeRegistryAddress" 1

@@ -20,6 +20,8 @@ import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {WavsAVSRegistrar} from "../../src/WavsAVSRegistrar.sol";
 
+
+
 library WavsMiddlewareDeploymentLib {
     using stdJson for *;
     using Strings for *;
@@ -32,6 +34,11 @@ library WavsMiddlewareDeploymentLib {
         address stakeRegistry;
         address strategy;
         address avsRegistrar;
+    }
+
+    struct StrategyConfig {
+        address strategy;
+        uint96 multiplier;
     }
 
     function deployContracts(
@@ -78,6 +85,32 @@ library WavsMiddlewareDeploymentLib {
         result.avsRegistrar = avsRegistrar;
 
         return result;
+    }
+
+    function readQuorumConfig(
+        string memory directoryPath,
+        uint256 chainId
+    ) internal returns (IECDSAStakeRegistryTypes.Quorum memory) {
+        string memory fileName = string.concat(directoryPath, vm.toString(chainId), ".json");
+        require(vm.exists(fileName), "Strategies file does not exist");
+
+        // load the strategies config
+        string memory json = vm.readFile(fileName);
+        address[] memory strategies = abi.decode(vm.parseJson(json, ".strategies"), (address[]));
+        uint96[] memory multipliers = abi.decode(vm.parseJson(json, ".multipliers"), (uint96[]));
+        require(strategies.length == multipliers.length, "Strategies and multipliers must have the same length");
+
+        // convert to quorum
+        uint256 size = strategies.length;
+        uint256 totalMultiplier = 0;
+        IECDSAStakeRegistryTypes.Quorum memory quorum = IECDSAStakeRegistryTypes.Quorum({strategies: new IECDSAStakeRegistryTypes.StrategyParams[](size)});
+        for (uint256 i; i < size; i++) {
+            totalMultiplier += multipliers[i];
+            quorum.strategies[i] = IECDSAStakeRegistryTypes.StrategyParams({strategy: IStrategy(strategies[i]), multiplier: multipliers[i]});
+        }
+        require(totalMultiplier == 10000, "Total multiplier must be 10000");
+
+        return quorum;
     }
 
     function readDeploymentJson(
