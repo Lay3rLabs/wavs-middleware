@@ -46,7 +46,9 @@ fi
 export WAVS_DELEGATE_AMOUNT="$3"
 
 OP_ADDR=$(cast wallet address "$OP_KEY")
-cast rpc anvil_setBalance $OP_ADDR 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for operator" && exit 1)
+if [ "$DEPLOY_ENV" = "LOCAL" ]; then
+    cast rpc anvil_setBalance $OP_ADDR 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for operator" && exit 1)
+fi
 
-cd contracts && forge script eigenlayer/script/WavsRegisterOperator.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $OP_KEY --broadcast \
+cd contracts && forge script eigenlayer/script/WavsRegisterOperator.s.sol -vvv --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $OP_KEY --broadcast \
   || (echo "Error: Failed to run WavsRegisterOperator" && exit 1)
