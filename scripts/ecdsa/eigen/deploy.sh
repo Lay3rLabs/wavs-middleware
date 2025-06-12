@@ -69,3 +69,4 @@ cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rp
 echo "Middleware contracts deployed with addresses:"
 cat deployments/wavs-middleware/$CHAIN_ID.json | jq .addresses
 cp deployments/wavs-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
+

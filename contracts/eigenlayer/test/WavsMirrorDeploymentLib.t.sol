@@ -113,7 +113,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         assertEq(address(quorum.strategies[0].strategy), address(1), "Quorum strategy should be our mock strategy");
     }
     
-    function test_validateQuorumSigned_success() public {
+    function test_validateQuorumSigned_success() public view {
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
@@ -302,7 +302,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         IWavsServiceHandler.Envelope memory envelope,
         uint256 numOperators,
         uint32 referenceBlockOffset
-    ) internal returns (IWavsServiceHandler.SignatureData memory) {
+    ) internal view returns (IWavsServiceHandler.SignatureData memory) {
         // Create digest using the same logic as WavsServiceManager
         bytes32 message = keccak256(abi.encode(envelope));
         bytes32 digest = ECDSAUpgradeable.toEthSignedMessageHash(message);
@@ -372,6 +372,55 @@ contract WavsMirrorDeploymentLibTest is Test {
         }
     }
     
+    function test_writeAndLoadConfiguration_roundtrip() public {
+        // 1. Define a sample InitialConfiguration
+        WavsMirrorDeploymentLib.InitialConfiguration memory originalConfig;
+        originalConfig.operators = operators; // Use operators from setUp
+        originalConfig.signingKeys = signingKeys; // Use signingKeys from setUp
+        originalConfig.weights = weights; // Use weights from setUp
+        originalConfig.thresholdWeight = 12345;
+        originalConfig.quorumNumerator = 2;
+        originalConfig.quorumDenominator = 3;
+
+        // 2. Specify a temporary file path
+        string memory tempFilePath = "./tempConfig.json";
+
+        // 3. Write the configuration
+        WavsMirrorDeploymentLib.writeConfiguration(tempFilePath, originalConfig);
+
+        // Ensure file was created
+        assertTrue(vm.exists(tempFilePath), "Config file should exist after writing");
+
+        // 4. Load the configuration
+        WavsMirrorDeploymentLib.InitialConfiguration memory loadedConfig = WavsMirrorDeploymentLib.loadConfiguration(tempFilePath);
+
+        // 5. Assert that every field matches
+        assertEq(loadedConfig.operators.length, originalConfig.operators.length, "Operators length mismatch");
+        for (uint i = 0; i < originalConfig.operators.length; i++) {
+            assertEq(loadedConfig.operators[i], originalConfig.operators[i], "Operator mismatch");
+        }
+
+        assertEq(loadedConfig.signingKeys.length, originalConfig.signingKeys.length, "Signing keys length mismatch");
+        for (uint i = 0; i < originalConfig.signingKeys.length; i++) {
+            assertEq(loadedConfig.signingKeys[i], originalConfig.signingKeys[i], "Signing key mismatch");
+        }
+
+        assertEq(loadedConfig.weights.length, originalConfig.weights.length, "Weights length mismatch");
+        for (uint i = 0; i < originalConfig.weights.length; i++) {
+            assertEq(loadedConfig.weights[i], originalConfig.weights[i], "Weight mismatch");
+        }
+
+        assertEq(loadedConfig.thresholdWeight, originalConfig.thresholdWeight, "Threshold weight mismatch");
+        assertEq(loadedConfig.quorumNumerator, originalConfig.quorumNumerator, "Quorum numerator mismatch");
+        assertEq(loadedConfig.quorumDenominator, originalConfig.quorumDenominator, "Quorum denominator mismatch");
+
+        // 6. Clean up the temporary file (optional, but good practice for tests)
+        // Forge's `vm.removeFile` can be used if available and needed, 
+        // but often test environments handle temp file cleanup.
+        // For now, we'll assume the test runner or environment handles it or it's not critical for this test.
+        // If direct cleanup is needed: vm.removeFile(tempFilePath);
+    }
+
     /**
      * @notice Helper function to generate an ECDSA signature using a private key
      * @param privateKey The private key to sign with

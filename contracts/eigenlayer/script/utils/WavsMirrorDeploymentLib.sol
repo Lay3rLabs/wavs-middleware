@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import {console2} from "forge-std/Test.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy} from
     "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {MirrorStakeRegistry} from "../../src/MirrorStakeRegistry.sol";
 import {MirrorServiceHandler} from "../../src/handlers/MirrorServiceHandler.sol";
 import {MirrorServiceManagerHandler} from "../../src/handlers/MirrorServiceManagerHandler.sol";
 import {WavsServiceManager} from "../../src/WavsServiceManager.sol";
+import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-import {
-    IECDSAStakeRegistryTypes,
-    IStrategy
-} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {IAllocationManagerTypes, IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
+import {IECDSAStakeRegistryTypes, IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -24,6 +24,18 @@ library WavsMirrorDeploymentLib {
     using stdJson for *;
     using Strings for *;
     using UpgradeableProxyLib for address;
+
+    struct InitialConfiguration {
+        // original operators
+        address[] operators;
+        address[] signingKeys;
+        uint256[] weights;
+        // stake registry threshold
+        uint256 thresholdWeight;
+        // service manager threshold
+        uint256 quorumNumerator;
+        uint256 quorumDenominator;
+    }
 
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
@@ -85,6 +97,19 @@ library WavsMirrorDeploymentLib {
         return result;
     }
 
+    function setInitialConfiguration(
+        DeploymentData memory deployment,
+        InitialConfiguration memory configuration 
+    ) internal 
+    {
+        MirrorStakeRegistry stakeRegistry = MirrorStakeRegistry(deployment.stakeRegistry);
+        WavsServiceManager serviceManager = WavsServiceManager(deployment.WavsServiceManager);
+
+        stakeRegistry.updateStakeThreshold(configuration.thresholdWeight);
+        stakeRegistry.batchSetOperatorDetails(configuration.operators, configuration.signingKeys, configuration.weights);
+        serviceManager.setQuorumThreshold(configuration.quorumNumerator, configuration.quorumDenominator);
+    }
+
     // deploy service handlers to run mirroring and transfer ownership
     // must be called by the owner of the service manager
     function deployServiceHandlers(
@@ -107,6 +132,72 @@ library WavsMirrorDeploymentLib {
         serviceManager.transferOwnership(result.MirrorServiceManagerHandler);
 
         return result;
+    }
+
+    function loadConfiguration(string memory filePath) internal returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
+        // load the config
+        require(vm.exists(filePath), "Config file does not exist");
+        string memory json = vm.readFile(filePath);
+ 
+        // parse it
+        WavsMirrorDeploymentLib.InitialConfiguration memory cfg;
+        cfg.operators = abi.decode(vm.parseJson(json, ".operators"), (address[]));
+        cfg.signingKeys = abi.decode(vm.parseJson(json, ".signingKeys"), (address[]));
+        cfg.weights = abi.decode(vm.parseJson(json, ".weights"), (uint256[]));
+        require(cfg.operators.length == cfg.signingKeys.length, "Operators and signingKeys must have the same length");
+        require(cfg.operators.length == cfg.weights.length, "Operators and weights must have the same length");
+
+        cfg.thresholdWeight = abi.decode(vm.parseJson(json, ".threshold"), (uint256));
+        cfg.quorumNumerator = abi.decode(vm.parseJson(json, ".quorumNumerator"), (uint256));
+        cfg.quorumDenominator = abi.decode(vm.parseJson(json, ".quorumDenominator"), (uint256));
+        return cfg;
+    }
+
+    function writeConfiguration(string memory filePath, WavsMirrorDeploymentLib.InitialConfiguration memory config) internal {
+        string memory objectKey = "WavsMirrorConfigJson"; // An arbitrary unique key for forge's internal JSON object tracking
+
+        // Serialize each field of the configuration into the JSON buffer
+        vm.serializeAddress(objectKey, "operators", config.operators);
+        vm.serializeAddress(objectKey, "signingKeys", config.signingKeys);
+        vm.serializeUint(objectKey, "weights", config.weights);
+        vm.serializeUint(objectKey, "threshold", config.thresholdWeight);
+        vm.serializeUint(objectKey, "quorumNumerator", config.quorumNumerator);
+        string memory jsonOutput = vm.serializeUint(objectKey, "quorumDenominator", config.quorumDenominator);
+
+        // Write the composed JSON string to the specified file
+        vm.writeFile(filePath, jsonOutput);
+    }
+
+    // This should be run on the source chain (with ECDSAStakeRegistry)
+    // All other functions should run on mirror chain (with MirrorStakeRegistry)
+    function loadConfigurationFromChain(address serviceManagerAddress) internal view returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
+        WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
+        ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
+
+        WavsMirrorDeploymentLib.InitialConfiguration memory cfg;
+
+        // get config values
+        cfg.thresholdWeight = stakeRegistry.getLastCheckpointThresholdWeight();
+        cfg.quorumNumerator = serviceManager.quorumNumerator();
+        cfg.quorumDenominator = serviceManager.quorumDenominator();
+
+        // get operators
+        IAllocationManager allocationManager = IAllocationManager(serviceManager.allocationManager());
+        OperatorSet memory opSetQuery = OperatorSet({
+            avs: serviceManagerAddress, 
+            id: 1
+        });
+        cfg.operators = allocationManager.getMembers(opSetQuery);
+
+        // get operator info
+        cfg.signingKeys = new address[](cfg.operators.length);
+        cfg.weights = new uint256[](cfg.operators.length);
+        for (uint256 i = 0; i < cfg.operators.length; i++) {
+            cfg.signingKeys[i] = stakeRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
+            cfg.weights[i] = stakeRegistry.getOperatorWeight(cfg.operators[i]);
+        }
+
+        return cfg;
     }
 
     function readDeploymentJson(

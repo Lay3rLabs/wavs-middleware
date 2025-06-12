@@ -59,13 +59,13 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
     function registerOperatorWithSignature(
         ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry memory,
         address
-    ) external override {
+    ) external override pure {
         revert RegistrationNotSupported();
     }
 
     /// @notice Override the deregisterOperator method to revert
     /// @dev This operation is not supported in the mock implementation
-    function deregisterOperator() external override {
+    function deregisterOperator() external override pure {
         revert DeregistrationNotSupported();
     }
 
@@ -73,7 +73,7 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
     /// @dev This operation is not supported in the mock implementation
     function updateOperatorSigningKey(
         address
-    ) external override {
+    ) external override pure {
         revert SigningKeyUpdateNotSupported();
     }
 
@@ -81,7 +81,7 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
     /// @dev This operation is not supported in the mock implementation
     function updateOperators(
         address[] memory
-    ) external override {
+    ) external override pure {
         revert OperatorUpdateNotSupported();
     }
     
@@ -90,7 +90,7 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
     function updateOperatorsForQuorum(
         address[][] memory,
         bytes memory
-    ) external override {
+    ) external override pure {
         revert QuorumOperatorUpdateNotSupported();
     }
 
@@ -98,7 +98,7 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
     function updateQuorumConfig(
          IECDSAStakeRegistryTypes.Quorum memory,
          address[] memory
-    ) external override onlyOwner {
+    ) external override pure {
         revert QuorumOperatorUpdateNotSupported();
     }
 
@@ -106,7 +106,7 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
     function updateMinimumWeight(
          uint256,
          address[] memory
-    ) external override onlyOwner {
+    ) external override pure {
         revert OperatorUpdateNotSupported();
     }
 

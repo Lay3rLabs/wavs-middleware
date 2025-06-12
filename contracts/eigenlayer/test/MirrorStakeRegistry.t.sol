@@ -69,7 +69,7 @@ contract MirrorStakeRegistryTest is Test {
     }
 
     // Test that the contract is properly initialized
-    function test_initialization() public {
+    function test_initialization() public view {
         assertEq(registry.owner(), owner, "Owner should be set correctly");
         assertEq(address(registry.serviceManager()), serviceManager, "Service manager should be set correctly");
     }
