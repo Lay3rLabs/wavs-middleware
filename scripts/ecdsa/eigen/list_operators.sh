@@ -3,6 +3,8 @@
 # -x echos all lines for debug
 # set -x
 
+export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
+
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 

@@ -41,7 +41,7 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
 
         // deploy the handlers
         console2.log("Deploying ServiceHandlers as admin...");
-        WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
+        deployment = WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
 
         vm.stopBroadcast();
 

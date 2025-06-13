@@ -103,7 +103,7 @@ List Operators:
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host  --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware list_operator
+   wavs-middleware list_operators
 ```
 
 Pause Registration:
@@ -117,6 +117,31 @@ Unpause Registration:
 ```bash
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware unpause
 ```
+
+## Deploying Mirror
+
+Run a second anvil at port 8546 with no eigenlayer deployed (can be not fork)
+
+```bash
+anvil --host 0.0.0.0 --port 8546
+```
+
+Deploy mirror contracts to match first anvil
+
+```bash
+export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+
+export SOURCE_RPC_URL=http://localhost:8545
+export MIRROR_RPC_URL=http://localhost:8546
+
+# Register the operator using the operator key and AVS signing address
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e SOURCE_RPC_URL=${SOURCE_RPC_URL} \
+   -e MIRROR_RPC_URL=${MIRROR_RPC_URL} \
+   wavs-middleware -m mirror deploy
+```
+
 
 ## Deploy Testnet
 

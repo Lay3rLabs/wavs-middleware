@@ -31,6 +31,6 @@ COPY --from=build --parents  /wavs/contracts/./lib/**/*.sol /wavs/contracts/
 
 WORKDIR /wavs
 COPY ./scripts /wavs/scripts
-RUN chmod +x /wavs/scripts/*.sh
+RUN chmod +x $(find /wavs/scripts -name '*.sh')
 
 ENTRYPOINT ["/wavs/scripts/cli.sh"]
