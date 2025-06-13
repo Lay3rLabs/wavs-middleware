@@ -5,13 +5,13 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 import {TransparentUpgradeableProxy} from
     "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {WavsServiceManager} from "../../src/WavsServiceManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
+import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {
     IECDSAStakeRegistryTypes,
     IStrategy
@@ -20,6 +20,8 @@ import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {WavsAVSRegistrar} from "../../src/WavsAVSRegistrar.sol";
+
+
 
 library WavsMiddlewareDeploymentLib {
     using stdJson for *;
@@ -33,6 +35,11 @@ library WavsMiddlewareDeploymentLib {
         address stakeRegistry;
         address strategy;
         address avsRegistrar;
+    }
+
+    struct StrategyConfig {
+        address strategy;
+        uint96 multiplier;
     }
 
     function deployContracts(
@@ -79,6 +86,63 @@ library WavsMiddlewareDeploymentLib {
         result.avsRegistrar = avsRegistrar;
 
         return result;
+    }
+
+    function configureContracts(
+        DeploymentData memory deployment,
+        string memory metadataUri,
+        uint256 minimumWeight
+    ) internal {
+        // update_minimum_weight
+        ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(deployment.stakeRegistry);
+        stakeRegistry.updateMinimumWeight(minimumWeight, new address[](0));
+
+        // set avs registrar
+        WavsServiceManager wavsServiceManager = WavsServiceManager(deployment.WavsServiceManager);
+        wavsServiceManager.setAVSRegistrar(WavsAVSRegistrar(deployment.avsRegistrar));
+
+        // set metadata uri on service manager
+        wavsServiceManager.updateAVSMetadataURI(metadataUri);
+
+        // create one operator set (for now)
+        // TODO: this is from deploy.sh but why are strategies in lstStrategyAddress and quorum different?
+        // If op set only allows one strategy, why do we need 12 registered with multipliers in the quorum?
+        // Suggestion - use same both for opset and for initialize. But which one (or both)? 
+        //             ECDSAStakeRegistry.initialize, (result.WavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
+        IAllocationManagerTypes.CreateSetParams memory opSetParams = IAllocationManagerTypes.CreateSetParams({
+            operatorSetId: 1,
+            strategies: new IStrategy[](1)
+        });
+        opSetParams.strategies[0] = IStrategy(deployment.strategy);
+        IAllocationManagerTypes.CreateSetParams[] memory opSetParamsArray = new IAllocationManagerTypes.CreateSetParams[](1);
+        opSetParamsArray[0] = opSetParams;
+        wavsServiceManager.createOperatorSets(opSetParamsArray);
+    }
+
+    function readQuorumConfig(
+        string memory directoryPath,
+        uint256 chainId
+    ) internal returns (IECDSAStakeRegistryTypes.Quorum memory) {
+        string memory fileName = string.concat(directoryPath, vm.toString(chainId), ".json");
+        require(vm.exists(fileName), "Strategies file does not exist");
+
+        // load the strategies config
+        string memory json = vm.readFile(fileName);
+        address[] memory strategies = abi.decode(vm.parseJson(json, ".strategies"), (address[]));
+        uint96[] memory multipliers = abi.decode(vm.parseJson(json, ".multipliers"), (uint96[]));
+        require(strategies.length == multipliers.length, "Strategies and multipliers must have the same length");
+
+        // convert to quorum
+        uint256 size = strategies.length;
+        uint256 totalMultiplier = 0;
+        IECDSAStakeRegistryTypes.Quorum memory quorum = IECDSAStakeRegistryTypes.Quorum({strategies: new IECDSAStakeRegistryTypes.StrategyParams[](size)});
+        for (uint256 i; i < size; i++) {
+            totalMultiplier += multipliers[i];
+            quorum.strategies[i] = IECDSAStakeRegistryTypes.StrategyParams({strategy: IStrategy(strategies[i]), multiplier: multipliers[i]});
+        }
+        require(totalMultiplier == 10000, "Total multiplier must be 10000");
+
+        return quorum;
     }
 
     function readDeploymentJson(

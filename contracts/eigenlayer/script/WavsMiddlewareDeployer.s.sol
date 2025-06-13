@@ -2,54 +2,59 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/Test.sol";
 import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeplomentLib.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
-import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
-import {StrategyManager} from "@eigenlayer/contracts/core/StrategyManager.sol";
-
-
 import {
     IECDSAStakeRegistryTypes,
     IStrategy
 } from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
+
 contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
-    using ReadCoreLib for *;
+    // using ReadCoreLib for *;
     using UpgradeableProxyLib for address;
 
-    address private deployer;
+    // Environment variables for deployContracts
+    string public constant ENV_LST_STRATEGY = "LST_STRATEGY_ADDRESS";
+    // Environment variables for configureContracts
+    string public constant ENV_METADATA_URI = "METADATA_URI";
+
+   // Deployment configuration
+    address private lstStrategyAddress;
+    string private metadataUri;
+
     address proxyAdmin;
-    IStrategy helloWorldStrategy;
     ReadCoreLib.DeploymentData coreDeployment;
     WavsMiddlewareDeploymentLib.DeploymentData wavsMiddlewareDeployment;
     Quorum internal quorum;
 
     function setUp() public virtual {
-        deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
-        vm.label(deployer, "Deployer");
-
         coreDeployment = ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
-        // Get the LST strategy address from environment
-        helloWorldStrategy = IStrategy(vm.envAddress("LST_STRATEGY_ADDRESS"));
 
-        quorum.strategies.push(
-            StrategyParams({strategy: helloWorldStrategy, multiplier: 10_000})
-        );
+        // Get the configuration from environment
+        lstStrategyAddress = vm.envAddress(ENV_LST_STRATEGY);
+        metadataUri = vm.envString(ENV_METADATA_URI);
+
+        // Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
+        // https://github.com/layr-labs/eigenlayer-contracts In the README.md
+        // 0x7d704507b76571a51d9cae8addabbfd0ba0e63d3 is sETH on Holesky
+        quorum = WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", block.chainid); 
     }
 
     function run() external {
-        vm.startBroadcast(deployer);
+        vm.startBroadcast();
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
 
+        // first deploy (from eigenlayer)
         wavsMiddlewareDeployment =
             WavsMiddlewareDeploymentLib.deployContracts(proxyAdmin, coreDeployment, quorum);
 
-        wavsMiddlewareDeployment.strategy = address(helloWorldStrategy);
+        // WAVS configuration
+        uint256 minimumWeight = 100;
+        wavsMiddlewareDeployment.strategy = lstStrategyAddress;
+        WavsMiddlewareDeploymentLib.configureContracts(wavsMiddlewareDeployment, metadataUri, minimumWeight);
+
         vm.stopBroadcast();
 
         verifyDeployment();

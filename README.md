@@ -94,7 +94,7 @@ echo "AVS signing address: $AVS_SIGNING_ADDRESS"
 # Register the operator using the operator key and AVS signing address
 docker run --rm --network host --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware register "$OPERATOR_KEY" "$AVS_SIGNING_ADDRESS" "0.01ether"
+   wavs-middleware register "$OPERATOR_KEY" "$AVS_SIGNING_ADDRESS" "1000000000000000"
 ```
 
 List Operators:
@@ -103,7 +103,6 @@ List Operators:
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host  --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   -e PAST_BLOCKS=1000 \
    wavs-middleware list_operator
 ```
 
