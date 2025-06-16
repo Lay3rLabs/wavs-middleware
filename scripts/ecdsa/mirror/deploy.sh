@@ -29,9 +29,6 @@ if [ -z "$MIRROR_RPC_URL" ]; then
     exit 1
 fi
 
-# Set arbitrary location for config
-export WAVS_MIRROR_CONFIG="/wavs/contracts/deployments/wavs-mirror-config.json"
-
 # Read the deployer private key from file
 if [ -f "$HOME/.nodes/deployer" ]; then
     deployer_private_key=$(cat "$HOME/.nodes/deployer")
@@ -47,16 +44,27 @@ fi
 if [ "$DEPLOY_ENV" = "LOCAL" ]; then
     echo "Set gas balancer for deployer on mirror chain"
     cast rpc anvil_setBalance $deployer_address 0x10000000000000000000 -r $MIRROR_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for deployer" && exit 1)
+else
+    FUNDED_KEY_BAL=$(cast balance ${deployer_address} --rpc-url "$MIRROR_RPC_URL")
+    while [ "$FUNDED_KEY_BAL" = "0" ]; do
+        echo "Waiting for FUNDED_KEY ${deployer_address} to have a balance on ${MIRROR_RPC_URL}."
+        sleep 5
+        FUNDED_KEY_BAL=$(cast balance ${deployer_address} --rpc-url "$MIRROR_RPC_URL")
+    done
+
 fi
 
 
 # Read service manager address from file
 export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' /root/.nodes/avs_deploy.json)
 
+# Set arbitrary location for config
+export WAVS_MIRROR_CONFIG=${WAVS_MIRROR_CONFIG:-./deployments/wavs-mirror-config.json}
+
 echo "Reading source chain config:"
 
 cd contracts
-forge script eigenlayer/script/WavsMirrorPrepareDeploy.s.sol --rpc-url $SOURCE_RPC_URL -vv --broadcast
+forge script eigenlayer/script/WavsMirrorPrepareDeploy.s.sol --rpc-url $SOURCE_RPC_URL -vvv --broadcast
 
 echo "Got config:"
 cat $WAVS_MIRROR_CONFIG
@@ -64,5 +72,5 @@ mkdir -p deployments/wavs-mirror/
 
 echo
 echo "Deploying contracts"
-forge script eigenlayer/script/WavsMirrorDeployer.s.sol --rpc-url $MIRROR_RPC_URL --private-key $deployer_private_key -vv --broadcast
+forge script eigenlayer/script/WavsMirrorDeployer.s.sol --rpc-url $MIRROR_RPC_URL --private-key $deployer_private_key -vvv --broadcast || (cp /wavs/contracts/broadcast/WavsMirrorDeployer.s.sol/31337/run-latest.json /root/.nodes && exit 1)
 cat deployments/wavs-mirror/31337.json

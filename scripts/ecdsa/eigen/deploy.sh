@@ -6,6 +6,8 @@
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
+export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
+
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck source=./helpers.sh
 # shellcheck disable=SC1091

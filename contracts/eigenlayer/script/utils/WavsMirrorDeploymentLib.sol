@@ -51,6 +51,13 @@ library WavsMirrorDeploymentLib {
     ) internal returns (DeploymentData memory) {
         DeploymentData memory result;
 
+        // FIXME: remove debug
+        // (, address msgSender, address txOrigin) = vm.readCallers();
+        // console2.log("deployContracts");
+        // console2.log("msgSender", msgSender);
+        // console2.log("txOrigin", txOrigin);
+        // console2.log("msg.sender", msg.sender);
+
         // use an mock quorum so checks pass, we don't use it internally
         IStrategy mockStrategyInstance = IStrategy(address(1)); // Using address(1) instead of address(0)
         IECDSAStakeRegistryTypes.StrategyParams memory strategyParams = IECDSAStakeRegistryTypes.StrategyParams({
@@ -105,7 +112,13 @@ library WavsMirrorDeploymentLib {
         MirrorStakeRegistry stakeRegistry = MirrorStakeRegistry(deployment.stakeRegistry);
         WavsServiceManager serviceManager = WavsServiceManager(deployment.WavsServiceManager);
 
-        stakeRegistry.updateStakeThreshold(configuration.thresholdWeight);
+        // // FIXME: remove debug
+        // console2.log("owners");
+        // console2.log(stakeRegistry.owner());
+        // console2.log(serviceManager.owner());
+
+        // TODO: fails here on broadcast, no error message. removing as unused in README.md
+        // stakeRegistry.updateStakeThreshold(configuration.thresholdWeight);
         stakeRegistry.batchSetOperatorDetails(configuration.operators, configuration.signingKeys, configuration.weights);
         serviceManager.setQuorumThreshold(configuration.quorumNumerator, configuration.quorumDenominator);
     }
@@ -136,7 +149,7 @@ library WavsMirrorDeploymentLib {
 
     function loadConfiguration(string memory filePath) internal returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
         // load the config
-        require(vm.exists(filePath), "Config file does not exist");
+        require(vm.exists(filePath), string(abi.encodePacked("Config file does not exist: ", filePath)));
         string memory json = vm.readFile(filePath);
  
         // parse it

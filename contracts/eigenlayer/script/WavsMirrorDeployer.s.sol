@@ -36,7 +36,7 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
         deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
         
         // initialize the operator set
-        console2.log("Configuraing initial state...");
+        console2.log("Configuring initial state...");
         WavsMirrorDeploymentLib.setInitialConfiguration(deployment, configuration);
 
         // deploy the handlers

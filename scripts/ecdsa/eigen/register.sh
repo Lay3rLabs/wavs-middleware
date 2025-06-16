@@ -6,6 +6,8 @@
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
+export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
+
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
 else
