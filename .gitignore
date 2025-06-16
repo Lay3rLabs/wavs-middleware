@@ -34,3 +34,5 @@ docker/.nodes
 
 
 **/.claude/settings.local.json
+
+tempConfig.json

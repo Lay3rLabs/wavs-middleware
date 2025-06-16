@@ -6,6 +6,8 @@
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
+export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
+
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck source=./helpers.sh
 # shellcheck disable=SC1091
@@ -69,3 +71,4 @@ cd contracts && forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rp
 echo "Middleware contracts deployed with addresses:"
 cat deployments/wavs-middleware/$CHAIN_ID.json | jq .addresses
 cp deployments/wavs-middleware/$CHAIN_ID.json ~/.nodes/avs_deploy.json
+

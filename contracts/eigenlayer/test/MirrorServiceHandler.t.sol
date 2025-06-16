@@ -331,7 +331,7 @@ contract MirrorServiceHandlerTest is Test {
         IWavsServiceHandler.Envelope memory envelope,
         uint256 numOperators,
         uint32 referenceBlockOffset
-    ) internal returns (IWavsServiceHandler.SignatureData memory) {
+    ) internal view returns (IWavsServiceHandler.SignatureData memory) {
         // Create digest using the same logic as WavsServiceManager
         bytes32 message = keccak256(abi.encode(envelope));
         bytes32 digest = ECDSAUpgradeable.toEthSignedMessageHash(message);

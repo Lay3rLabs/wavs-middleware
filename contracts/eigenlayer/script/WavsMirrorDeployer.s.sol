@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-// import {console2} from "forge-std/Test.sol";
+import {console2} from "forge-std/Test.sol";
 import {WavsMirrorDeploymentLib} from "./utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
@@ -15,34 +15,55 @@ import {
 contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
     using UpgradeableProxyLib for address;
 
-    address private deployer;
+    string public constant ENV_CONFIG_FILE = "WAVS_MIRROR_CONFIG";
+
     address proxyAdmin;
-    WavsMirrorDeploymentLib.DeploymentData WavsMirrorDeployment;
+    WavsMirrorDeploymentLib.DeploymentData deployment;
+    WavsMirrorDeploymentLib.InitialConfiguration configuration;
 
     function setUp() public virtual {
-        deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
-        vm.label(deployer, "Mirror Deployer");
+        // Pass in the configuration as a file, load it
+        string memory configFile = vm.envString(ENV_CONFIG_FILE);
+        configuration = WavsMirrorDeploymentLib.loadConfiguration(configFile);
     }
 
     function run() external {
-        vm.startBroadcast(deployer);
+        vm.startBroadcast();
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
 
-        WavsMirrorDeployment =
-            WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
+        // deploy middleware contracts
+        console2.log("Deploying contracts...");
+        deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
+        
+        // initialize the operator set
+        console2.log("Configuring initial state...");
+        WavsMirrorDeploymentLib.setInitialConfiguration(deployment, configuration);
+
+        // deploy the handlers
+        console2.log("Deploying ServiceHandlers as admin...");
+        deployment = WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
+
         vm.stopBroadcast();
 
         verifyDeployment();
-        WavsMirrorDeploymentLib.writeDeploymentJson(WavsMirrorDeployment);
+        WavsMirrorDeploymentLib.writeDeploymentJson(deployment);
     }
 
     function verifyDeployment() internal view {
         require(
-            WavsMirrorDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
+            deployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
         );
         require(
-            WavsMirrorDeployment.WavsServiceManager != address(0),
+            deployment.WavsServiceManager != address(0),
             "WavsServiceManager address cannot be zero"
+        );
+        require(
+            deployment.MirrorServiceHandler != address(0),
+            "MirrorServiceHandler address cannot be zero"
+        );
+        require(
+            deployment.MirrorServiceManagerHandler != address(0),
+            "MirrorServiceManagerHandler address cannot be zero"
         );
         require(proxyAdmin != address(0), "ProxyAdmin address cannot be zero");
     }

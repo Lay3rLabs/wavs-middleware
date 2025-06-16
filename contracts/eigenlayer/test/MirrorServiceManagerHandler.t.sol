@@ -83,7 +83,7 @@ contract MirrorServiceManagerHandlerTest is Test {
         vm.roll(10);
     }
     
-    function test_initial_state() public {
+    function test_initial_state() public view {
         // Test initial state of the service handler
         assertEq(serviceHandler.lastTriggerId(), 0, "Initial trigger ID should be 0");
         assertEq(address(serviceHandler.serviceManager()), address(serviceManager), "Service manager address should be set");
@@ -240,7 +240,7 @@ contract MirrorServiceManagerHandlerTest is Test {
         IWavsServiceHandler.Envelope memory envelope,
         uint256 numOperators,
         uint32 referenceBlockOffset
-    ) internal returns (IWavsServiceHandler.SignatureData memory) {
+    ) internal view returns (IWavsServiceHandler.SignatureData memory) {
         // Create digest using the same logic as WavsServiceManager
         bytes32 message = keccak256(abi.encode(envelope));
         bytes32 digest = ECDSAUpgradeable.toEthSignedMessageHash(message);

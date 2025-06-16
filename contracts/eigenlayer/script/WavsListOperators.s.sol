@@ -59,7 +59,7 @@ contract WavsListOperators is Script {
         }
     }
 
-    function listOperators(address serviceManagerAddress) internal returns (OperatorInfo memory) {
+    function listOperators(address serviceManagerAddress) internal view returns (OperatorInfo memory) {
         WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
         ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
 
