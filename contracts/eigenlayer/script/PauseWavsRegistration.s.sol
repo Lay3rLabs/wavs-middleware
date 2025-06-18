@@ -32,7 +32,7 @@ contract PauseWavsRegistration is Script {
             console.logString("AVS Registrar is already paused");
             return;
         }
-        
+
         avsRegistrar.pause();
         isPaused = avsRegistrar.isPaused();
         vm.stopBroadcast();

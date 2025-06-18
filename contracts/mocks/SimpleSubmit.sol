@@ -16,16 +16,16 @@ contract SimpleSubmit is IWavsServiceHandler, ISimpleSubmit {
         _serviceManager = serviceManager;
     }
 
-    function handleSignedEnvelope(IWavsServiceHandler.Envelope calldata envelope, IWavsServiceHandler.SignatureData calldata signatureData) external {
+    function handleSignedEnvelope(
+        IWavsServiceHandler.Envelope calldata envelope,
+        IWavsServiceHandler.SignatureData calldata signatureData
+    ) external {
         _serviceManager.validate(envelope, signatureData);
 
         ISimpleSubmit.DataWithId memory dataWithId = abi.decode(envelope.payload, (ISimpleSubmit.DataWithId));
 
-        signedDatas[dataWithId.triggerId] = ISimpleSubmit.SignedData({
-            data: dataWithId.data,
-            signatureData: signatureData,
-            envelope: envelope
-        });
+        signedDatas[dataWithId.triggerId] =
+            ISimpleSubmit.SignedData({data: dataWithId.data, signatureData: signatureData, envelope: envelope});
 
         validTriggers[dataWithId.triggerId] = true;
     }
@@ -34,16 +34,21 @@ contract SimpleSubmit is IWavsServiceHandler, ISimpleSubmit {
         return validTriggers[triggerId];
     }
 
-    function getSignedData(ISimpleTrigger.TriggerId triggerId) external view returns (ISimpleSubmit.SignedData memory signedData) {
+    function getSignedData(ISimpleTrigger.TriggerId triggerId)
+        external
+        view
+        returns (ISimpleSubmit.SignedData memory signedData)
+    {
         signedData = signedDatas[triggerId];
     }
 
     // not really needed, just to make alloy generate DataWithId
-    function getDataWithId(ISimpleTrigger.TriggerId triggerId) external view returns (ISimpleSubmit.DataWithId memory dataWithId) {
+    function getDataWithId(ISimpleTrigger.TriggerId triggerId)
+        external
+        view
+        returns (ISimpleSubmit.DataWithId memory dataWithId)
+    {
         ISimpleSubmit.SignedData memory signedData = signedDatas[triggerId];
-        dataWithId = ISimpleSubmit.DataWithId({
-            triggerId: triggerId,
-            data: signedData.data
-        }); 
+        dataWithId = ISimpleSubmit.DataWithId({triggerId: triggerId, data: signedData.data});
     }
 }

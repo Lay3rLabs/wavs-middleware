@@ -6,11 +6,7 @@ import {console2} from "forge-std/Test.sol";
 import {WavsMirrorDeploymentLib} from "./utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
-
-import {
-    IECDSAStakeRegistryTypes,
-    IStrategy
-} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {IECDSAStakeRegistryTypes, IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 contract WavsMirrorPrepareDeploy is Script, IECDSAStakeRegistryTypes {
     using UpgradeableProxyLib for address;
@@ -29,14 +25,14 @@ contract WavsMirrorPrepareDeploy is Script, IECDSAStakeRegistryTypes {
 
     function run() external {
         vm.startBroadcast();
-        
+
         // Pass in the configuration as a file, load it
-        WavsMirrorDeploymentLib.InitialConfiguration memory configuration = WavsMirrorDeploymentLib.loadConfigurationFromChain(serviceManagerAddress);
+        WavsMirrorDeploymentLib.InitialConfiguration memory configuration =
+            WavsMirrorDeploymentLib.loadConfigurationFromChain(serviceManagerAddress);
 
         // write the configuration to a file
         WavsMirrorDeploymentLib.writeConfiguration(configFile, configuration);
 
         vm.stopBroadcast();
     }
-
 }

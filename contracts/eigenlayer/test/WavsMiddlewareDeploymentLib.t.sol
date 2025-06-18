@@ -15,20 +15,18 @@ import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IE
 import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
 import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from
-    "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 uint256 constant OPERATOR_WEIGHT = 10000;
 
 contract WavsMiddlewareDeploymentLibTest is Test {
     using UpgradeableProxyLib for address;
 
-    function setUp() public {
-
-    }
+    function setUp() public {}
 
     function test_parseStrategies() public {
-        IECDSAStakeRegistryTypes.Quorum memory quorum = WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", 17000);
+        IECDSAStakeRegistryTypes.Quorum memory quorum =
+            WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", 17000);
         console2.log(quorum.strategies.length);
         console2.log(address(quorum.strategies[0].strategy));
         console2.log(quorum.strategies[0].multiplier);

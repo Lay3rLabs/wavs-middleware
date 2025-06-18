@@ -6,11 +6,7 @@ import {console2} from "forge-std/Test.sol";
 import {WavsMirrorDeploymentLib} from "./utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
-
-import {
-    IECDSAStakeRegistryTypes,
-    IStrategy
-} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {IECDSAStakeRegistryTypes, IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
     using UpgradeableProxyLib for address;
@@ -34,7 +30,7 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
         // deploy middleware contracts
         console2.log("Deploying contracts...");
         deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
-        
+
         // initialize the operator set
         console2.log("Configuring initial state...");
         WavsMirrorDeploymentLib.setInitialConfiguration(deployment, configuration);
@@ -50,20 +46,11 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
     }
 
     function verifyDeployment() internal view {
+        require(deployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero");
+        require(deployment.WavsServiceManager != address(0), "WavsServiceManager address cannot be zero");
+        require(deployment.MirrorServiceHandler != address(0), "MirrorServiceHandler address cannot be zero");
         require(
-            deployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
-        );
-        require(
-            deployment.WavsServiceManager != address(0),
-            "WavsServiceManager address cannot be zero"
-        );
-        require(
-            deployment.MirrorServiceHandler != address(0),
-            "MirrorServiceHandler address cannot be zero"
-        );
-        require(
-            deployment.MirrorServiceManagerHandler != address(0),
-            "MirrorServiceManagerHandler address cannot be zero"
+            deployment.MirrorServiceManagerHandler != address(0), "MirrorServiceManagerHandler address cannot be zero"
         );
         require(proxyAdmin != address(0), "ProxyAdmin address cannot be zero");
     }

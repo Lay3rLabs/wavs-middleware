@@ -7,6 +7,7 @@ interface IWavsServiceHandler {
         bytes[] signatures;
         uint32 referenceBlock;
     }
+
     struct Envelope {
         bytes20 eventId;
         // currently unused, for future version. added now for padding

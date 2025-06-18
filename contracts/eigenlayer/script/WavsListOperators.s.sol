@@ -11,7 +11,6 @@ import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract WavsListOperators is Script {
-
     string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
 
     struct OperatorInfo {
@@ -52,7 +51,9 @@ contract WavsListOperators is Script {
         console.log(" "); // Blank line for separation
         console.log("=== Registered Operators ===");
         for (uint256 i = 0; i < opInfo.operators.length; i++) {
-            string memory op = string.concat("Operator ", Strings.toString(i + 1), ": ", Strings.toHexString(uint160(opInfo.operators[i]), 20));
+            string memory op = string.concat(
+                "Operator ", Strings.toString(i + 1), ": ", Strings.toHexString(uint160(opInfo.operators[i]), 20)
+            );
             string memory sign = string.concat("-> ", Strings.toHexString(uint160(opInfo.signingKeys[i]), 20));
             string memory weight = string.concat("= ", Strings.toString(opInfo.weights[i]));
             console.log(op, sign, weight);
@@ -67,10 +68,7 @@ contract WavsListOperators is Script {
         uint256 thresholdWeight = stakeRegistry.getLastCheckpointThresholdWeight();
 
         IAllocationManager allocationManager = IAllocationManager(serviceManager.allocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({
-            avs: serviceManagerAddress, 
-            id: 1
-        });
+        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 1});
         address[] memory operators = allocationManager.getMembers(opSetQuery);
 
         uint256[] memory weights = new uint256[](operators.length);
@@ -92,5 +90,4 @@ contract WavsListOperators is Script {
             weights: weights
         });
     }
-    
 }
