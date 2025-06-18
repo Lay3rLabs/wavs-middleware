@@ -5,7 +5,6 @@ import {Script} from "forge-std/Script.sol";
 import {WavsRegisterOperatorLib} from "./utils/WavsRegisterOperatorLib.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 
-
 // contract WavsRegisterOperator is Script, IECDSAStakeRegistryTypes {
 contract WavsRegisterOperator is Script {
     // using ReadCoreLib for *;
@@ -46,6 +45,5 @@ contract WavsRegisterOperator is Script {
         WavsRegisterOperatorLib.registerToAvs(serviceManagerAddress, signingKey);
 
         vm.stopBroadcast();
-
     }
 }

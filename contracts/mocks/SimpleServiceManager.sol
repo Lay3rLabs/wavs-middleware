@@ -12,7 +12,7 @@ contract SimpleServiceManager is IWavsServiceManager {
     uint256 private lastCheckpointTotalWeight;
 
     function validate(
-        IWavsServiceHandler.Envelope calldata /* envelope */,
+        IWavsServiceHandler.Envelope calldata, /* envelope */
         IWavsServiceHandler.SignatureData calldata signatureData
     ) external view override {
         // Input validation
@@ -37,9 +37,11 @@ contract SimpleServiceManager is IWavsServiceManager {
             revert IWavsServiceManager.InsufficientQuorumZero();
         }
 
-        // Check if the total weight meets the last checkpoint threshold 
+        // Check if the total weight meets the last checkpoint threshold
         if (signedWeight < lastCheckpointThresholdWeight) {
-            revert IWavsServiceManager.InsufficientQuorum(signedWeight, lastCheckpointThresholdWeight, lastCheckpointTotalWeight);
+            revert IWavsServiceManager.InsufficientQuorum(
+                signedWeight, lastCheckpointThresholdWeight, lastCheckpointTotalWeight
+            );
         }
     }
 
@@ -48,9 +50,7 @@ contract SimpleServiceManager is IWavsServiceManager {
      * @param operators Array of operator addresses
      * @return True if the operators are properly sorted
      */
-    function _validateOperatorSorting(
-        address[] calldata operators
-    ) internal pure returns (bool) {
+    function _validateOperatorSorting(address[] calldata operators) internal pure returns (bool) {
         // Empty array or single element is always sorted
         if (operators.length <= 1) {
             return true;
@@ -87,17 +87,11 @@ contract SimpleServiceManager is IWavsServiceManager {
         lastCheckpointTotalWeight = weight;
     }
 
-    function getOperatorWeight(
-        address operator
-    ) external view returns (uint256) {
+    function getOperatorWeight(address operator) external view returns (uint256) {
         return operatorWeights[operator];
     }
 
-    function getLastCheckpointThresholdWeight()
-        external
-        view
-        returns (uint256)
-    {
+    function getLastCheckpointThresholdWeight() external view returns (uint256) {
         return lastCheckpointThresholdWeight;
     }
 
@@ -105,9 +99,7 @@ contract SimpleServiceManager is IWavsServiceManager {
         return lastCheckpointTotalWeight;
     }
 
-    function getLatestOperatorForSigningKey(
-        address signingKey
-    ) external pure override returns (address) {
+    function getLatestOperatorForSigningKey(address signingKey) external pure override returns (address) {
         return signingKey;
     }
 }

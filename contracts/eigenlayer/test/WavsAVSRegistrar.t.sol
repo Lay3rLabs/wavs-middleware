@@ -32,7 +32,7 @@ contract WavsAVSRegistrarTest is Test {
         // First pause the contract
         vm.prank(owner);
         registrar.pause();
-        
+
         // Then unpause it
         vm.prank(owner);
         registrar.unpause();
@@ -50,7 +50,7 @@ contract WavsAVSRegistrarTest is Test {
         // First pause the contract
         vm.prank(owner);
         registrar.pause();
-        
+
         // Non-owner should not be able to unpause
         vm.prank(nonOwner);
         vm.expectRevert("Ownable: caller is not the owner");
@@ -65,7 +65,7 @@ contract WavsAVSRegistrarTest is Test {
         bytes memory data = "test data";
 
         // Should not revert when not paused
-        registrar.registerOperator(operator, avs, operatorSetIds, data);        
+        registrar.registerOperator(operator, avs, operatorSetIds, data);
         assertTrue(true, "registerOperator should not revert when not paused");
 
         vm.prank(owner);

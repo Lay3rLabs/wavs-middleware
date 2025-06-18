@@ -176,7 +176,6 @@ contract MirrorServiceHandlerTest is Test {
         // but fails
         vm.expectRevert(abi.encodeWithSelector(IMirrorUpdateTypes.InvalidTriggerId.selector, 5));
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
-
     }
 
     function test_insufficient_quorum() public {
@@ -213,12 +212,14 @@ contract MirrorServiceHandlerTest is Test {
         // Note: The actual error will come from the serviceManager.validate() call inside handleSignedEnvelope
         // which will revert with InsufficientQuorum error
         // The actual values are slightly different due to integer division in the contract
-        vm.expectRevert(abi.encodeWithSignature(
-            "InsufficientQuorum(uint256,uint256,uint256)",
-            30000,  // 3/5 * 10000 = 6000 (but in basis points, so 30000)
-            33333,  // 1/3 in basis points (rounded up from 33333.33...)
-            50000   // 1/2 in basis points (due to integer math in the contract)
-        ));
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "InsufficientQuorum(uint256,uint256,uint256)",
+                30000, // 3/5 * 10000 = 6000 (but in basis points, so 30000)
+                33333, // 1/3 in basis points (rounded up from 33333.33...)
+                50000 // 1/2 in basis points (due to integer math in the contract)
+            )
+        );
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
@@ -325,7 +326,6 @@ contract MirrorServiceHandlerTest is Test {
         }
     }
 
-
     // Helper function to create signature data with a specific number of operators and real signatures
     function createSignatureData(
         IWavsServiceHandler.Envelope memory envelope,
@@ -367,16 +367,13 @@ contract MirrorServiceHandlerTest is Test {
         });
     }
 
-        /**
+    /**
      * @notice Helper function to sort signers and their corresponding signatures in ascending order by signer address
      * @dev ECDSAStakeRegistry requires signers to be sorted in ascending order
      * @param signers Array of signer addresses
      * @param signatures Array of signatures that correspond to signers at the same index
      */
-    function sortSignersAndSignatures(
-        address[] memory signers,
-        bytes[] memory signatures
-    ) internal pure {
+    function sortSignersAndSignatures(address[] memory signers, bytes[] memory signatures) internal pure {
         // Simple bubble sort since we're working with small arrays
         uint256 length = signers.length;
         for (uint256 i = 0; i < length - 1; i++) {
@@ -402,10 +399,7 @@ contract MirrorServiceHandlerTest is Test {
      * @param digest The message hash to sign
      * @return The signature in bytes format ready for validation
      */
-    function generateSignature(
-        uint256 privateKey,
-        bytes32 digest
-    ) internal pure returns (bytes memory) {
+    function generateSignature(uint256 privateKey, bytes32 digest) internal pure returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
         return abi.encodePacked(r, s, v);
     }
@@ -416,11 +410,7 @@ contract MirrorServiceHandlerTest is Test {
      * @param signers Array of signer addresses (should be sorted)
      * @param signatures Array of signatures corresponding to signers
      */
-    function verifySignatures(
-        bytes32 digest,
-        address[] memory signers,
-        bytes[] memory signatures
-    ) internal pure {
+    function verifySignatures(bytes32 digest, address[] memory signers, bytes[] memory signatures) internal pure {
         require(signers.length == signatures.length, "Arrays length mismatch");
 
         for (uint256 i = 0; i < signers.length; i++) {

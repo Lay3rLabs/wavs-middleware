@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {IWavsServiceHandler} from "../../../interfaces/IWavsServiceHandler.sol";
 import {WavsServiceManager} from "../WavsServiceManager.sol";
 
-
 interface IManagerUpdateTypes {
     error InvalidTriggerId(uint64 expectedTriggerId);
 
@@ -16,7 +15,6 @@ interface IManagerUpdateTypes {
     }
 }
 
-
 contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler {
     /// @notice Ensures all updates are deployed in order and no duplicates.
     uint64 public lastTriggerId;
@@ -26,12 +24,14 @@ contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler
 
     constructor(WavsServiceManager _serviceManager) {
         serviceManager = _serviceManager;
+        serviceManager = _serviceManager;
         lastTriggerId = 0;
     }
 
     function handleSignedEnvelope(Envelope calldata envelope, SignatureData calldata signatureData) external {
         // Quick check this is valid trigger id before validating signatures
-        IManagerUpdateTypes.UpdateWithId memory updateData = abi.decode(envelope.payload, (IManagerUpdateTypes.UpdateWithId));
+        IManagerUpdateTypes.UpdateWithId memory updateData =
+            abi.decode(envelope.payload, (IManagerUpdateTypes.UpdateWithId));
         if (updateData.triggerId <= lastTriggerId) {
             revert InvalidTriggerId(lastTriggerId);
         }

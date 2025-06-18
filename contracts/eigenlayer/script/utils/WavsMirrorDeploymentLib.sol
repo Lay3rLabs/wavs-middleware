@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 import {console2} from "forge-std/Test.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
@@ -46,9 +45,7 @@ library WavsMirrorDeploymentLib {
         address MirrorServiceManagerHandler;
     }
 
-    function deployContracts(
-        address proxyAdmin
-    ) internal returns (DeploymentData memory) {
+    function deployContracts(address proxyAdmin) internal returns (DeploymentData memory) {
         DeploymentData memory result;
 
         // FIXME: remove debug
@@ -72,42 +69,32 @@ library WavsMirrorDeploymentLib {
         result.WavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         // Deploy the implementation contracts, using the proxy contracts as inputs
-        address stakeRegistryImpl =
-            address(new MirrorStakeRegistry());
+        address stakeRegistryImpl = address(new MirrorStakeRegistry());
         // Use 0 address for contracts we don't use
-        address WavsServiceManagerImpl = address(
-            new WavsServiceManager(
-                address(0),
-                result.stakeRegistry,
-                address(0),
-                address(0),
-                address(0)
-            )
-        );
+        address WavsServiceManagerImpl =
+            address(new WavsServiceManager(address(0), result.stakeRegistry, address(0), address(0), address(0)));
         // Upgrade contracts
         bytes memory stakeRegistryUpgradeCall = abi.encodeCall(
-            MirrorStakeRegistry.initialize, (result.WavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
+            MirrorStakeRegistry.initialize,
+            (result.WavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
         );
-        bytes memory WavsServiceManagerUpgradeCall = abi.encodeCall(
-            WavsServiceManager.initialize, (msg.sender, msg.sender)
-        );
+        bytes memory WavsServiceManagerUpgradeCall =
+            abi.encodeCall(WavsServiceManager.initialize, (msg.sender, msg.sender));
         UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryUpgradeCall);
-        UpgradeableProxyLib.upgradeAndCall(result.WavsServiceManager, WavsServiceManagerImpl, WavsServiceManagerUpgradeCall);
-
-        // TODO: This is incredibly stupid, 
-        // when we implement out own stake registry, pass owner as an argument
-        bytes memory stakeRegistryOwnerUpgradeCall = abi.encodeCall(
-            Ownable.transferOwnership, (msg.sender)
+        UpgradeableProxyLib.upgradeAndCall(
+            result.WavsServiceManager, WavsServiceManagerImpl, WavsServiceManagerUpgradeCall
         );
+
+        // TODO: This is incredibly stupid,
+        // when we implement out own stake registry, pass owner as an argument
+        bytes memory stakeRegistryOwnerUpgradeCall = abi.encodeCall(Ownable.transferOwnership, (msg.sender));
         UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryOwnerUpgradeCall);
 
         return result;
     }
 
-    function setInitialConfiguration(
-        DeploymentData memory deployment,
-        InitialConfiguration memory configuration 
-    ) internal 
+    function setInitialConfiguration(DeploymentData memory deployment, InitialConfiguration memory configuration)
+        internal
     {
         MirrorStakeRegistry stakeRegistry = MirrorStakeRegistry(deployment.stakeRegistry);
         WavsServiceManager serviceManager = WavsServiceManager(deployment.WavsServiceManager);
@@ -125,9 +112,7 @@ library WavsMirrorDeploymentLib {
 
     // deploy service handlers to run mirroring and transfer ownership
     // must be called by the owner of the service manager
-    function deployServiceHandlers(
-        DeploymentData memory deployment
-    ) internal returns (DeploymentData memory) {
+    function deployServiceHandlers(DeploymentData memory deployment) internal returns (DeploymentData memory) {
         if (deployment.MirrorServiceHandler != address(0) || deployment.MirrorServiceManagerHandler != address(0)) {
             revert("Service handlers already deployed");
         }
@@ -147,11 +132,14 @@ library WavsMirrorDeploymentLib {
         return result;
     }
 
-    function loadConfiguration(string memory filePath) internal returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
+    function loadConfiguration(string memory filePath)
+        internal
+        returns (WavsMirrorDeploymentLib.InitialConfiguration memory)
+    {
         // load the config
         require(vm.exists(filePath), string(abi.encodePacked("Config file does not exist: ", filePath)));
         string memory json = vm.readFile(filePath);
- 
+
         // parse it
         WavsMirrorDeploymentLib.InitialConfiguration memory cfg;
         cfg.operators = abi.decode(vm.parseJson(json, ".operators"), (address[]));
@@ -166,7 +154,9 @@ library WavsMirrorDeploymentLib {
         return cfg;
     }
 
-    function writeConfiguration(string memory filePath, WavsMirrorDeploymentLib.InitialConfiguration memory config) internal {
+    function writeConfiguration(string memory filePath, WavsMirrorDeploymentLib.InitialConfiguration memory config)
+        internal
+    {
         string memory objectKey = "WavsMirrorConfigJson"; // An arbitrary unique key for forge's internal JSON object tracking
 
         // Serialize each field of the configuration into the JSON buffer
@@ -183,7 +173,11 @@ library WavsMirrorDeploymentLib {
 
     // This should be run on the source chain (with ECDSAStakeRegistry)
     // All other functions should run on mirror chain (with MirrorStakeRegistry)
-    function loadConfigurationFromChain(address serviceManagerAddress) internal view returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
+    function loadConfigurationFromChain(address serviceManagerAddress)
+        internal
+        view
+        returns (WavsMirrorDeploymentLib.InitialConfiguration memory)
+    {
         WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
         ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
 
@@ -196,10 +190,7 @@ library WavsMirrorDeploymentLib {
 
         // get operators
         IAllocationManager allocationManager = IAllocationManager(serviceManager.allocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({
-            avs: serviceManagerAddress, 
-            id: 1
-        });
+        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 1});
         cfg.operators = allocationManager.getMembers(opSetQuery);
 
         // get operator info
@@ -213,16 +204,14 @@ library WavsMirrorDeploymentLib {
         return cfg;
     }
 
-    function readDeploymentJson(
-        uint256 chainId
-    ) internal returns (DeploymentData memory) {
+    function readDeploymentJson(uint256 chainId) internal returns (DeploymentData memory) {
         return readDeploymentJson("deployments/wavs-mirror/", chainId);
     }
 
-    function readDeploymentJson(
-        string memory directoryPath,
-        uint256 chainId
-    ) internal returns (DeploymentData memory) {
+    function readDeploymentJson(string memory directoryPath, uint256 chainId)
+        internal
+        returns (DeploymentData memory)
+    {
         string memory fileName = string.concat(directoryPath, vm.toString(chainId), ".json");
 
         require(vm.exists(fileName), "Deployment file does not exist");
@@ -234,24 +223,17 @@ library WavsMirrorDeploymentLib {
         data.stakeRegistry = json.readAddress(".contracts.stakeRegistry");
         data.MirrorServiceHandler = json.readAddress(".contracts.MirrorServiceHandler");
         data.MirrorServiceManagerHandler = json.readAddress(".contracts.MirrorServiceManagerHandler");
-        
+
         return data;
     }
 
     /// write to default output path
-    function writeDeploymentJson(
-        DeploymentData memory data
-    ) internal {
+    function writeDeploymentJson(DeploymentData memory data) internal {
         writeDeploymentJson("deployments/wavs-mirror/", block.chainid, data);
     }
 
-    function writeDeploymentJson(
-        string memory outputPath,
-        uint256 chainId,
-        DeploymentData memory data
-    ) internal {
-        address proxyAdmin =
-            address(UpgradeableProxyLib.getProxyAdmin(data.WavsServiceManager));
+    function writeDeploymentJson(string memory outputPath, uint256 chainId, DeploymentData memory data) internal {
+        address proxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(data.WavsServiceManager));
 
         string memory deploymentData = _generateDeploymentJson(data, proxyAdmin);
 
@@ -264,26 +246,32 @@ library WavsMirrorDeploymentLib {
         console2.log("Deployment artifacts written to:", fileName);
     }
 
-    function _generateDeploymentJson(
-        DeploymentData memory data,
-        address proxyAdmin
-    ) private view returns (string memory) {
+    function _generateDeploymentJson(DeploymentData memory data, address proxyAdmin)
+        private
+        view
+        returns (string memory)
+    {
         return string.concat(
-            '{',
-                '"lastUpdate":{',
-                    '"timestamp":"', vm.toString(block.timestamp), '",',
-                    '"block_number":"', vm.toString(block.number), '"',
-                '},',
-                '"addresses":', 
-                    _generateContractsJson(data, proxyAdmin),
-            '}'
+            "{",
+            '"lastUpdate":{',
+            '"timestamp":"',
+            vm.toString(block.timestamp),
+            '",',
+            '"block_number":"',
+            vm.toString(block.number),
+            '"',
+            "},",
+            '"addresses":',
+            _generateContractsJson(data, proxyAdmin),
+            "}"
         );
     }
 
-    function _generateContractsJson(
-        DeploymentData memory data,
-        address proxyAdmin
-    ) private view returns (string memory) {
+    function _generateContractsJson(DeploymentData memory data, address proxyAdmin)
+        private
+        view
+        returns (string memory)
+    {
         return string.concat(
             '{"proxyAdmin":"',
             proxyAdmin.toHexString(),
