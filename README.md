@@ -142,6 +142,15 @@ docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
    wavs-middleware -m mirror deploy
 ```
 
+List Mirror Operators:
+
+```bash
+# View stake registry status, including registered operators and their weights
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+   -e SOURCE_RPC_URL=${SOURCE_RPC_URL} \
+   -e MIRROR_RPC_URL=${MIRROR_RPC_URL} \
+   wavs-middleware -m mirror list_operators
+```
 
 ## Deploy Testnet
 
@@ -259,6 +268,7 @@ sequenceDiagram
 To get Holesky ETH for running on testnet:
 
 1. PoW Mining Faucet:
+
    - Go to https://holesky-faucet.pk910.de/
    - Connect your wallet
    - Mine blocks in your browser to earn ETH
