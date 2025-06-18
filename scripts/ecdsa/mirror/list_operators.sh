@@ -48,19 +48,35 @@ fi
 validate_rpc_url "$SOURCE_RPC_URL" "SOURCE_RPC_URL"
 validate_rpc_url "$MIRROR_RPC_URL" "MIRROR_RPC_URL"
 
+export SOURCE_RPC_URL
+export MIRROR_RPC_URL
+
 # Get chain ID from mirror RPC URL
 MIRROR_CHAIN_ID=$(cast chain-id --rpc-url "$MIRROR_RPC_URL") || error_exit "Failed to get chain ID from mirror RPC URL"
 export MIRROR_CHAIN_ID
 echo "Mirror Chain ID: $MIRROR_CHAIN_ID"
 
-# Read service manager addresses from JSON files
-WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' /root/.nodes/avs_deploy.json) || error_exit "Failed to read WAVS_SERVICE_MANAGER_ADDRESS from avs_deploy.json"
-MIRROR_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' "/root/.nodes/mirror-$MIRROR_CHAIN_ID.json") || error_exit "Failed to read MIRROR_SERVICE_MANAGER_ADDRESS from mirror-$MIRROR_CHAIN_ID.json"
+# Get service manager addresses from environment variables or files
+SOURCE_SERVICE_MANAGER_ADDRESS=${SOURCE_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "/root/.nodes/avs_deploy.json")}
+MIRROR_SERVICE_MANAGER_ADDRESS=${MIRROR_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "/root/.nodes/mirror-$MIRROR_CHAIN_ID.json")}
 
-# Export addresses for the script
-export WAVS_SERVICE_MANAGER_ADDRESS
+# Validate service manager addresses
+if [ -z "${SOURCE_SERVICE_MANAGER_ADDRESS:-}" ]; then
+    error_exit "SOURCE_SERVICE_MANAGER_ADDRESS is not set in environment variables or found in .nodes/avs_deploy.json"
+fi
+
+if [ -z "${MIRROR_SERVICE_MANAGER_ADDRESS:-}" ]; then
+    error_exit "MIRROR_SERVICE_MANAGER_ADDRESS is not set in environment variables or found in .nodes/mirror-$MIRROR_CHAIN_ID.json"
+fi
+
+export SOURCE_SERVICE_MANAGER_ADDRESS
 export MIRROR_SERVICE_MANAGER_ADDRESS
+
+echo "Source Service Manager: $SOURCE_SERVICE_MANAGER_ADDRESS"
+echo "Mirror Service Manager: $MIRROR_SERVICE_MANAGER_ADDRESS"
 
 # Change to contracts directory and run the script
 cd contracts || error_exit "Failed to change to contracts directory"
 forge script eigenlayer/script/WavsMirrorListOperators.s.sol -vvv --broadcast
+cat "deployments/wavs-mirror/list-operators-$MIRROR_CHAIN_ID.json" | jq .
+cp "deployments/wavs-mirror/list-operators-$MIRROR_CHAIN_ID.json" "/root/.nodes/mirror-list-operators-$MIRROR_CHAIN_ID.json"

@@ -14,7 +14,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 /// @dev This script reads operator information from the source chain and their corresponding weights from the mirror chain
 contract WavsMirrorListOperators is Script {
     // Environment variable names
-    string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
+    string public constant ENV_SOURCE_SERVICE_MANAGER = "SOURCE_SERVICE_MANAGER_ADDRESS";
     string public constant ENV_MIRROR_SERVICE_MANAGER = "MIRROR_SERVICE_MANAGER_ADDRESS";
     string public constant SOURCE_RPC_URL = "SOURCE_RPC_URL";
     string public constant MIRROR_RPC_URL = "MIRROR_RPC_URL";
@@ -30,7 +30,7 @@ contract WavsMirrorListOperators is Script {
     }
 
     // Configuration variables
-    address private serviceManagerAddr;
+    address private sourceServiceManagerAddr;
     address private mirrorServiceManagerAddr;
     string private sourceRpcUrl;
     string private mirrorRpcUrl;
@@ -39,7 +39,7 @@ contract WavsMirrorListOperators is Script {
     /// @dev This function is called before run() and validates all required environment variables
     function setUp() public virtual {
         // Read and validate service manager addresses
-        serviceManagerAddr = vm.envAddress(ENV_SERVICE_MANAGER);
+        sourceServiceManagerAddr = vm.envAddress(ENV_SOURCE_SERVICE_MANAGER);
         mirrorServiceManagerAddr = vm.envAddress(ENV_MIRROR_SERVICE_MANAGER);
         
         // Read and validate RPC URLs
@@ -47,7 +47,7 @@ contract WavsMirrorListOperators is Script {
         mirrorRpcUrl = vm.envString(MIRROR_RPC_URL);
 
         // Validate addresses
-        require(serviceManagerAddr != address(0), "Invalid service manager address");
+        require(sourceServiceManagerAddr != address(0), "Invalid source service manager address");
         require(mirrorServiceManagerAddr != address(0), "Invalid mirror service manager address");
     }
 
@@ -55,27 +55,27 @@ contract WavsMirrorListOperators is Script {
     /// @dev This function orchestrates the process of fetching and displaying operator information
     function run() external {
         // Get operator information
-        OperatorInfo memory opInfo = listOperators(serviceManagerAddr, mirrorServiceManagerAddr);
+        OperatorInfo memory opInfo = listOperators(sourceServiceManagerAddr, mirrorServiceManagerAddr);
 
         // Display results
         displayResults(opInfo);
     }
 
     /// @notice Internal function to fetch operator information from both chains
-    /// @param serviceManagerAddress The address of the source chain service manager
+    /// @param sourceServiceManagerAddress The address of the source chain service manager
     /// @param mirrorServiceManagerAddress The address of the mirror chain service manager
     /// @return OperatorInfo struct containing all operator-related information
     function listOperators(
-        address serviceManagerAddress,
+        address sourceServiceManagerAddress,
         address mirrorServiceManagerAddress
     ) internal returns (OperatorInfo memory) {
         // Create source chain fork and get operators
         vm.createSelectFork(sourceRpcUrl);
-        WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
+        WavsServiceManager sourceServiceManager = WavsServiceManager(sourceServiceManagerAddress);
 
-        IAllocationManager allocationManager = IAllocationManager(serviceManager.allocationManager());
+        IAllocationManager allocationManager = IAllocationManager(sourceServiceManager.allocationManager());
         OperatorSet memory opSetQuery = OperatorSet({
-            avs: serviceManagerAddress, 
+            avs: sourceServiceManagerAddress, 
             id: 1
         });
         address[] memory operators = allocationManager.getMembers(opSetQuery);
@@ -98,6 +98,15 @@ contract WavsMirrorListOperators is Script {
             signingKeys[i] = mirrorStakeRegistry.getLatestOperatorSigningKey(operators[i]);
         }
 
+        writeOperatorListJson(block.chainid, OperatorInfo({
+            stakeRegistry: address(mirrorStakeRegistry),
+            totalWeight: totalWeight,
+            thresholdWeight: thresholdWeight,
+            operators: operators,
+            signingKeys: signingKeys,
+            weights: weights
+        }));
+
         return OperatorInfo({
             stakeRegistry: address(mirrorStakeRegistry),
             totalWeight: totalWeight,
@@ -112,6 +121,7 @@ contract WavsMirrorListOperators is Script {
     /// @param opInfo The operator information to display
     function displayResults(OperatorInfo memory opInfo) internal view {
         console.log("=== List Operators ===");
+        console.log("Source Service Manager Address:", sourceServiceManagerAddr);
         console.log("Mirror Service Manager Address:", mirrorServiceManagerAddr);
         console.log("Mirror Stake Registry Address:", address(opInfo.stakeRegistry));
 
@@ -141,5 +151,43 @@ contract WavsMirrorListOperators is Script {
             );
             console.log(op, sign, weight);
         }
+    }
+
+    function writeOperatorListJson(
+        uint256 chainId,
+        OperatorInfo memory opInfo
+    ) internal {
+        string memory fileName = string.concat("deployments/wavs-mirror/list-operators-", vm.toString(chainId), ".json");
+        if (!vm.exists("deployments/wavs-mirror")) {
+            vm.createDir("deployments/wavs-mirror", true);
+        }
+
+        string memory json = string.concat(
+            '{',
+                '"sourceServiceManager":"', Strings.toHexString(uint160(sourceServiceManagerAddr)), '",',
+                '"mirrorServiceManager":"', Strings.toHexString(uint160(mirrorServiceManagerAddr)), '",',
+                '"stakeRegistry":"', Strings.toHexString(uint160(address(opInfo.stakeRegistry))), '",',
+                '"totalWeight":"', Strings.toString(opInfo.totalWeight), '",',
+                '"thresholdWeight":"', Strings.toString(opInfo.thresholdWeight), '",',
+                '"operators":['
+        );
+
+        for (uint256 i = 0; i < opInfo.operators.length; i++) {
+            if (i > 0) {
+                json = string.concat(json, ',');
+            }
+            json = string.concat(
+                json,
+                '{',
+                    '"operator":"', Strings.toHexString(uint160(opInfo.operators[i]), 20), '",',
+                    '"signingKey":"', Strings.toHexString(uint160(opInfo.signingKeys[i]), 20), '",',
+                    '"weight":"', Strings.toString(opInfo.weights[i]), '"',
+                '}'
+            );
+        }
+
+        json = string.concat(json, ']}');
+        vm.writeFile(fileName, json);
+        console.log("Operator list written to:", fileName);
     }
 }

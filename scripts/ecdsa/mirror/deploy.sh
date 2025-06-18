@@ -60,7 +60,11 @@ else
 fi
 
 # Read service manager address from file
-export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' /root/.nodes/avs_deploy.json) || error_exit "Failed to read WAVS_SERVICE_MANAGER_ADDRESS from avs_deploy.json"
+WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "/root/.nodes/avs_deploy.json")}
+if [ -z "${WAVS_SERVICE_MANAGER_ADDRESS:-}" ]; then
+    error_exit "WAVS_SERVICE_MANAGER_ADDRESS is not set in environment variables or found in .nodes/avs_deploy.json"
+fi
+export WAVS_SERVICE_MANAGER_ADDRESS
 
 # Set arbitrary location for config
 export WAVS_MIRROR_CONFIG=${WAVS_MIRROR_CONFIG:-./deployments/wavs-mirror-config.json}
