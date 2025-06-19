@@ -4,15 +4,13 @@ pragma solidity ^0.8.0;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
-import {WavsServiceManager} from "../src/WavsServiceManager.sol";
-import {IAllocationManagerTypes, IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
-
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract WavsListOperators is Script {
-    string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
+import {WavsServiceManager} from "../src/WavsServiceManager.sol";
 
+contract WavsListOperators is Script {
     struct OperatorInfo {
         address stakeRegistry;
         uint256 totalWeight;
@@ -21,6 +19,8 @@ contract WavsListOperators is Script {
         address[] signingKeys;
         uint256[] weights;
     }
+
+    string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
 
     // configuration
     address private serviceManagerAddr;

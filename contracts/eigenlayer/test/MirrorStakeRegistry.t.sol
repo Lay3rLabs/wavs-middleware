@@ -1,17 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.27;
 
-import "forge-std/Test.sol";
-import {MirrorStakeRegistry} from "../src/MirrorStakeRegistry.sol";
+import {Test} from "forge-std/Test.sol";
 import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistryStorage.sol";
 import {ISignatureUtilsMixinTypes} from "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
 import {IERC1271Upgradeable} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
-import {SignatureCheckerUpgradeable} from
-    "@openzeppelin-upgrades/contracts/utils/cryptography/SignatureCheckerUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
+import {MirrorStakeRegistry} from "../src/MirrorStakeRegistry.sol";
+
 contract MirrorStakeRegistryTest is Test {
+    // these should sum to around 9,0000 (so 2/3 can pass)
+    uint256 public constant WEIGHT_1 = 1500;
+    uint256 public constant WEIGHT_2 = 3000;
+    uint256 public constant WEIGHT_3 = 4500;
+
     MirrorStakeRegistry public registry;
     address public owner;
     address public operator1;
@@ -24,10 +28,9 @@ contract MirrorStakeRegistryTest is Test {
     uint256 public privateKey2;
     uint256 public privateKey3;
     address public serviceManager;
-    // these should sum to around 9,0000 (so 2/3 can pass)
-    uint256 public constant WEIGHT_1 = 1500;
-    uint256 public constant WEIGHT_2 = 3000;
-    uint256 public constant WEIGHT_3 = 4500;
+
+    error MirrorStakeRegistryTest__ArraysLengthMismatch();
+    error MirrorStakeRegistryTest__SignatureRecoveryFailed();
 
     function setUp() public {
         // Set up test addresses
@@ -412,11 +415,15 @@ contract MirrorStakeRegistryTest is Test {
      * @param signatures Array of signatures corresponding to signers
      */
     function verifySignatures(bytes32 digest, address[] memory signers, bytes[] memory signatures) internal pure {
-        require(signers.length == signatures.length, "Arrays length mismatch");
+        if (signers.length != signatures.length) {
+            revert MirrorStakeRegistryTest__ArraysLengthMismatch();
+        }
 
         for (uint256 i = 0; i < signers.length; i++) {
             address recovered = ECDSA.recover(digest, signatures[i]);
-            require(recovered == signers[i], "Signature recovery failed");
+            if (recovered != signers[i]) {
+                revert MirrorStakeRegistryTest__SignatureRecoveryFailed();
+            }
         }
     }
 

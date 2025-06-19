@@ -5,7 +5,6 @@ import {IDelegationManager} from "eigenlayer-contracts/src/contracts/interfaces/
 import {
     ECDSAStakeRegistry, IECDSAStakeRegistryTypes
 } from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
-import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
 import {ISignatureUtilsMixinTypes} from "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
 import {CheckpointsUpgradeable} from "@openzeppelin-upgrades/contracts/utils/CheckpointsUpgradeable.sol";
 

@@ -1,21 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {console} from "forge-std/console.sol";
-import "forge-std/Test.sol";
+import {Test, console2} from "forge-std/Test.sol";
+import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+
 import {WavsMiddlewareDeploymentLib} from "../script/utils/WavsMiddlewareDeplomentLib.sol";
 import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
-import {MirrorStakeRegistry} from "../src/MirrorStakeRegistry.sol";
-import {WavsServiceManager} from "../src/WavsServiceManager.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
-import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
-import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 uint256 constant OPERATOR_WEIGHT = 10000;
 

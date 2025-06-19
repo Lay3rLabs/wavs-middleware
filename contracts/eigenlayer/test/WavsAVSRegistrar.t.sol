@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "forge-std/Test.sol";
-import "../src/WavsAVSRegistrar.sol";
+import {Test} from "forge-std/Test.sol";
+
+import {WavsAVSRegistrar} from "../src/WavsAVSRegistrar.sol";
 
 contract WavsAVSRegistrarTest is Test {
     WavsAVSRegistrar public registrar;
@@ -72,7 +73,7 @@ contract WavsAVSRegistrarTest is Test {
         registrar.pause();
 
         // Should revert with pause message when paused
-        vm.expectRevert("AVSRegistrar: paused");
+        vm.expectRevert(abi.encodeWithSelector(WavsAVSRegistrar.WavsAVSRegistrar__Paused.selector));
         registrar.registerOperator(operator, avs, operatorSetIds, data);
     }
 
@@ -90,7 +91,7 @@ contract WavsAVSRegistrarTest is Test {
         registrar.pause();
 
         // Should revert with pause message when paused
-        vm.expectRevert("AVSRegistrar: paused");
+        vm.expectRevert(abi.encodeWithSelector(WavsAVSRegistrar.WavsAVSRegistrar__Paused.selector));
         registrar.deregisterOperator(operator, avs, operatorSetIds);
     }
 }

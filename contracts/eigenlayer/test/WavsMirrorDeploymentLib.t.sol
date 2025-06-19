@@ -1,40 +1,40 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {console} from "forge-std/console.sol";
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
+import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+
 import {WavsMirrorDeploymentLib} from "../script/utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 import {MirrorStakeRegistry} from "../src/MirrorStakeRegistry.sol";
 import {WavsServiceManager} from "../src/WavsServiceManager.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
-import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
 import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
 
 uint256 constant OPERATOR_WEIGHT = 10000;
 
 contract WavsMirrorDeploymentLibTest is Test {
     using UpgradeableProxyLib for address;
 
-    address private deployer;
-    address private proxyAdmin;
-    WavsMirrorDeploymentLib.DeploymentData private deployment;
+    address public deployer;
+    address public proxyAdmin;
+    WavsMirrorDeploymentLib.DeploymentData public deployment;
 
     // basic operator data
-    address[] private operators;
-    address[] private signingKeys;
-    uint256[] private weights;
-    uint256[] private privateKeys;
+    address[] public operators;
+    address[] public signingKeys;
+    uint256[] public weights;
+    uint256[] public privateKeys;
 
     // References to deployed contracts
-    MirrorStakeRegistry private stakeRegistry;
-    WavsServiceManager private serviceManager;
+    MirrorStakeRegistry public stakeRegistry;
+    WavsServiceManager public serviceManager;
+
+    error WavsMirrorDeploymentLibTest__BlockNumberTooLowForOffset();
+    error WavsMirrorDeploymentLibTest__ArraysLengthMismatch();
+    error WavsMirrorDeploymentLibTest__SignatureRecoveryFailed();
 
     function setUp() public {
         // Set up deployer address
@@ -50,7 +50,7 @@ contract WavsMirrorDeploymentLibTest is Test {
 
         // Create references to deployed contracts
         stakeRegistry = MirrorStakeRegistry(deployment.stakeRegistry);
-        serviceManager = WavsServiceManager(deployment.WavsServiceManager);
+        serviceManager = WavsServiceManager(deployment.wavsServiceManager);
 
         // Create test info for 5 operators
         privateKeys = new uint256[](5);
@@ -80,19 +80,19 @@ contract WavsMirrorDeploymentLibTest is Test {
     function test_initial_state() public view {
         // Verify deployment addresses are set correctly
         assertNotEq(deployment.stakeRegistry, address(0), "StakeRegistry address cannot be zero");
-        assertNotEq(deployment.WavsServiceManager, address(0), "WavsServiceManager address cannot be zero");
+        assertNotEq(deployment.wavsServiceManager, address(0), "WavsServiceManager address cannot be zero");
         assertNotEq(proxyAdmin, address(0), "ProxyAdmin address cannot be zero");
 
         // Verify proxy admin relationships
         address stakeRegistryProxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(deployment.stakeRegistry));
-        address serviceManagerProxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(deployment.WavsServiceManager));
+        address serviceManagerProxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(deployment.wavsServiceManager));
 
         assertEq(stakeRegistryProxyAdmin, proxyAdmin, "StakeRegistry proxy admin should match");
         assertEq(serviceManagerProxyAdmin, proxyAdmin, "WavsServiceManager proxy admin should match");
 
         // Check implementation addresses
         address stakeRegistryImpl = deployment.stakeRegistry.getImplementation();
-        address serviceManagerImpl = deployment.WavsServiceManager.getImplementation();
+        address serviceManagerImpl = deployment.wavsServiceManager.getImplementation();
 
         assertNotEq(stakeRegistryImpl, address(0), "StakeRegistry implementation cannot be zero");
         assertNotEq(serviceManagerImpl, address(0), "WavsServiceManager implementation cannot be zero");
@@ -102,7 +102,7 @@ contract WavsMirrorDeploymentLibTest is Test {
 
         assertEq(
             address(registry.serviceManager()),
-            deployment.WavsServiceManager,
+            deployment.wavsServiceManager,
             "StakeRegistry should reference ServiceManager"
         );
 
@@ -291,7 +291,9 @@ contract WavsMirrorDeploymentLibTest is Test {
         // Note: referenceBlock must be a valid block that exists and is in the past
         // Make sure we're at least at block 1 before subtracting offset
         uint32 currentBlock = uint32(block.number);
-        require(currentBlock > referenceBlockOffset, "Block number too low for offset");
+        if (currentBlock <= referenceBlockOffset) {
+            revert WavsMirrorDeploymentLibTest__BlockNumberTooLowForOffset();
+        }
 
         return IWavsServiceHandler.SignatureData({
             signers: signers,
@@ -394,11 +396,15 @@ contract WavsMirrorDeploymentLibTest is Test {
      * @param signatures Array of signatures corresponding to signers
      */
     function verifySignatures(bytes32 digest, address[] memory signers, bytes[] memory signatures) internal pure {
-        require(signers.length == signatures.length, "Arrays length mismatch");
+        if (signers.length != signatures.length) {
+            revert WavsMirrorDeploymentLibTest__ArraysLengthMismatch();
+        }
 
         for (uint256 i = 0; i < signers.length; i++) {
             address recovered = ECDSA.recover(digest, signatures[i]);
-            require(recovered == signers[i], "Signature recovery failed");
+            if (recovered != signers[i]) {
+                revert WavsMirrorDeploymentLibTest__SignatureRecoveryFailed();
+            }
         }
     }
 }

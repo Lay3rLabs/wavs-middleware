@@ -1,33 +1,33 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
-import {WavsServiceManager} from "../../src/WavsServiceManager.sol";
 import {ISignatureUtilsMixinTypes} from "@eigenlayer/contracts/interfaces/ISignatureUtilsMixin.sol";
 import {IStrategyManager} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
 import {IAllocationManagerTypes, IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
-import {IECDSAStakeRegistryTypes, IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import {WavsServiceManager} from "../../src/WavsServiceManager.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {WavsAVSRegistrar} from "../../src/WavsAVSRegistrar.sol";
 
 library WavsRegisterOperatorLib {
     using stdJson for *;
     using Strings for *;
     using UpgradeableProxyLib for address;
 
-    Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+
+    error WavsRegisterOperatorLib__FailedToMintLSTTokens();
+    error WavsRegisterOperatorLib__FailedToApproveLSTTokens();
 
     function setupOperator(
         ReadCoreLib.DeploymentData memory coreDeployment,
@@ -37,7 +37,7 @@ library WavsRegisterOperatorLib {
     ) internal {
         // This is the address for private key forge is running the script as.
         // Calculated from the --private-key argument
-        (, address operatorAddr,) = vm.readCallers();
+        (, address operatorAddr,) = VM.readCallers();
 
         IStrategyManager strategyManager = IStrategyManager(coreDeployment.strategyManager);
         uint256 numDeposit = strategyManager.stakerStrategyListLength(operatorAddr);
@@ -54,7 +54,9 @@ library WavsRegisterOperatorLib {
                 (bool success,) = lstContractAddress.call{value: stakeAmount}(
                     abi.encodeWithSignature("submit(address)", operatorAddr)
                 );
-                require(success, "Failed to mint LST tokens");
+                if (!success) {
+                    revert WavsRegisterOperatorLib__FailedToMintLSTTokens();
+                }
 
                 // Update the LST balance after minting
                 lstBalance = lstToken.balanceOf(operatorAddr);
@@ -65,7 +67,9 @@ library WavsRegisterOperatorLib {
 
             // Approve the strategy manager to spend the LST tokens
             bool approved = lstToken.approve(coreDeployment.strategyManager, stakeAmount);
-            require(approved, "Failed to approve LST tokens");
+            if (!approved) {
+                revert WavsRegisterOperatorLib__FailedToApproveLSTTokens();
+            }
             console2.log("Approved", stakeAmount, "LST tokens for StrategyManager");
 
             // Create a new deposit with the LSTs
@@ -89,7 +93,7 @@ library WavsRegisterOperatorLib {
 
         // This is the address for private key forge is running the script as.
         // Calculated from the --private-key argument
-        (, address operatorAddr,) = vm.readCallers();
+        (, address operatorAddr,) = VM.readCallers();
 
         //  query if already in opset and add if if not in it yet.
         IAllocationManager allocationManager = IAllocationManager(serviceManager.allocationManager());
@@ -136,7 +140,7 @@ library WavsRegisterOperatorLib {
                 operatorAddr, serviceManagerAddress, salt, expiry
             );
             // local signature=$(cast wallet sign $digest_hash --no-hash --private-key "$operator_key")
-            (uint8 v, bytes32 r, bytes32 s) = vm.sign(digest);
+            (uint8 v, bytes32 r, bytes32 s) = VM.sign(digest);
             bytes memory signature = abi.encodePacked(r, s, v);
 
             console2.log("Registering operator with signature...");

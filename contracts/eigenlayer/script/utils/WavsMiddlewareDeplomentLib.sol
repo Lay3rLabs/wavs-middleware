@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
-import {WavsServiceManager} from "../../src/WavsServiceManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IECDSAStakeRegistryTypes, IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
-import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
-import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
+import {WavsServiceManager} from "../../src/WavsServiceManager.sol";
+import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsAVSRegistrar} from "../../src/WavsAVSRegistrar.sol";
 
 library WavsMiddlewareDeploymentLib {
@@ -22,10 +21,8 @@ library WavsMiddlewareDeploymentLib {
     using Strings for *;
     using UpgradeableProxyLib for address;
 
-    Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
     struct DeploymentData {
-        address WavsServiceManager;
+        address wavsServiceManager;
         address stakeRegistry;
         address strategy;
         address avsRegistrar;
@@ -36,6 +33,13 @@ library WavsMiddlewareDeploymentLib {
         uint96 multiplier;
     }
 
+    Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+
+    error WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
+    error WavsMiddlewareDeploymentLib__DeploymentFileNotFound();
+    error WavsMiddlewareDeploymentLib__StrategiesAndMultipliersLengthMismatch();
+    error WavsMiddlewareDeploymentLib__TotalMultiplierNot10000();
+
     function deployContracts(
         address proxyAdmin,
         ReadCoreLib.DeploymentData memory core,
@@ -44,11 +48,11 @@ library WavsMiddlewareDeploymentLib {
         DeploymentData memory result;
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.
-        result.WavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        result.wavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         // Deploy the implementation contracts, using the proxy contracts as inputs
         address stakeRegistryImpl = address(new ECDSAStakeRegistry(IDelegationManager(core.delegationManager)));
-        address WavsServiceManagerImpl = address(
+        address wavsServiceManagerImpl = address(
             new WavsServiceManager(
                 core.avsDirectory,
                 result.stakeRegistry,
@@ -60,13 +64,13 @@ library WavsMiddlewareDeploymentLib {
         // Upgrade contracts
         bytes memory stakeRegistryUpgradeCall = abi.encodeCall(
             ECDSAStakeRegistry.initialize,
-            (result.WavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
+            (result.wavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
         );
-        bytes memory WavsServiceManagerUpgradeCall =
+        bytes memory wavsServiceManagerUpgradeCall =
             abi.encodeCall(WavsServiceManager.initialize, (msg.sender, msg.sender));
         UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryUpgradeCall);
         UpgradeableProxyLib.upgradeAndCall(
-            result.WavsServiceManager, WavsServiceManagerImpl, WavsServiceManagerUpgradeCall
+            result.wavsServiceManager, wavsServiceManagerImpl, wavsServiceManagerUpgradeCall
         );
 
         // TODO: This is incredibly stupid,
@@ -89,7 +93,7 @@ library WavsMiddlewareDeploymentLib {
         stakeRegistry.updateMinimumWeight(minimumWeight, new address[](0));
 
         // set avs registrar
-        WavsServiceManager wavsServiceManager = WavsServiceManager(deployment.WavsServiceManager);
+        WavsServiceManager wavsServiceManager = WavsServiceManager(deployment.wavsServiceManager);
         wavsServiceManager.setAVSRegistrar(WavsAVSRegistrar(deployment.avsRegistrar));
 
         // set metadata uri on service manager
@@ -113,14 +117,18 @@ library WavsMiddlewareDeploymentLib {
         internal
         returns (IECDSAStakeRegistryTypes.Quorum memory)
     {
-        string memory fileName = string.concat(directoryPath, vm.toString(chainId), ".json");
-        require(vm.exists(fileName), "Strategies file does not exist");
+        string memory fileName = string.concat(directoryPath, VM.toString(chainId), ".json");
+        if (!VM.exists(fileName)) {
+            revert WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
+        }
 
         // load the strategies config
-        string memory json = vm.readFile(fileName);
-        address[] memory strategies = abi.decode(vm.parseJson(json, ".strategies"), (address[]));
-        uint96[] memory multipliers = abi.decode(vm.parseJson(json, ".multipliers"), (uint96[]));
-        require(strategies.length == multipliers.length, "Strategies and multipliers must have the same length");
+        string memory json = VM.readFile(fileName);
+        address[] memory strategies = abi.decode(VM.parseJson(json, ".strategies"), (address[]));
+        uint96[] memory multipliers = abi.decode(VM.parseJson(json, ".multipliers"), (uint96[]));
+        if (strategies.length != multipliers.length) {
+            revert WavsMiddlewareDeploymentLib__StrategiesAndMultipliersLengthMismatch();
+        }
 
         // convert to quorum
         uint256 size = strategies.length;
@@ -134,7 +142,9 @@ library WavsMiddlewareDeploymentLib {
                 multiplier: multipliers[i]
             });
         }
-        require(totalMultiplier == 10000, "Total multiplier must be 10000");
+        if (totalMultiplier != 10000) {
+            revert WavsMiddlewareDeploymentLib__TotalMultiplierNot10000();
+        }
 
         return quorum;
     }
@@ -147,15 +157,17 @@ library WavsMiddlewareDeploymentLib {
         internal
         returns (DeploymentData memory)
     {
-        string memory fileName = string.concat(directoryPath, vm.toString(chainId), ".json");
+        string memory fileName = string.concat(directoryPath, VM.toString(chainId), ".json");
 
-        require(vm.exists(fileName), "Deployment file does not exist");
+        if (!VM.exists(fileName)) {
+            revert WavsMiddlewareDeploymentLib__DeploymentFileNotFound();
+        }
 
-        string memory json = vm.readFile(fileName);
+        string memory json = VM.readFile(fileName);
 
         DeploymentData memory data;
         /// TODO: 2 Step for reading deployment json.  Read to the core and the AVS data
-        data.WavsServiceManager = json.readAddress(".contracts.WavsServiceManager");
+        data.wavsServiceManager = json.readAddress(".contracts.wavsServiceManager");
         data.stakeRegistry = json.readAddress(".contracts.stakeRegistry");
         data.strategy = json.readAddress(".contracts.strategy");
         data.avsRegistrar = json.readAddress(".contracts.avsRegistrar");
@@ -169,16 +181,16 @@ library WavsMiddlewareDeploymentLib {
     }
 
     function writeDeploymentJson(string memory outputPath, uint256 chainId, DeploymentData memory data) internal {
-        address proxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(data.WavsServiceManager));
+        address proxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(data.wavsServiceManager));
 
         string memory deploymentData = _generateDeploymentJson(data, proxyAdmin);
 
-        string memory fileName = string.concat(outputPath, vm.toString(chainId), ".json");
-        if (!vm.exists(outputPath)) {
-            vm.createDir(outputPath, true);
+        string memory fileName = string.concat(outputPath, VM.toString(chainId), ".json");
+        if (!VM.exists(outputPath)) {
+            VM.createDir(outputPath, true);
         }
 
-        vm.writeFile(fileName, deploymentData);
+        VM.writeFile(fileName, deploymentData);
         console2.log("Deployment artifacts written to:", fileName);
     }
 
@@ -189,15 +201,15 @@ library WavsMiddlewareDeploymentLib {
     {
         return string.concat(
             "{",
-            '"lastUpdate":{',
-            '"timestamp":"',
-            vm.toString(block.timestamp),
-            '",',
-            '"block_number":"',
-            vm.toString(block.number),
-            '"',
+            "\"lastUpdate\":{",
+            "\"timestamp\":\"",
+            VM.toString(block.timestamp),
+            "\",",
+            "\"block_number\":\"",
+            VM.toString(block.number),
+            "\"",
             "},",
-            '"addresses":',
+            "\"addresses\":",
             _generateContractsJson(data, proxyAdmin),
             "}"
         );
@@ -209,21 +221,21 @@ library WavsMiddlewareDeploymentLib {
         returns (string memory)
     {
         return string.concat(
-            '{"proxyAdmin":"',
+            "{\"proxyAdmin\":\"",
             proxyAdmin.toHexString(),
-            '","WavsServiceManager":"',
-            data.WavsServiceManager.toHexString(),
-            '","WavsServiceManagerImpl":"',
-            data.WavsServiceManager.getImplementation().toHexString(),
-            '","stakeRegistry":"',
+            "\",\"WavsServiceManager\":\"",
+            data.wavsServiceManager.toHexString(),
+            "\",\"WavsServiceManagerImpl\":\"",
+            data.wavsServiceManager.getImplementation().toHexString(),
+            "\",\"stakeRegistry\":\"",
             data.stakeRegistry.toHexString(),
-            '","stakeRegistryImpl":"',
+            "\",\"stakeRegistryImpl\":\"",
             data.stakeRegistry.getImplementation().toHexString(),
-            '","strategy":"',
+            "\",\"strategy\":\"",
             data.strategy.toHexString(),
-            '","avsRegistrar":"',
+            "\",\"avsRegistrar\":\"",
             data.avsRegistrar.toHexString(),
-            '"}'
+            "\"}"
         );
     }
 }
