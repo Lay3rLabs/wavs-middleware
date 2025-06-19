@@ -28,13 +28,18 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
     /// @notice Service manager instance
     IWavsServiceManager public serviceManager;
 
-    constructor(MirrorStakeRegistry _stakeRegistry) {
+    constructor(
+        MirrorStakeRegistry _stakeRegistry
+    ) {
         stakeRegistry = _stakeRegistry;
         serviceManager = IWavsServiceManager(_stakeRegistry.serviceManager());
         lastTriggerId = 0;
     }
 
-    function handleSignedEnvelope(Envelope calldata envelope, SignatureData calldata signatureData) external {
+    function handleSignedEnvelope(
+        Envelope calldata envelope,
+        SignatureData calldata signatureData
+    ) external {
         // Quick check this is valid trigger id before validating signatures
         IMirrorUpdateTypes.UpdateWithId memory updateData =
             abi.decode(envelope.payload, (IMirrorUpdateTypes.UpdateWithId));
@@ -48,6 +53,8 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
 
         // call stake registry to update
         stakeRegistry.updateStakeThreshold(updateData.thresholdWeight);
-        stakeRegistry.batchSetOperatorDetails(updateData.operators, updateData.signingKeys, updateData.weights);
+        stakeRegistry.batchSetOperatorDetails(
+            updateData.operators, updateData.signingKeys, updateData.weights
+        );
     }
 }

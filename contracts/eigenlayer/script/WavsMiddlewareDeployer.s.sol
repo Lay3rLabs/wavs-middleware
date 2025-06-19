@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {IECDSAStakeRegistryTypes} from
+    "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeplomentLib.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
@@ -34,7 +35,8 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     error WavsMiddlewareDeployer__AVSDirectoryAddressCannotBeZero();
 
     function setUp() public virtual {
-        coreDeployment = ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
+        coreDeployment =
+            ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
 
         // Get the configuration from environment
         lstStrategyAddress = vm.envAddress(ENV_LST_STRATEGY);
@@ -43,7 +45,8 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         // Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
         // https://github.com/layr-labs/eigenlayer-contracts In the README.md
         // 0x7d704507b76571a51d9cae8addabbfd0ba0e63d3 is sETH on Holesky
-        quorum = WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", block.chainid);
+        quorum =
+            WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", block.chainid);
     }
 
     function run() external {
@@ -51,12 +54,15 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
 
         // first deploy (from eigenlayer)
-        wavsMiddlewareDeployment = WavsMiddlewareDeploymentLib.deployContracts(proxyAdmin, coreDeployment, quorum);
+        wavsMiddlewareDeployment =
+            WavsMiddlewareDeploymentLib.deployContracts(proxyAdmin, coreDeployment, quorum);
 
         // WAVS configuration
         uint256 minimumWeight = 100;
         wavsMiddlewareDeployment.strategy = lstStrategyAddress;
-        WavsMiddlewareDeploymentLib.configureContracts(wavsMiddlewareDeployment, metadataUri, minimumWeight);
+        WavsMiddlewareDeploymentLib.configureContracts(
+            wavsMiddlewareDeployment, metadataUri, minimumWeight
+        );
 
         vm.stopBroadcast();
 
