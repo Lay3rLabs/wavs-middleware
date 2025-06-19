@@ -3,5 +3,12 @@
   "version": "0.4.0-beta.1",
   "description": "WAVS Middleware",
   "author": "Lay3rLabs Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "solhint": "^5.1.0"
+  },
+  "scripts": {
+    "lint": "solhint 'contracts/eigenlayer/**/*.sol' 'contracts/mocks/**/*.sol' 'contracts/interfaces/**/*.sol'",
+    "lint:fix": "solhint --fix 'contracts/eigenlayer/**/*.sol' 'contracts/mocks/**/*.sol' 'contracts/interfaces/**/*.sol'"
+  }
 }

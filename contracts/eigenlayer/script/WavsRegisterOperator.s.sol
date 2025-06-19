@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
+
 import {WavsRegisterOperatorLib} from "./utils/WavsRegisterOperatorLib.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 
@@ -24,7 +25,7 @@ contract WavsRegisterOperator is Script {
     address private signingKey;
     uint256 private stakeAmount;
 
-    ReadCoreLib.DeploymentData coreDeployment;
+    ReadCoreLib.DeploymentData public coreDeployment;
 
     function setUp() public virtual {
         coreDeployment = ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);

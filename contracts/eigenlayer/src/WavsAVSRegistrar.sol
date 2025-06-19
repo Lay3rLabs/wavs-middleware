@@ -9,6 +9,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract WavsAVSRegistrar is IAVSRegistrar, Ownable {
     bool public isPaused;
 
+    error WavsAVSRegistrar__Paused();
+
     constructor() Ownable() {
         isPaused = false;
     }
@@ -22,7 +24,9 @@ contract WavsAVSRegistrar is IAVSRegistrar, Ownable {
     }
 
     modifier notPaused() {
-        require(!isPaused, "AVSRegistrar: paused");
+        if (isPaused) {
+            revert WavsAVSRegistrar__Paused();
+        }
         _;
     }
 

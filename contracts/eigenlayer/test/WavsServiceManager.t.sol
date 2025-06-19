@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "forge-std/Test.sol";
-import "../src/WavsServiceManager.sol";
-import "../../interfaces/IWavsServiceManager.sol";
-import "../../interfaces/IWavsServiceHandler.sol";
+import {Test} from "forge-std/Test.sol";
+import {IERC1271Upgradeable} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
+import {WavsServiceManager} from "../src/WavsServiceManager.sol";
+import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
+import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
 
 uint256 constant OPERATOR_WEIGHT = 100;
 

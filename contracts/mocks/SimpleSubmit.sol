@@ -9,8 +9,8 @@ import {ISimpleSubmit} from "./ISimpleSubmit.sol";
 contract SimpleSubmit is IWavsServiceHandler, ISimpleSubmit {
     IWavsServiceManager private _serviceManager;
 
-    mapping(ISimpleTrigger.TriggerId => bool) validTriggers;
-    mapping(ISimpleTrigger.TriggerId => ISimpleSubmit.SignedData) signedDatas;
+    mapping(ISimpleTrigger.TriggerId => bool) public validTriggers;
+    mapping(ISimpleTrigger.TriggerId => ISimpleSubmit.SignedData) public signedDatas;
 
     constructor(IWavsServiceManager serviceManager) {
         _serviceManager = serviceManager;

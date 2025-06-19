@@ -2,20 +2,21 @@
 pragma solidity ^0.8.0;
 
 import {Test} from "forge-std/Test.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+
 import {WavsMirrorDeploymentLib} from "../script/utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 import {MirrorStakeRegistry} from "../src/MirrorStakeRegistry.sol";
 import {WavsServiceManager} from "../src/WavsServiceManager.sol";
 import {MirrorServiceManagerHandler, IManagerUpdateTypes} from "../src/handlers/MirrorServiceManagerHandler.sol";
-import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
-import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 contract MirrorServiceManagerHandlerTest is Test {
     using UpgradeableProxyLib for address;
+
+    // Constants
+    uint256 private constant OPERATOR_WEIGHT = 10000;
 
     address private deployer;
     address private proxyAdmin;
@@ -32,8 +33,9 @@ contract MirrorServiceManagerHandlerTest is Test {
     uint256[] private weights;
     uint256[] private privateKeys;
 
-    // Constants
-    uint256 private constant OPERATOR_WEIGHT = 10000;
+    error MirrorServiceManagerHandlerTest__BlockNumberTooLowForOffset();
+    error MirrorServiceManagerHandlerTest__ArraysLengthMismatch();
+    error MirrorServiceManagerHandlerTest__SignatureRecoveryFailed();
 
     function setUp() public {
         // Set up deployer address
@@ -47,7 +49,7 @@ contract MirrorServiceManagerHandlerTest is Test {
         deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
 
         // Create references to deployed contracts
-        serviceManager = WavsServiceManager(deployment.WavsServiceManager);
+        serviceManager = WavsServiceManager(deployment.wavsServiceManager);
         stakeRegistry = MirrorStakeRegistry(deployment.stakeRegistry);
 
         vm.stopPrank();
@@ -76,7 +78,7 @@ contract MirrorServiceManagerHandlerTest is Test {
         // Deploy MirrorServiceManagerHandler
         vm.startPrank(actualOwner);
         deployment = WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
-        serviceHandler = MirrorServiceManagerHandler(deployment.MirrorServiceManagerHandler);
+        serviceHandler = MirrorServiceManagerHandler(deployment.mirrorServiceManagerHandler);
         vm.stopPrank();
 
         // Roll to block 10 to ensure we have enough blocks for reference blocks
@@ -252,7 +254,9 @@ contract MirrorServiceManagerHandlerTest is Test {
         // Note: referenceBlock must be a valid block that exists and is in the past
         // Make sure we're at least at block 1 before subtracting offset
         uint32 currentBlock = uint32(block.number);
-        require(currentBlock > referenceBlockOffset, "Block number too low for offset");
+        if (currentBlock <= referenceBlockOffset) {
+            revert MirrorServiceManagerHandlerTest__BlockNumberTooLowForOffset();
+        }
 
         return IWavsServiceHandler.SignatureData({
             signers: signers,
@@ -305,11 +309,15 @@ contract MirrorServiceManagerHandlerTest is Test {
      * @param signatures Array of signatures corresponding to signers
      */
     function verifySignatures(bytes32 digest, address[] memory signers, bytes[] memory signatures) internal pure {
-        require(signers.length == signatures.length, "Arrays length mismatch");
+        if (signers.length != signatures.length) {
+            revert MirrorServiceManagerHandlerTest__ArraysLengthMismatch();
+        }
 
         for (uint256 i = 0; i < signers.length; i++) {
             address recovered = ECDSA.recover(digest, signatures[i]);
-            require(recovered == signers[i], "Signature recovery failed");
+            if (recovered != signers[i]) {
+                revert MirrorServiceManagerHandlerTest__SignatureRecoveryFailed();
+            }
         }
     }
 }
