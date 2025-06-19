@@ -9,7 +9,10 @@ import {ISignatureUtilsMixinTypes} from "@eigenlayer/contracts/interfaces/ISigna
 import {IStrategyManager} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
-import {IAllocationManagerTypes, IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {
+    IAllocationManagerTypes,
+    IAllocationManager
+} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 import {IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -74,7 +77,9 @@ library WavsRegisterOperatorLib {
 
             // Create a new deposit with the LSTs
             console2.log("Creating new deposit for operator");
-            uint256 shares = strategyManager.depositIntoStrategy(IStrategy(lstStrategyAddress), lstToken, stakeAmount);
+            uint256 shares = strategyManager.depositIntoStrategy(
+                IStrategy(lstStrategyAddress), lstToken, stakeAmount
+            );
             console2.log("Created deposit with", shares, "shares");
         } else {
             console2.log("Operator already has deposits, skipping LST operations");
@@ -96,18 +101,16 @@ library WavsRegisterOperatorLib {
         (, address operatorAddr,) = VM.readCallers();
 
         //  query if already in opset and add if if not in it yet.
-        IAllocationManager allocationManager = IAllocationManager(serviceManager.allocationManager());
+        IAllocationManager allocationManager =
+            IAllocationManager(serviceManager.allocationManager());
         OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 1});
         if (!allocationManager.isMemberOfOperatorSet(operatorAddr, opSetQuery)) {
             uint32[] memory opSetIds = new uint32[](1);
             opSetIds[0] = 1;
             // TODO: change this arbitrary code?
             bytes memory secretCode = bytes("0x1234");
-            IAllocationManagerTypes.RegisterParams memory params = IAllocationManagerTypes.RegisterParams({
-                avs: serviceManagerAddress,
-                operatorSetIds: opSetIds,
-                data: secretCode
-            });
+            IAllocationManagerTypes.RegisterParams memory params = IAllocationManagerTypes
+                .RegisterParams({avs: serviceManagerAddress, operatorSetIds: opSetIds, data: secretCode});
             allocationManager.registerForOperatorSets(operatorAddr, params);
 
             console2.log("Successfully registered operator %s to operator sets [1]", operatorAddr);
@@ -116,7 +119,11 @@ library WavsRegisterOperatorLib {
         }
 
         if (!stakeRegistry.operatorRegistered(operatorAddr)) {
-            console2.log("Registering operator %s with AVS using signing key %s ...", operatorAddr, signingKeyAddress);
+            console2.log(
+                "Registering operator %s with AVS using signing key %s ...",
+                operatorAddr,
+                signingKeyAddress
+            );
             IAVSDirectory avsDirectory = IAVSDirectory(serviceManager.avsDirectory());
 
             // TODO: port bash logic
@@ -145,11 +152,17 @@ library WavsRegisterOperatorLib {
 
             console2.log("Registering operator with signature...");
             ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry memory operatorSignature =
-                ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry({signature: signature, salt: salt, expiry: expiry});
+            ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry({
+                signature: signature,
+                salt: salt,
+                expiry: expiry
+            });
 
             stakeRegistry.registerOperatorWithSignature(operatorSignature, signingKeyAddress);
             console2.log(
-                "Successfully registered operator %s with AVS using signing key %s", operatorAddr, signingKeyAddress
+                "Successfully registered operator %s with AVS using signing key %s",
+                operatorAddr,
+                signingKeyAddress
             );
         } else {
             console2.log("Operator %s is already registered with AVS", operatorAddr);

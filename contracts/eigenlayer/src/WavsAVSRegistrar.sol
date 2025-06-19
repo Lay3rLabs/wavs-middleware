@@ -30,23 +30,26 @@ contract WavsAVSRegistrar is IAVSRegistrar, Ownable {
         _;
     }
 
-    function registerOperator(address operator, address avs, uint32[] calldata operatorSetIds, bytes calldata data)
-        external
-        override
-        notPaused
-    {
+    function registerOperator(
+        address operator,
+        address avs,
+        uint32[] calldata operatorSetIds,
+        bytes calldata data
+    ) external override notPaused {
         // TODO: Implement registration logic
     }
 
-    function deregisterOperator(address operator, address avs, uint32[] calldata operatorSetIds)
-        external
-        override
-        notPaused
-    {
+    function deregisterOperator(
+        address operator,
+        address avs,
+        uint32[] calldata operatorSetIds
+    ) external override notPaused {
         // TODO: Implement deregistration logic
     }
 
-    function supportsAVS(address /* avs */ ) external pure override returns (bool) {
+    function supportsAVS(
+        address /* avs */
+    ) external pure override returns (bool) {
         // TODO: Implement logic to check if AVS is supported
         return true; // Placeholder return value
     }

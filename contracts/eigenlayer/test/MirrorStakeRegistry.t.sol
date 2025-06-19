@@ -2,10 +2,13 @@
 pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistryStorage.sol";
-import {ISignatureUtilsMixinTypes} from "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
+import {IECDSAStakeRegistryTypes} from
+    "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistryStorage.sol";
+import {ISignatureUtilsMixinTypes} from
+    "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
-import {IERC1271Upgradeable} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+import {IERC1271Upgradeable} from
+    "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {MirrorStakeRegistry} from "../src/MirrorStakeRegistry.sol";
@@ -56,17 +59,20 @@ contract MirrorStakeRegistryTest is Test {
         IStrategy mockStrategyInstance = IStrategy(address(1)); // Using address(1) instead of address(0)
 
         // Create the strategy params
-        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams = IECDSAStakeRegistryTypes.StrategyParams({
+        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams = IECDSAStakeRegistryTypes
+            .StrategyParams({
             strategy: mockStrategyInstance,
-            multiplier: 10000 // 100% in basis points
+            multiplier: 10_000 // 100% in basis points
         });
 
         // Create the strategies array with one strategy
-        IECDSAStakeRegistryTypes.StrategyParams[] memory strategies = new IECDSAStakeRegistryTypes.StrategyParams[](1);
+        IECDSAStakeRegistryTypes.StrategyParams[] memory strategies =
+            new IECDSAStakeRegistryTypes.StrategyParams[](1);
         strategies[0] = strategyParams;
 
         // Create the quorum with the strategies
-        IECDSAStakeRegistryTypes.Quorum memory quorum = IECDSAStakeRegistryTypes.Quorum({strategies: strategies});
+        IECDSAStakeRegistryTypes.Quorum memory quorum =
+            IECDSAStakeRegistryTypes.Quorum({strategies: strategies});
 
         registry.initialize(serviceManager, 6667, quorum); // 2/3 threshold (6667 basis points)
         vm.stopPrank();
@@ -75,7 +81,11 @@ contract MirrorStakeRegistryTest is Test {
     // Test that the contract is properly initialized
     function test_initialization() public view {
         assertEq(registry.owner(), owner, "Owner should be set correctly");
-        assertEq(address(registry.serviceManager()), serviceManager, "Service manager should be set correctly");
+        assertEq(
+            address(registry.serviceManager()),
+            serviceManager,
+            "Service manager should be set correctly"
+        );
     }
 
     // Test that public registration methods revert as expected
@@ -158,10 +168,18 @@ contract MirrorStakeRegistryTest is Test {
         registry.setOperatorDetails(operator1, signingKey1, WEIGHT_1);
 
         // Verify the operator weight is set correctly
-        assertEq(registry.getOperatorWeight(operator1), WEIGHT_1, "Operator weight should be set correctly");
+        assertEq(
+            registry.getOperatorWeight(operator1),
+            WEIGHT_1,
+            "Operator weight should be set correctly"
+        );
 
         // Verify the signing key is associated with the operator
-        assertEq(registry.getLatestOperatorSigningKey(operator1), signingKey1, "Signing key should be set correctly");
+        assertEq(
+            registry.getLatestOperatorSigningKey(operator1),
+            signingKey1,
+            "Signing key should be set correctly"
+        );
 
         // Verify the operator is associated with the signing key
         assertEq(
@@ -198,14 +216,38 @@ contract MirrorStakeRegistryTest is Test {
         registry.batchSetOperatorDetails(operators, signingKeys, weights);
 
         // Verify all operators' weights are set correctly
-        assertEq(registry.getOperatorWeight(operator1), WEIGHT_1, "Operator1 weight should be set correctly");
-        assertEq(registry.getOperatorWeight(operator2), WEIGHT_2, "Operator2 weight should be set correctly");
-        assertEq(registry.getOperatorWeight(operator3), WEIGHT_3, "Operator3 weight should be set correctly");
+        assertEq(
+            registry.getOperatorWeight(operator1),
+            WEIGHT_1,
+            "Operator1 weight should be set correctly"
+        );
+        assertEq(
+            registry.getOperatorWeight(operator2),
+            WEIGHT_2,
+            "Operator2 weight should be set correctly"
+        );
+        assertEq(
+            registry.getOperatorWeight(operator3),
+            WEIGHT_3,
+            "Operator3 weight should be set correctly"
+        );
 
         // Verify all signing keys are associated with their operators
-        assertEq(registry.getLatestOperatorSigningKey(operator1), signingKey1, "Signing key1 should be set correctly");
-        assertEq(registry.getLatestOperatorSigningKey(operator2), signingKey2, "Signing key2 should be set correctly");
-        assertEq(registry.getLatestOperatorSigningKey(operator3), signingKey3, "Signing key3 should be set correctly");
+        assertEq(
+            registry.getLatestOperatorSigningKey(operator1),
+            signingKey1,
+            "Signing key1 should be set correctly"
+        );
+        assertEq(
+            registry.getLatestOperatorSigningKey(operator2),
+            signingKey2,
+            "Signing key2 should be set correctly"
+        );
+        assertEq(
+            registry.getLatestOperatorSigningKey(operator3),
+            signingKey3,
+            "Signing key3 should be set correctly"
+        );
 
         // Verify all operators are associated with their signing keys
         assertEq(
@@ -240,14 +282,22 @@ contract MirrorStakeRegistryTest is Test {
         registry.setOperatorDetails(operator1, newSigningKey, newWeight);
 
         // Verify the operator weight is updated
-        assertEq(registry.getOperatorWeight(operator1), newWeight, "Operator weight should be updated");
+        assertEq(
+            registry.getOperatorWeight(operator1), newWeight, "Operator weight should be updated"
+        );
 
         // Verify the new signing key is associated with the operator
-        assertEq(registry.getLatestOperatorSigningKey(operator1), newSigningKey, "New signing key should be set");
+        assertEq(
+            registry.getLatestOperatorSigningKey(operator1),
+            newSigningKey,
+            "New signing key should be set"
+        );
 
         // Verify the old signing key is no longer associated with the operator
         assertEq(
-            registry.getLatestOperatorForSigningKey(signingKey1), address(0), "Old signing key should not be associated"
+            registry.getLatestOperatorForSigningKey(signingKey1),
+            address(0),
+            "Old signing key should not be associated"
         );
 
         // Verify the operator is associated with the new signing key
@@ -353,7 +403,11 @@ contract MirrorStakeRegistryTest is Test {
         uint256 expectedTotalWeight = WEIGHT_1 + WEIGHT_2 + WEIGHT_3;
 
         // Verify the total weight
-        assertEq(registry.getLastCheckpointTotalWeight(), expectedTotalWeight, "Total weight should be correct");
+        assertEq(
+            registry.getLastCheckpointTotalWeight(),
+            expectedTotalWeight,
+            "Total weight should be correct"
+        );
 
         // We need to roll to the next block to make the checkpoint available
         vm.roll(block.number + 1);
@@ -377,7 +431,10 @@ contract MirrorStakeRegistryTest is Test {
      * @param signers Array of signer addresses
      * @param signatures Array of signatures that correspond to signers at the same index
      */
-    function sortSignersAndSignatures(address[] memory signers, bytes[] memory signatures) internal pure {
+    function sortSignersAndSignatures(
+        address[] memory signers,
+        bytes[] memory signatures
+    ) internal pure {
         // Simple bubble sort since we're working with small arrays
         uint256 length = signers.length;
         for (uint256 i = 0; i < length - 1; i++) {
@@ -403,7 +460,10 @@ contract MirrorStakeRegistryTest is Test {
      * @param digest The message hash to sign
      * @return The signature in bytes format ready for validation
      */
-    function generateSignature(uint256 privateKey, bytes32 digest) internal pure returns (bytes memory) {
+    function generateSignature(
+        uint256 privateKey,
+        bytes32 digest
+    ) internal pure returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
         return abi.encodePacked(r, s, v);
     }
@@ -414,7 +474,11 @@ contract MirrorStakeRegistryTest is Test {
      * @param signers Array of signer addresses (should be sorted)
      * @param signatures Array of signatures corresponding to signers
      */
-    function verifySignatures(bytes32 digest, address[] memory signers, bytes[] memory signatures) internal pure {
+    function verifySignatures(
+        bytes32 digest,
+        address[] memory signers,
+        bytes[] memory signatures
+    ) internal pure {
         if (signers.length != signatures.length) {
             revert MirrorStakeRegistryTest__ArraysLengthMismatch();
         }
@@ -493,7 +557,9 @@ contract MirrorStakeRegistryTest is Test {
 
         // Verify the result
         assertEq(
-            result, IERC1271Upgradeable.isValidSignature.selector, "isValidSignature should return the correct selector"
+            result,
+            IERC1271Upgradeable.isValidSignature.selector,
+            "isValidSignature should return the correct selector"
         );
     }
 }

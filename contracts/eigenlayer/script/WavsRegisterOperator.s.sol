@@ -28,7 +28,8 @@ contract WavsRegisterOperator is Script {
     ReadCoreLib.DeploymentData public coreDeployment;
 
     function setUp() public virtual {
-        coreDeployment = ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
+        coreDeployment =
+            ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
 
         // Get the configuration from environment
         lstContractAddress = vm.envAddress(ENV_LST_CONTRACT);
@@ -42,7 +43,9 @@ contract WavsRegisterOperator is Script {
     function run() external {
         vm.startBroadcast();
 
-        WavsRegisterOperatorLib.setupOperator(coreDeployment, lstContractAddress, lstStrategyAddress, stakeAmount);
+        WavsRegisterOperatorLib.setupOperator(
+            coreDeployment, lstContractAddress, lstStrategyAddress, stakeAmount
+        );
         WavsRegisterOperatorLib.registerToAvs(serviceManagerAddress, signingKey);
 
         vm.stopBroadcast();

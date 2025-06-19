@@ -7,7 +7,10 @@ import {stdJson} from "forge-std/StdJson.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IECDSAStakeRegistryTypes, IStrategy} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {
+    IECDSAStakeRegistryTypes,
+    IStrategy
+} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -51,7 +54,8 @@ library WavsMiddlewareDeploymentLib {
         result.wavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         // Deploy the implementation contracts, using the proxy contracts as inputs
-        address stakeRegistryImpl = address(new ECDSAStakeRegistry(IDelegationManager(core.delegationManager)));
+        address stakeRegistryImpl =
+            address(new ECDSAStakeRegistry(IDelegationManager(core.delegationManager)));
         address wavsServiceManagerImpl = address(
             new WavsServiceManager(
                 core.avsDirectory,
@@ -68,15 +72,20 @@ library WavsMiddlewareDeploymentLib {
         );
         bytes memory wavsServiceManagerUpgradeCall =
             abi.encodeCall(WavsServiceManager.initialize, (msg.sender, msg.sender));
-        UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryUpgradeCall);
+        UpgradeableProxyLib.upgradeAndCall(
+            result.stakeRegistry, stakeRegistryImpl, stakeRegistryUpgradeCall
+        );
         UpgradeableProxyLib.upgradeAndCall(
             result.wavsServiceManager, wavsServiceManagerImpl, wavsServiceManagerUpgradeCall
         );
 
         // TODO: This is incredibly stupid,
         // when we implement out own stake registry, pass owner as an argument
-        bytes memory stakeRegistryOwnerUpgradeCall = abi.encodeCall(Ownable.transferOwnership, (msg.sender));
-        UpgradeableProxyLib.upgradeAndCall(result.stakeRegistry, stakeRegistryImpl, stakeRegistryOwnerUpgradeCall);
+        bytes memory stakeRegistryOwnerUpgradeCall =
+            abi.encodeCall(Ownable.transferOwnership, (msg.sender));
+        UpgradeableProxyLib.upgradeAndCall(
+            result.stakeRegistry, stakeRegistryImpl, stakeRegistryOwnerUpgradeCall
+        );
 
         // Dummy AVSRegistrar deployment for now
         address avsRegistrar = address(new WavsAVSRegistrar());
@@ -85,9 +94,11 @@ library WavsMiddlewareDeploymentLib {
         return result;
     }
 
-    function configureContracts(DeploymentData memory deployment, string memory metadataUri, uint256 minimumWeight)
-        internal
-    {
+    function configureContracts(
+        DeploymentData memory deployment,
+        string memory metadataUri,
+        uint256 minimumWeight
+    ) internal {
         // update_minimum_weight
         ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(deployment.stakeRegistry);
         stakeRegistry.updateMinimumWeight(minimumWeight, new address[](0));
@@ -104,8 +115,8 @@ library WavsMiddlewareDeploymentLib {
         // If op set only allows one strategy, why do we need 12 registered with multipliers in the quorum?
         // Suggestion - use same both for opset and for initialize. But which one (or both)?
         //             ECDSAStakeRegistry.initialize, (result.WavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
-        IAllocationManagerTypes.CreateSetParams memory opSetParams =
-            IAllocationManagerTypes.CreateSetParams({operatorSetId: 1, strategies: new IStrategy[](1)});
+        IAllocationManagerTypes.CreateSetParams memory opSetParams = IAllocationManagerTypes
+            .CreateSetParams({operatorSetId: 1, strategies: new IStrategy[](1)});
         opSetParams.strategies[0] = IStrategy(deployment.strategy);
         IAllocationManagerTypes.CreateSetParams[] memory opSetParamsArray =
             new IAllocationManagerTypes.CreateSetParams[](1);
@@ -113,10 +124,10 @@ library WavsMiddlewareDeploymentLib {
         wavsServiceManager.createOperatorSets(opSetParamsArray);
     }
 
-    function readQuorumConfig(string memory directoryPath, uint256 chainId)
-        internal
-        returns (IECDSAStakeRegistryTypes.Quorum memory)
-    {
+    function readQuorumConfig(
+        string memory directoryPath,
+        uint256 chainId
+    ) internal returns (IECDSAStakeRegistryTypes.Quorum memory) {
         string memory fileName = string.concat(directoryPath, VM.toString(chainId), ".json");
         if (!VM.exists(fileName)) {
             revert WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
@@ -133,8 +144,9 @@ library WavsMiddlewareDeploymentLib {
         // convert to quorum
         uint256 size = strategies.length;
         uint256 totalMultiplier = 0;
-        IECDSAStakeRegistryTypes.Quorum memory quorum =
-            IECDSAStakeRegistryTypes.Quorum({strategies: new IECDSAStakeRegistryTypes.StrategyParams[](size)});
+        IECDSAStakeRegistryTypes.Quorum memory quorum = IECDSAStakeRegistryTypes.Quorum({
+            strategies: new IECDSAStakeRegistryTypes.StrategyParams[](size)
+        });
         for (uint256 i; i < size; i++) {
             totalMultiplier += multipliers[i];
             quorum.strategies[i] = IECDSAStakeRegistryTypes.StrategyParams({
@@ -142,21 +154,23 @@ library WavsMiddlewareDeploymentLib {
                 multiplier: multipliers[i]
             });
         }
-        if (totalMultiplier != 10000) {
+        if (totalMultiplier != 10_000) {
             revert WavsMiddlewareDeploymentLib__TotalMultiplierNot10000();
         }
 
         return quorum;
     }
 
-    function readDeploymentJson(uint256 chainId) internal returns (DeploymentData memory) {
+    function readDeploymentJson(
+        uint256 chainId
+    ) internal returns (DeploymentData memory) {
         return readDeploymentJson("deployments/wavs-middleware/", chainId);
     }
 
-    function readDeploymentJson(string memory directoryPath, uint256 chainId)
-        internal
-        returns (DeploymentData memory)
-    {
+    function readDeploymentJson(
+        string memory directoryPath,
+        uint256 chainId
+    ) internal returns (DeploymentData memory) {
         string memory fileName = string.concat(directoryPath, VM.toString(chainId), ".json");
 
         if (!VM.exists(fileName)) {
@@ -176,11 +190,17 @@ library WavsMiddlewareDeploymentLib {
     }
 
     /// write to default output path
-    function writeDeploymentJson(DeploymentData memory data) internal {
+    function writeDeploymentJson(
+        DeploymentData memory data
+    ) internal {
         writeDeploymentJson("deployments/wavs-middleware/", block.chainid, data);
     }
 
-    function writeDeploymentJson(string memory outputPath, uint256 chainId, DeploymentData memory data) internal {
+    function writeDeploymentJson(
+        string memory outputPath,
+        uint256 chainId,
+        DeploymentData memory data
+    ) internal {
         address proxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(data.wavsServiceManager));
 
         string memory deploymentData = _generateDeploymentJson(data, proxyAdmin);
@@ -194,11 +214,10 @@ library WavsMiddlewareDeploymentLib {
         console2.log("Deployment artifacts written to:", fileName);
     }
 
-    function _generateDeploymentJson(DeploymentData memory data, address proxyAdmin)
-        private
-        view
-        returns (string memory)
-    {
+    function _generateDeploymentJson(
+        DeploymentData memory data,
+        address proxyAdmin
+    ) private view returns (string memory) {
         return string.concat(
             "{",
             "\"lastUpdate\":{",
@@ -215,11 +234,10 @@ library WavsMiddlewareDeploymentLib {
         );
     }
 
-    function _generateContractsJson(DeploymentData memory data, address proxyAdmin)
-        private
-        view
-        returns (string memory)
-    {
+    function _generateContractsJson(
+        DeploymentData memory data,
+        address proxyAdmin
+    ) private view returns (string memory) {
         return string.concat(
             "{\"proxyAdmin\":\"",
             proxyAdmin.toHexString(),

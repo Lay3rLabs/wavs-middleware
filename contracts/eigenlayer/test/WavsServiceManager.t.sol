@@ -2,8 +2,10 @@
 pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
-import {IERC1271Upgradeable} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {IERC1271Upgradeable} from
+    "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+import {TransparentUpgradeableProxy} from
+    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {WavsServiceManager} from "../src/WavsServiceManager.sol";
 import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
@@ -31,7 +33,9 @@ contract MockStakeRegistry {
         signingToOperator[signer] = operator;
     }
 
-    function setTotalWeight(uint256 _totalWeight) external {
+    function setTotalWeight(
+        uint256 _totalWeight
+    ) external {
         totalWeight = _totalWeight;
     }
 
@@ -43,27 +47,41 @@ contract MockStakeRegistry {
         return operatorWeights[operator];
     }
 
-    function getLastCheckpointTotalWeightAtBlock(uint32) external view returns (uint256) {
+    function getLastCheckpointTotalWeightAtBlock(
+        uint32
+    ) external view returns (uint256) {
         return totalWeight;
     }
 
-    function getLastCheckpointOperatorWeight(address operator) external view returns (uint256) {
+    function getLastCheckpointOperatorWeight(
+        address operator
+    ) external view returns (uint256) {
         return operatorWeights[operator];
     }
 
-    function getOperatorSigningKeyAtBlock(address operator, uint256) external view returns (address) {
+    function getOperatorSigningKeyAtBlock(
+        address operator,
+        uint256
+    ) external view returns (address) {
         return operatorToSigning[operator];
     }
 
-    function getLatestOperatorSigningKey(address operator) external view returns (address) {
+    function getLatestOperatorSigningKey(
+        address operator
+    ) external view returns (address) {
         return operatorToSigning[operator];
     }
 
-    function getOperatorForSigningKeyAtBlock(address signing, uint256) external view returns (address) {
+    function getOperatorForSigningKeyAtBlock(
+        address signing,
+        uint256
+    ) external view returns (address) {
         return signingToOperator[signing];
     }
 
-    function getLatestOperatorForSigningKey(address signing) external view returns (address) {
+    function getLatestOperatorForSigningKey(
+        address signing
+    ) external view returns (address) {
         return signingToOperator[signing];
     }
 }
@@ -150,7 +168,9 @@ contract WavsServiceManagerTest is Test {
 
     function test_validateQuorumSigned_insufficient() public {
         // 2/3 of 500 is 333, so 300 should fail
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 300, 333, 500));
+        vm.expectRevert(
+            abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 300, 333, 500)
+        );
         serviceManager.validate(
             IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}),
             createSignatureData(3, 0)
@@ -195,7 +215,8 @@ contract WavsServiceManagerTest is Test {
         });
 
         serviceManager.validate(
-            IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}), signatureData
+            IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}),
+            signatureData
         );
 
         // Test should not revert
@@ -229,7 +250,9 @@ contract WavsServiceManagerTest is Test {
         );
 
         // Now 200/500 (40%) should fail (needs 255)
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 200, 255, 500));
+        vm.expectRevert(
+            abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 200, 255, 500)
+        );
         serviceManager.validate(
             IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}),
             createSignatureData(2, 0)
@@ -246,17 +269,23 @@ contract WavsServiceManagerTest is Test {
     function test_setQuorumThreshold_invalid_params() public {
         // numerator = 0
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector)
+        );
         serviceManager.setQuorumThreshold(0, 2);
 
         // denominator = 0
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector)
+        );
         serviceManager.setQuorumThreshold(1, 0);
 
         // numerator > denominator
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector)
+        );
         serviceManager.setQuorumThreshold(3, 2);
     }
 
@@ -268,16 +297,19 @@ contract WavsServiceManagerTest is Test {
         vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidSignatureLength.selector));
         serviceManager.validate(
             IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}),
-            IWavsServiceHandler.SignatureData({signers: emptySigners, signatures: emptySignatures, referenceBlock: 1})
+            IWavsServiceHandler.SignatureData({
+                signers: emptySigners,
+                signatures: emptySignatures,
+                referenceBlock: 1
+            })
         );
     }
 
     // Helper function to create signature data with a specific total weight
-    function createSignatureData(uint256 numOperators, uint32 referenceBlockOffset)
-        internal
-        view
-        returns (IWavsServiceHandler.SignatureData memory)
-    {
+    function createSignatureData(
+        uint256 numOperators,
+        uint32 referenceBlockOffset
+    ) internal view returns (IWavsServiceHandler.SignatureData memory) {
         address[] memory signers = new address[](numOperators);
         bytes[] memory signatures = new bytes[](numOperators);
 

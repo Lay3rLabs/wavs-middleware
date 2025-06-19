@@ -2,9 +2,11 @@
 pragma solidity ^0.8.0;
 
 import {Test} from "forge-std/Test.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {IECDSAStakeRegistryTypes} from
+    "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import {ECDSAUpgradeable} from
+    "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 import {WavsMirrorDeploymentLib} from "../script/utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
@@ -13,7 +15,7 @@ import {WavsServiceManager} from "../src/WavsServiceManager.sol";
 import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
 import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
 
-uint256 constant OPERATOR_WEIGHT = 10000;
+uint256 constant OPERATOR_WEIGHT = 10_000;
 
 contract WavsMirrorDeploymentLibTest is Test {
     using UpgradeableProxyLib for address;
@@ -80,22 +82,30 @@ contract WavsMirrorDeploymentLibTest is Test {
     function test_initial_state() public view {
         // Verify deployment addresses are set correctly
         assertNotEq(deployment.stakeRegistry, address(0), "StakeRegistry address cannot be zero");
-        assertNotEq(deployment.wavsServiceManager, address(0), "WavsServiceManager address cannot be zero");
+        assertNotEq(
+            deployment.wavsServiceManager, address(0), "WavsServiceManager address cannot be zero"
+        );
         assertNotEq(proxyAdmin, address(0), "ProxyAdmin address cannot be zero");
 
         // Verify proxy admin relationships
-        address stakeRegistryProxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(deployment.stakeRegistry));
-        address serviceManagerProxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(deployment.wavsServiceManager));
+        address stakeRegistryProxyAdmin =
+            address(UpgradeableProxyLib.getProxyAdmin(deployment.stakeRegistry));
+        address serviceManagerProxyAdmin =
+            address(UpgradeableProxyLib.getProxyAdmin(deployment.wavsServiceManager));
 
         assertEq(stakeRegistryProxyAdmin, proxyAdmin, "StakeRegistry proxy admin should match");
-        assertEq(serviceManagerProxyAdmin, proxyAdmin, "WavsServiceManager proxy admin should match");
+        assertEq(
+            serviceManagerProxyAdmin, proxyAdmin, "WavsServiceManager proxy admin should match"
+        );
 
         // Check implementation addresses
         address stakeRegistryImpl = deployment.stakeRegistry.getImplementation();
         address serviceManagerImpl = deployment.wavsServiceManager.getImplementation();
 
         assertNotEq(stakeRegistryImpl, address(0), "StakeRegistry implementation cannot be zero");
-        assertNotEq(serviceManagerImpl, address(0), "WavsServiceManager implementation cannot be zero");
+        assertNotEq(
+            serviceManagerImpl, address(0), "WavsServiceManager implementation cannot be zero"
+        );
 
         // Verify contract relationships
         MirrorStakeRegistry registry = MirrorStakeRegistry(deployment.stakeRegistry);
@@ -109,13 +119,20 @@ contract WavsMirrorDeploymentLibTest is Test {
         // Verify that the mock strategy is included in the quorum
         IECDSAStakeRegistryTypes.Quorum memory quorum = registry.quorum();
         assertEq(quorum.strategies.length, 1, "Quorum should have one strategy");
-        assertEq(address(quorum.strategies[0].strategy), address(1), "Quorum strategy should be our mock strategy");
+        assertEq(
+            address(quorum.strategies[0].strategy),
+            address(1),
+            "Quorum strategy should be our mock strategy"
+        );
     }
 
     function test_validateQuorumSigned_success() public view {
         // Create the envelope
-        IWavsServiceHandler.Envelope memory envelope =
-            IWavsServiceHandler.Envelope({eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: "one"});
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: "one"
+        });
 
         // Create signature data with first 4 operators (4/5 >= 2/3 == success)
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 5);
@@ -126,14 +143,21 @@ contract WavsMirrorDeploymentLibTest is Test {
 
     function test_validateQuorumSigned_insufficient() public {
         // Create the envelope
-        IWavsServiceHandler.Envelope memory envelope =
-            IWavsServiceHandler.Envelope({eventId: bytes20(uint160(2)), ordering: bytes12(0), payload: "two"});
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(2)),
+            ordering: bytes12(0),
+            payload: "two"
+        });
 
         // Create signature data with first 3 operators (3/5 < 2/3 == failure)
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 3, 5);
 
         // Call validate fails
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 30000, 33333, 50000));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IWavsServiceManager.InsufficientQuorum.selector, 30_000, 33_333, 50_000
+            )
+        );
         serviceManager.validate(envelope, signatureData);
     }
 
@@ -145,8 +169,11 @@ contract WavsMirrorDeploymentLibTest is Test {
         vm.stopPrank();
 
         // Create the envelope
-        IWavsServiceHandler.Envelope memory envelope =
-            IWavsServiceHandler.Envelope({eventId: bytes20(uint160(3)), ordering: bytes12(0), payload: "three"});
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(3)),
+            ordering: bytes12(0),
+            payload: "three"
+        });
 
         // Create signature data with first 4 operators (3/5 >= 3/5 == success)
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 3, 5);
@@ -177,8 +204,11 @@ contract WavsMirrorDeploymentLibTest is Test {
         address registeredOperator = stakeRegistry.getLatestOperatorForSigningKey(signingKeys[0]);
         assertEq(registeredOperator, operators[0], "Operator not registered correctly");
 
-        IWavsServiceHandler.Envelope memory envelope =
-            IWavsServiceHandler.Envelope({eventId: bytes20(uint160(4)), ordering: bytes12(0), payload: "four"});
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(4)),
+            ordering: bytes12(0),
+            payload: "four"
+        });
 
         // One operator will match threshold. Ensure lookup by signing key works well.
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 1, 0);
@@ -198,8 +228,11 @@ contract WavsMirrorDeploymentLibTest is Test {
         assertEq(serviceManager.quorumDenominator(), 100, "Quorum denominator should be updated");
 
         // Create the envelope
-        IWavsServiceHandler.Envelope memory envelope =
-            IWavsServiceHandler.Envelope({eventId: bytes20(uint160(5)), ordering: bytes12(0), payload: "five"});
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(5)),
+            ordering: bytes12(0),
+            payload: "five"
+        });
 
         // Create signature data with first 3 operators (3/5 >= 51% == success)
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 3, 1);
@@ -209,7 +242,11 @@ contract WavsMirrorDeploymentLibTest is Test {
         // Create signature data with first 2 operators (2/5 < 51% == failure)
         signatureData = createSignatureData(envelope, 2, 1);
         // Call validate fails
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 20000, 25500, 50000));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IWavsServiceManager.InsufficientQuorum.selector, 20_000, 25_500, 50_000
+            )
+        );
         serviceManager.validate(envelope, signatureData);
     }
 
@@ -228,15 +265,21 @@ contract WavsMirrorDeploymentLibTest is Test {
         vm.startPrank(actualOwner);
 
         // 0/5 should fail
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector)
+        );
         serviceManager.setQuorumThreshold(0, 5);
 
         // 0/0 should fail
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector)
+        );
         serviceManager.setQuorumThreshold(0, 0);
 
         // 6/5 should fail
-        vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IWavsServiceManager.InvalidQuorumParameters.selector)
+        );
         serviceManager.setQuorumThreshold(6, 5);
 
         vm.stopPrank();
@@ -250,7 +293,11 @@ contract WavsMirrorDeploymentLibTest is Test {
         vm.expectRevert(abi.encodeWithSelector(IWavsServiceManager.InvalidSignatureLength.selector));
         serviceManager.validate(
             IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}),
-            IWavsServiceHandler.SignatureData({signers: emptySigners, signatures: emptySignatures, referenceBlock: 1})
+            IWavsServiceHandler.SignatureData({
+                signers: emptySigners,
+                signatures: emptySignatures,
+                referenceBlock: 1
+            })
         );
     }
 
@@ -308,7 +355,10 @@ contract WavsMirrorDeploymentLibTest is Test {
      * @param signers Array of signer addresses
      * @param signatures Array of signatures that correspond to signers at the same index
      */
-    function sortSignersAndSignatures(address[] memory signers, bytes[] memory signatures) internal pure {
+    function sortSignersAndSignatures(
+        address[] memory signers,
+        bytes[] memory signatures
+    ) internal pure {
         // Simple bubble sort since we're working with small arrays
         uint256 length = signers.length;
         for (uint256 i = 0; i < length - 1; i++) {
@@ -334,7 +384,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         originalConfig.operators = operators; // Use operators from setUp
         originalConfig.signingKeys = signingKeys; // Use signingKeys from setUp
         originalConfig.weights = weights; // Use weights from setUp
-        originalConfig.thresholdWeight = 12345;
+        originalConfig.thresholdWeight = 12_345;
         originalConfig.quorumNumerator = 2;
         originalConfig.quorumDenominator = 3;
 
@@ -352,24 +402,48 @@ contract WavsMirrorDeploymentLibTest is Test {
             WavsMirrorDeploymentLib.loadConfiguration(tempFilePath);
 
         // 5. Assert that every field matches
-        assertEq(loadedConfig.operators.length, originalConfig.operators.length, "Operators length mismatch");
+        assertEq(
+            loadedConfig.operators.length,
+            originalConfig.operators.length,
+            "Operators length mismatch"
+        );
         for (uint256 i = 0; i < originalConfig.operators.length; i++) {
             assertEq(loadedConfig.operators[i], originalConfig.operators[i], "Operator mismatch");
         }
 
-        assertEq(loadedConfig.signingKeys.length, originalConfig.signingKeys.length, "Signing keys length mismatch");
+        assertEq(
+            loadedConfig.signingKeys.length,
+            originalConfig.signingKeys.length,
+            "Signing keys length mismatch"
+        );
         for (uint256 i = 0; i < originalConfig.signingKeys.length; i++) {
-            assertEq(loadedConfig.signingKeys[i], originalConfig.signingKeys[i], "Signing key mismatch");
+            assertEq(
+                loadedConfig.signingKeys[i], originalConfig.signingKeys[i], "Signing key mismatch"
+            );
         }
 
-        assertEq(loadedConfig.weights.length, originalConfig.weights.length, "Weights length mismatch");
+        assertEq(
+            loadedConfig.weights.length, originalConfig.weights.length, "Weights length mismatch"
+        );
         for (uint256 i = 0; i < originalConfig.weights.length; i++) {
             assertEq(loadedConfig.weights[i], originalConfig.weights[i], "Weight mismatch");
         }
 
-        assertEq(loadedConfig.thresholdWeight, originalConfig.thresholdWeight, "Threshold weight mismatch");
-        assertEq(loadedConfig.quorumNumerator, originalConfig.quorumNumerator, "Quorum numerator mismatch");
-        assertEq(loadedConfig.quorumDenominator, originalConfig.quorumDenominator, "Quorum denominator mismatch");
+        assertEq(
+            loadedConfig.thresholdWeight,
+            originalConfig.thresholdWeight,
+            "Threshold weight mismatch"
+        );
+        assertEq(
+            loadedConfig.quorumNumerator,
+            originalConfig.quorumNumerator,
+            "Quorum numerator mismatch"
+        );
+        assertEq(
+            loadedConfig.quorumDenominator,
+            originalConfig.quorumDenominator,
+            "Quorum denominator mismatch"
+        );
 
         // 6. Clean up the temporary file (optional, but good practice for tests)
         // Forge's `vm.removeFile` can be used if available and needed,
@@ -384,7 +458,10 @@ contract WavsMirrorDeploymentLibTest is Test {
      * @param digest The message hash to sign
      * @return The signature in bytes format ready for validation
      */
-    function generateSignature(uint256 privateKey, bytes32 digest) internal pure returns (bytes memory) {
+    function generateSignature(
+        uint256 privateKey,
+        bytes32 digest
+    ) internal pure returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
         return abi.encodePacked(r, s, v);
     }
@@ -395,7 +472,11 @@ contract WavsMirrorDeploymentLibTest is Test {
      * @param signers Array of signer addresses (should be sorted)
      * @param signatures Array of signatures corresponding to signers
      */
-    function verifySignatures(bytes32 digest, address[] memory signers, bytes[] memory signatures) internal pure {
+    function verifySignatures(
+        bytes32 digest,
+        address[] memory signers,
+        bytes[] memory signatures
+    ) internal pure {
         if (signers.length != signatures.length) {
             revert WavsMirrorDeploymentLibTest__ArraysLengthMismatch();
         }
