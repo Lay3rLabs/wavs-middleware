@@ -37,7 +37,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager
-    )        
+    )
         ECDSAServiceManagerBase(
             _avsDirectory,
             _stakeRegistry,
@@ -179,7 +179,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
      *      2. Quorum check to ensure sufficient stake weight signed (2/3 threshold)
      */
     function validate(
-        IWavsServiceHandler.Envelope calldata envelope, 
+        IWavsServiceHandler.Envelope calldata envelope,
         IWavsServiceHandler.SignatureData calldata signatureData
     ) external view {
         // Input validation
@@ -193,15 +193,15 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         // Create message hash
         bytes32 message = keccak256(abi.encode(envelope));
         bytes32 ethSignedMessageHash = ECDSAUpgradeable.toEthSignedMessageHash(message);
-        
+
         // Validate signatures through the stake registry
         bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
         bytes memory signatureDataBytes = abi.encode(
-            signatureData.signers, 
-            signatureData.signatures, 
+            signatureData.signers,
+            signatureData.signatures,
             signatureData.referenceBlock
         );
-        
+
         // Check signature validity
         if (magicValue != ECDSAStakeRegistry(stakeRegistry).isValidSignature(
             ethSignedMessageHash,
@@ -215,17 +215,17 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         uint256 signedWeight = 0;
         for (uint256 i = 0; i < signatureData.signers.length; i++) {
             address operator = registry.getOperatorForSigningKeyAtBlock(
-                signatureData.signers[i], 
+                signatureData.signers[i],
                 signatureData.referenceBlock
             );
             signedWeight += registry.getOperatorWeightAtBlock(
-                operator, 
+                operator,
                 signatureData.referenceBlock
             );
         }
-        
+
         uint256 totalWeight = registry.getLastCheckpointTotalWeightAtBlock(signatureData.referenceBlock);
-        
+
         // Ensure sufficient quorum was reached
         _validateQuorumSigned(signedWeight, totalWeight);
     }
@@ -244,16 +244,16 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         if (totalWeight == 0) {
             revert IWavsServiceManager.InsufficientQuorumZero();
         }
-        
+
         // Calculate threshold weight
         uint256 thresholdWeight = (totalWeight * quorumNumerator) / quorumDenominator;
-        
+
         // Check if signedWeight >= thresholdWeight
         if (signedWeight < thresholdWeight) {
             revert IWavsServiceManager.InsufficientQuorum(signedWeight, thresholdWeight, totalWeight);
         }
     }
-    
+
     /**
      * @notice Sets a new quorum threshold for signature validation
      * @param numerator The numerator of the quorum fraction
@@ -271,10 +271,10 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         if (numerator > denominator) {
             revert IWavsServiceManager.InvalidQuorumParameters();
         }
-        
+
         quorumNumerator = numerator;
         quorumDenominator = denominator;
-        
+
         emit QuorumThresholdUpdated(numerator, denominator);
     }
 
