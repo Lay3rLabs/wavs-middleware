@@ -118,6 +118,27 @@ Unpause Registration:
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware unpause
 ```
 
+Delegation to Operator:
+
+```bash
+# Generate a new private key for the staker (needs ETH for transactions)
+STAKER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+STAKER_ADDRESS=$(cast wallet addr --private-key "$STAKER_KEY")
+echo "Staker address: $STAKER_ADDRESS"
+
+export DELEGATION_MANAGER_ADDRESS=0xA44151489861Fe9e3055d95adC98FbD462B948e7
+
+docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
+   -e STAKER_KEY=${STAKER_KEY} \
+   -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e DELEGATION_MANAGER_ADDRESS=${DELEGATION_MANAGER_ADDRESS} \
+   -e DELEGATION_APPROVER_PRIVATE_KEY=${OPERATOR_KEY} \
+   -e DELEGATION_APPROVER_SALT=0x0000000000000000000000000000000000000000000000000000000000000000 \
+   -e DELEGATION_DURATION=86400 \
+   wavs-middleware delegate_to_operator
+```
+
 ## Deploying Mirror
 
 Run a second anvil at port 8546 with no eigenlayer deployed (can be not fork)
