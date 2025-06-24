@@ -125,10 +125,8 @@ library WavsMiddlewareDeploymentLib {
     }
 
     function readQuorumConfig(
-        string memory directoryPath,
-        uint256 chainId
+        string memory fileName
     ) internal returns (IECDSAStakeRegistryTypes.Quorum memory) {
-        string memory fileName = string.concat(directoryPath, VM.toString(chainId), ".json");
         if (!VM.exists(fileName)) {
             revert WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
         }
@@ -159,6 +157,14 @@ library WavsMiddlewareDeploymentLib {
         }
 
         return quorum;
+    }
+
+    function readQuorumConfig(
+        string memory directoryPath,
+        uint256 chainId
+    ) internal returns (IECDSAStakeRegistryTypes.Quorum memory) {
+        string memory fileName = string.concat(directoryPath, VM.toString(chainId), ".json");
+        return readQuorumConfig(fileName);
     }
 
     function readDeploymentJson(
