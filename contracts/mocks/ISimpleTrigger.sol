@@ -10,7 +10,5 @@ interface ISimpleTrigger {
 
     type TriggerId is uint64;
 
-    function getTrigger(
-        TriggerId triggerId
-    ) external view returns (TriggerInfo memory);
+    function getTrigger(TriggerId triggerId) external view returns (TriggerInfo memory);
 }

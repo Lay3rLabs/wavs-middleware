@@ -2,11 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {Vm} from "forge-std/Vm.sol";
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TransparentUpgradeableProxy,ITransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-
 import {EmptyContract} from "@eigenlayer/test/mocks/EmptyContract.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {
+    TransparentUpgradeableProxy,
+    ITransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 library UpgradeableProxyLib {
     bytes32 internal constant IMPLEMENTATION_SLOT =
@@ -14,7 +15,7 @@ library UpgradeableProxyLib {
     bytes32 internal constant ADMIN_SLOT =
         0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
-    Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     function deployProxyAdmin() internal returns (address) {
         return address(new ProxyAdmin());
@@ -40,14 +41,14 @@ library UpgradeableProxyLib {
     function getImplementation(
         address proxy
     ) internal view returns (address) {
-        bytes32 value = vm.load(proxy, IMPLEMENTATION_SLOT);
+        bytes32 value = VM.load(proxy, IMPLEMENTATION_SLOT);
         return address(uint160(uint256(value)));
     }
 
     function getProxyAdmin(
         address proxy
     ) internal view returns (ProxyAdmin) {
-        bytes32 value = vm.load(proxy, ADMIN_SLOT);
+        bytes32 value = VM.load(proxy, ADMIN_SLOT);
         return ProxyAdmin(address(uint160(uint256(value))));
     }
 }

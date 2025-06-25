@@ -4,10 +4,12 @@ pragma solidity ^0.8.9;
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-// Minimal AVS Registrar contract. 
+// Minimal AVS Registrar contract.
 // It allows the owner to pause the registration, preventing all Operator register and deregister operations.
 contract WavsAVSRegistrar is IAVSRegistrar, Ownable {
     bool public isPaused;
+
+    error WavsAVSRegistrar__Paused();
 
     constructor() Ownable() {
         isPaused = false;
@@ -22,7 +24,9 @@ contract WavsAVSRegistrar is IAVSRegistrar, Ownable {
     }
 
     modifier notPaused() {
-        require(!isPaused, "AVSRegistrar: paused");
+        if (isPaused) {
+            revert WavsAVSRegistrar__Paused();
+        }
         _;
     }
 
@@ -50,5 +54,5 @@ contract WavsAVSRegistrar is IAVSRegistrar, Ownable {
         return true; // Placeholder return value
     }
 
-    fallback () external {}
+    fallback() external {}
 }

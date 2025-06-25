@@ -2,14 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
+import {IECDSAStakeRegistryTypes} from
+    "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+
 import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeplomentLib.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
-import {
-    IECDSAStakeRegistryTypes,
-    IStrategy
-} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
-
 
 contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     // using ReadCoreLib for *;
@@ -20,17 +18,25 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     // Environment variables for configureContracts
     string public constant ENV_METADATA_URI = "METADATA_URI";
 
-   // Deployment configuration
+    // Deployment configuration
     address private lstStrategyAddress;
     string private metadataUri;
 
-    address proxyAdmin;
-    ReadCoreLib.DeploymentData coreDeployment;
-    WavsMiddlewareDeploymentLib.DeploymentData wavsMiddlewareDeployment;
+    address public proxyAdmin;
+    ReadCoreLib.DeploymentData public coreDeployment;
+    WavsMiddlewareDeploymentLib.DeploymentData public wavsMiddlewareDeployment;
     Quorum internal quorum;
 
+    error WavsMiddlewareDeployer__WavsServiceManagerAddressCannotBeZero();
+    error WavsMiddlewareDeployer__StakeRegistryAddressCannotBeZero();
+    error WavsMiddlewareDeployer__StrategyAddressCannotBeZero();
+    error WavsMiddlewareDeployer__ProxyAdminAddressCannotBeZero();
+    error WavsMiddlewareDeployer__DelegationManagerAddressCannotBeZero();
+    error WavsMiddlewareDeployer__AVSDirectoryAddressCannotBeZero();
+
     function setUp() public virtual {
-        coreDeployment = ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
+        coreDeployment =
+            ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
 
         // Get the configuration from environment
         lstStrategyAddress = vm.envAddress(ENV_LST_STRATEGY);
@@ -39,7 +45,8 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         // Local Deployment assumes testnet strategies, for documentation on strategies on different chains see:
         // https://github.com/layr-labs/eigenlayer-contracts In the README.md
         // 0x7d704507b76571a51d9cae8addabbfd0ba0e63d3 is sETH on Holesky
-        quorum = WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", block.chainid); 
+        quorum =
+            WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", block.chainid);
     }
 
     function run() external {
@@ -53,7 +60,9 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         // WAVS configuration
         uint256 minimumWeight = 100;
         wavsMiddlewareDeployment.strategy = lstStrategyAddress;
-        WavsMiddlewareDeploymentLib.configureContracts(wavsMiddlewareDeployment, metadataUri, minimumWeight);
+        WavsMiddlewareDeploymentLib.configureContracts(
+            wavsMiddlewareDeployment, metadataUri, minimumWeight
+        );
 
         vm.stopBroadcast();
 
@@ -62,19 +71,23 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     }
 
     function verifyDeployment() internal view {
-        require(
-            wavsMiddlewareDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
-        );
-        require(
-            wavsMiddlewareDeployment.WavsServiceManager != address(0),
-            "WavsServiceManager address cannot be zero"
-        );
-        require(wavsMiddlewareDeployment.strategy != address(0), "Strategy address cannot be zero");
-        require(proxyAdmin != address(0), "ProxyAdmin address cannot be zero");
-        require(
-            coreDeployment.delegationManager != address(0),
-            "DelegationManager address cannot be zero"
-        );
-        require(coreDeployment.avsDirectory != address(0), "AVSDirectory address cannot be zero");
+        if (wavsMiddlewareDeployment.stakeRegistry == address(0)) {
+            revert WavsMiddlewareDeployer__StakeRegistryAddressCannotBeZero();
+        }
+        if (wavsMiddlewareDeployment.wavsServiceManager == address(0)) {
+            revert WavsMiddlewareDeployer__WavsServiceManagerAddressCannotBeZero();
+        }
+        if (wavsMiddlewareDeployment.strategy == address(0)) {
+            revert WavsMiddlewareDeployer__StrategyAddressCannotBeZero();
+        }
+        if (proxyAdmin == address(0)) {
+            revert WavsMiddlewareDeployer__ProxyAdminAddressCannotBeZero();
+        }
+        if (coreDeployment.delegationManager == address(0)) {
+            revert WavsMiddlewareDeployer__DelegationManagerAddressCannotBeZero();
+        }
+        if (coreDeployment.avsDirectory == address(0)) {
+            revert WavsMiddlewareDeployer__AVSDirectoryAddressCannotBeZero();
+        }
     }
 }

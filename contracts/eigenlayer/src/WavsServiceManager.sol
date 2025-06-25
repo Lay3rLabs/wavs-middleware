@@ -4,20 +4,22 @@ pragma solidity ^0.8.9;
 import {ECDSAServiceManagerBase} from
     "@eigenlayer-middleware/src/unaudited/ECDSAServiceManagerBase.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
-import {IECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistryStorage.sol";
-
+import {IECDSAStakeRegistry} from
+    "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistryStorage.sol";
 import {IServiceManager} from "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
+import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+import {
+    IAllocationManager,
+    IAllocationManagerTypes
+} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {ISignatureUtilsMixinTypes} from "@eigenlayer/contracts/interfaces/ISignatureUtilsMixin.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {ECDSAUpgradeable} from
     "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
-import {IERC1271Upgradeable} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+import {IERC1271Upgradeable} from
+    "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+
 import {IWavsServiceManager} from "../../interfaces/IWavsServiceManager.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {ISignatureUtilsMixinTypes} from "@eigenlayer/contracts/interfaces/ISignatureUtilsMixin.sol";
-import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
-import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {IWavsServiceHandler} from "../../interfaces/IWavsServiceHandler.sol";
 
 /**
@@ -47,10 +49,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         )
     {}
 
-    function initialize(
-        address _initialOwner,
-        address _rewardsInitiator
-    ) public initializer {
+    function initialize(address _initialOwner, address _rewardsInitiator) public initializer {
         __ServiceManagerBase_init(_initialOwner, _rewardsInitiator);
         quorumNumerator = 2;
         quorumDenominator = 3;
@@ -64,18 +63,30 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     /// and between `StakeRegistry.sol` and `ECDSAStakeRegistry.sol`
 
     /// @notice Creates new operator sets with the given parameters
-    function createOperatorSets(IAllocationManager.CreateSetParams[] memory params) external onlyOwner {
+    function createOperatorSets(
+        IAllocationManager.CreateSetParams[] memory params
+    ) external onlyOwner {
         IAllocationManager(allocationManager).createOperatorSets(address(this), params);
     }
 
     /// @notice Adds strategies to an existing operator set
-    function addStrategyToOperatorSet(uint32 operatorSetId, IStrategy[] memory strategies) external onlyOwner {
-        IAllocationManager(allocationManager).addStrategiesToOperatorSet(address(this), operatorSetId, strategies);
+    function addStrategyToOperatorSet(
+        uint32 operatorSetId,
+        IStrategy[] memory strategies
+    ) external onlyOwner {
+        IAllocationManager(allocationManager).addStrategiesToOperatorSet(
+            address(this), operatorSetId, strategies
+        );
     }
 
     /// @notice Removes strategies from an existing operator set
-    function removeStrategiesFromOperatorSet(uint32 operatorSetId, IStrategy[] memory strategies) external onlyOwner {
-        IAllocationManager(allocationManager).removeStrategiesFromOperatorSet(address(this), operatorSetId, strategies);
+    function removeStrategiesFromOperatorSet(
+        uint32 operatorSetId,
+        IStrategy[] memory strategies
+    ) external onlyOwner {
+        IAllocationManager(allocationManager).removeStrategiesFromOperatorSet(
+            address(this), operatorSetId, strategies
+        );
     }
 
     /// @notice Deregisters an operator from operator sets
@@ -96,7 +107,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     }
 
     /// @notice Creates AVS rewards submission
-    function createAVSRewardsSubmission(IRewardsCoordinator.RewardsSubmission[] calldata rewardsSubmissions) external override {
+    function createAVSRewardsSubmission(
+        IRewardsCoordinator.RewardsSubmission[] calldata rewardsSubmissions
+    ) external override {
         // Implementation logic here
     }
 
@@ -160,7 +173,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     }
 
     /// @inheritdoc IWavsServiceManager
-    function setServiceURI(string calldata _serviceURI) external override onlyOwner {
+    function setServiceURI(
+        string calldata _serviceURI
+    ) external override onlyOwner {
         serviceURI = _serviceURI;
         emit ServiceURIUpdated(_serviceURI);
     }
@@ -183,7 +198,10 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         IWavsServiceHandler.SignatureData calldata signatureData
     ) external view {
         // Input validation
-        if (signatureData.signers.length == 0 || signatureData.signers.length != signatureData.signatures.length) {
+        if (
+            signatureData.signers.length == 0
+                || signatureData.signers.length != signatureData.signatures.length
+        ) {
             revert IWavsServiceManager.InvalidSignatureLength();
         }
         if (signatureData.referenceBlock >= block.number) {
@@ -197,16 +215,16 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         // Validate signatures through the stake registry
         bytes4 magicValue = IERC1271Upgradeable.isValidSignature.selector;
         bytes memory signatureDataBytes = abi.encode(
-            signatureData.signers,
-            signatureData.signatures,
-            signatureData.referenceBlock
+            signatureData.signers, signatureData.signatures, signatureData.referenceBlock
         );
 
         // Check signature validity
-        if (magicValue != ECDSAStakeRegistry(stakeRegistry).isValidSignature(
-            ethSignedMessageHash,
-            signatureDataBytes
-        )) {
+        if (
+            magicValue
+                != ECDSAStakeRegistry(stakeRegistry).isValidSignature(
+                    ethSignedMessageHash, signatureDataBytes
+                )
+        ) {
             revert IWavsServiceManager.InvalidSignature();
         }
 
@@ -215,16 +233,14 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         uint256 signedWeight = 0;
         for (uint256 i = 0; i < signatureData.signers.length; i++) {
             address operator = registry.getOperatorForSigningKeyAtBlock(
-                signatureData.signers[i],
-                signatureData.referenceBlock
+                signatureData.signers[i], signatureData.referenceBlock
             );
-            signedWeight += registry.getOperatorWeightAtBlock(
-                operator,
-                signatureData.referenceBlock
-            );
+            signedWeight +=
+                registry.getOperatorWeightAtBlock(operator, signatureData.referenceBlock);
         }
 
-        uint256 totalWeight = registry.getLastCheckpointTotalWeightAtBlock(signatureData.referenceBlock);
+        uint256 totalWeight =
+            registry.getLastCheckpointTotalWeightAtBlock(signatureData.referenceBlock);
 
         // Ensure sufficient quorum was reached
         _validateQuorumSigned(signedWeight, totalWeight);
@@ -236,10 +252,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
      * @param totalWeight The total weight of all operators
      * @dev Requires at least quorumNumerator/quorumDenominator of the total weight to have signed
      */
-    function _validateQuorumSigned(
-        uint256 signedWeight,
-        uint256 totalWeight
-    ) internal view {
+    function _validateQuorumSigned(uint256 signedWeight, uint256 totalWeight) internal view {
         // Avoid 0 weight ever passing this check
         if (totalWeight == 0) {
             revert IWavsServiceManager.InsufficientQuorumZero();
@@ -250,7 +263,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
 
         // Check if signedWeight >= thresholdWeight
         if (signedWeight < thresholdWeight) {
-            revert IWavsServiceManager.InsufficientQuorum(signedWeight, thresholdWeight, totalWeight);
+            revert IWavsServiceManager.InsufficientQuorum(
+                signedWeight, thresholdWeight, totalWeight
+            );
         }
     }
 
@@ -279,12 +294,16 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     }
 
     /// @inheritdoc IWavsServiceManager
-    function getOperatorWeight(address operator) external view returns (uint256) {
+    function getOperatorWeight(
+        address operator
+    ) external view returns (uint256) {
         return ECDSAStakeRegistry(stakeRegistry).getLastCheckpointOperatorWeight(operator);
     }
 
     /// @inheritdoc IWavsServiceManager
-    function getLatestOperatorForSigningKey(address signingKey) external view returns(address) {
+    function getLatestOperatorForSigningKey(
+        address signingKey
+    ) external view returns (address) {
         return ECDSAStakeRegistry(stakeRegistry).getLatestOperatorForSigningKey(signingKey);
     }
 }

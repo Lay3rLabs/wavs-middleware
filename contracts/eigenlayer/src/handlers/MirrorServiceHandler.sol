@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IWavsServiceHandler} from "../../../interfaces/IWavsServiceHandler.sol";
 import {IWavsServiceManager} from "../../../interfaces/IWavsServiceManager.sol";
-import { MirrorStakeRegistry } from "../MirrorStakeRegistry.sol";
-
+import {MirrorStakeRegistry} from "../MirrorStakeRegistry.sol";
 
 interface IMirrorUpdateTypes {
     error InvalidTriggerId(uint64 expectedTriggerId);
@@ -19,7 +18,6 @@ interface IMirrorUpdateTypes {
     }
 }
 
-
 contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
     /// @notice Ensures all updates are deployed in order and no duplicates.
     uint64 public lastTriggerId;
@@ -30,15 +28,21 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
     /// @notice Service manager instance
     IWavsServiceManager public serviceManager;
 
-    constructor(MirrorStakeRegistry _stakeRegistry) {
+    constructor(
+        MirrorStakeRegistry _stakeRegistry
+    ) {
         stakeRegistry = _stakeRegistry;
         serviceManager = IWavsServiceManager(_stakeRegistry.serviceManager());
         lastTriggerId = 0;
     }
 
-    function handleSignedEnvelope(Envelope calldata envelope, SignatureData calldata signatureData) external {
+    function handleSignedEnvelope(
+        Envelope calldata envelope,
+        SignatureData calldata signatureData
+    ) external {
         // Quick check this is valid trigger id before validating signatures
-        IMirrorUpdateTypes.UpdateWithId memory updateData = abi.decode(envelope.payload, (IMirrorUpdateTypes.UpdateWithId));
+        IMirrorUpdateTypes.UpdateWithId memory updateData =
+            abi.decode(envelope.payload, (IMirrorUpdateTypes.UpdateWithId));
         if (updateData.triggerId <= lastTriggerId) {
             revert InvalidTriggerId(lastTriggerId);
         }
@@ -49,11 +53,12 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
 
         // call stake registry to update
         stakeRegistry.updateStakeThreshold(updateData.thresholdWeight);
-        stakeRegistry.batchSetOperatorDetails(updateData.operators, updateData.signingKeys, updateData.weights);
-   }
+        stakeRegistry.batchSetOperatorDetails(
+            updateData.operators, updateData.signingKeys, updateData.weights
+        );
+    }
 
     function getServiceManager() external view returns (address) {
         return address(serviceManager);
     }
-
 }

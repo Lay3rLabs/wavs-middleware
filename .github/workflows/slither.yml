@@ -1,0 +1,46 @@
+name: slither analysis
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  slither:
+    strategy:
+      fail-fast: true
+
+    name: Slither analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Show Forge version
+        run: |
+          forge --version
+
+      - name: Run Forge build
+        run: |
+          make build
+        id: build
+
+      - name: Slither analysis
+        uses: crytic/slither-action@v0.4.0
+        with:
+          target: contracts
+          fail-on: "medium"
+          slither-config: contracts/slither.config.json
+
+      - name: "Add summary"
+        run: |
+          echo "### Slither Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "Passed" >> $GITHUB_STEP_SUMMARY

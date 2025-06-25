@@ -9,8 +9,6 @@ library ReadCoreLib {
     using stdJson for *;
     using Strings for *;
 
-    Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
     struct DeploymentData {
         address delegationManager;
         address avsDirectory;
@@ -21,10 +19,16 @@ library ReadCoreLib {
         address allocationManager;
     }
 
-    function readDeploymentJson(string memory deploymentPath, uint256 chainId) view internal returns (DeploymentData memory) {
-        string memory json = vm.readFile(
-            string.concat(deploymentPath, uint256(chainId).toString(), ".json")
-        );
+    Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+
+    error ReadCoreLib__RewardsCoordinatorNotFound();
+
+    function readDeploymentJson(
+        string memory deploymentPath,
+        uint256 chainId
+    ) internal view returns (DeploymentData memory) {
+        string memory json =
+            VM.readFile(string.concat(deploymentPath, uint256(chainId).toString(), ".json"));
 
         DeploymentData memory data;
         data = readFirstAddressSet(json, data);
@@ -32,7 +36,10 @@ library ReadCoreLib {
         return data;
     }
 
-    function readFirstAddressSet(string memory json, DeploymentData memory data) pure internal returns (DeploymentData memory) {
+    function readFirstAddressSet(
+        string memory json,
+        DeploymentData memory data
+    ) internal pure returns (DeploymentData memory) {
         data.strategyFactory = json.readAddress(".addresses.strategyFactory");
         data.strategyManager = json.readAddress(".addresses.strategyManager");
         data.eigenPodManager = json.readAddress(".addresses.eigenPodManager");
@@ -40,15 +47,20 @@ library ReadCoreLib {
         return data;
     }
 
-    function readSecondAddressSet(string memory json, DeploymentData memory data) pure internal returns (DeploymentData memory) {
+    function readSecondAddressSet(
+        string memory json,
+        DeploymentData memory data
+    ) internal pure returns (DeploymentData memory) {
         data.avsDirectory = json.readAddress(".addresses.avsDirectory");
-        
+
         // Try to read rewardsCoordinator
-        try vm.parseJson(json, ".addresses.rewardsCoordinator") returns (bytes memory parsed) {
+        try VM.parseJson(json, ".addresses.rewardsCoordinator") returns (bytes memory parsed) {
             if (parsed.length > 0) {
                 data.rewardsCoordinator = abi.decode(parsed, (address));
             }
-        } catch {}
+        } catch {
+            revert ReadCoreLib__RewardsCoordinatorNotFound();
+        }
 
         data.allocationManager = json.readAddress(".addresses.allocationManager");
         return data;

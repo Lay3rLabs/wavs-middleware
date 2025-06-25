@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "forge-std/Test.sol";
-import "../src/WavsAVSRegistrar.sol";
+import {Test} from "forge-std/Test.sol";
+
+import {WavsAVSRegistrar} from "../src/WavsAVSRegistrar.sol";
 
 contract WavsAVSRegistrarTest is Test {
     WavsAVSRegistrar public registrar;
@@ -32,7 +33,7 @@ contract WavsAVSRegistrarTest is Test {
         // First pause the contract
         vm.prank(owner);
         registrar.pause();
-        
+
         // Then unpause it
         vm.prank(owner);
         registrar.unpause();
@@ -50,7 +51,7 @@ contract WavsAVSRegistrarTest is Test {
         // First pause the contract
         vm.prank(owner);
         registrar.pause();
-        
+
         // Non-owner should not be able to unpause
         vm.prank(nonOwner);
         vm.expectRevert("Ownable: caller is not the owner");
@@ -65,14 +66,14 @@ contract WavsAVSRegistrarTest is Test {
         bytes memory data = "test data";
 
         // Should not revert when not paused
-        registrar.registerOperator(operator, avs, operatorSetIds, data);        
+        registrar.registerOperator(operator, avs, operatorSetIds, data);
         assertTrue(true, "registerOperator should not revert when not paused");
 
         vm.prank(owner);
         registrar.pause();
 
         // Should revert with pause message when paused
-        vm.expectRevert("AVSRegistrar: paused");
+        vm.expectRevert(abi.encodeWithSelector(WavsAVSRegistrar.WavsAVSRegistrar__Paused.selector));
         registrar.registerOperator(operator, avs, operatorSetIds, data);
     }
 
@@ -90,7 +91,7 @@ contract WavsAVSRegistrarTest is Test {
         registrar.pause();
 
         // Should revert with pause message when paused
-        vm.expectRevert("AVSRegistrar: paused");
+        vm.expectRevert(abi.encodeWithSelector(WavsAVSRegistrar.WavsAVSRegistrar__Paused.selector));
         registrar.deregisterOperator(operator, avs, operatorSetIds);
     }
 }
