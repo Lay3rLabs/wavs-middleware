@@ -53,11 +53,12 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
 
         // call stake registry to update
         stakeRegistry.updateStakeThreshold(updateData.thresholdWeight);
-        stakeRegistry.batchSetOperatorDetails(updateData.operators, updateData.signingKeys, updateData.weights);
-   }
+        stakeRegistry.batchSetOperatorDetails(
+            updateData.operators, updateData.signingKeys, updateData.weights
+        );
+    }
 
     function getServiceManager() external view returns (address) {
         return address(serviceManager);
     }
-
 }
