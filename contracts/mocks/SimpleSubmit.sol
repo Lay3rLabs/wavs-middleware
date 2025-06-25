@@ -51,4 +51,8 @@ contract SimpleSubmit is IWavsServiceHandler, ISimpleSubmit {
         ISimpleSubmit.SignedData memory signedData = signedDatas[triggerId];
         dataWithId = ISimpleSubmit.DataWithId({triggerId: triggerId, data: signedData.data});
     }
+
+    function getServiceManager() external view returns (address) {
+        return address(_serviceManager);
+    }
 }

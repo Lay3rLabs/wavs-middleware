@@ -47,4 +47,8 @@ contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler
         // call stake registry to update
         serviceManager.setQuorumThreshold(updateData.numerator, updateData.denominator);
     }
+
+    function getServiceManager() external view returns (address) {
+        return address(serviceManager);
+    }
 }

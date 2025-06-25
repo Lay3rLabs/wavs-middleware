@@ -1,6 +1,6 @@
 {
   "name": "@wavs/solidity",
-  "version": "0.4.0-beta.1",
+  "version": "0.4.0",
   "description": "WAVS Middleware",
   "author": "Lay3rLabs Team",
   "license": "MIT",

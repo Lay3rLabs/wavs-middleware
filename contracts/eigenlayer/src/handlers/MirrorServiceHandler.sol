@@ -57,4 +57,8 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
             updateData.operators, updateData.signingKeys, updateData.weights
         );
     }
+
+    function getServiceManager() external view returns (address) {
+        return address(serviceManager);
+    }
 }
