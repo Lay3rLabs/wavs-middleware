@@ -31,7 +31,7 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
     IWavsServiceManager public serviceManager;
 
     constructor(MirrorStakeRegistry _stakeRegistry) {
-        stakeRegistry = _stakeRegistry; 
+        stakeRegistry = _stakeRegistry;
         serviceManager = IWavsServiceManager(_stakeRegistry.serviceManager());
         lastTriggerId = 0;
     }
@@ -50,6 +50,10 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
         // call stake registry to update
         stakeRegistry.updateStakeThreshold(updateData.thresholdWeight);
         stakeRegistry.batchSetOperatorDetails(updateData.operators, updateData.signingKeys, updateData.weights);
-  }
+   }
+
+    function getServiceManager() external view returns (address) {
+        return address(serviceManager);
+    }
 
 }

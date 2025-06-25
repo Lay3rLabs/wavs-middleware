@@ -25,7 +25,7 @@ contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler
     WavsServiceManager public serviceManager;
 
     constructor(WavsServiceManager _serviceManager) {
-        serviceManager = _serviceManager; 
+        serviceManager = _serviceManager;
         lastTriggerId = 0;
     }
 
@@ -42,6 +42,9 @@ contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler
 
         // call stake registry to update
         serviceManager.setQuorumThreshold(updateData.numerator, updateData.denominator);
-  }
+    }
 
+    function getServiceManager() external view returns (address) {
+        return address(serviceManager);
+    }
 }
