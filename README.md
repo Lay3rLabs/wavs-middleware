@@ -207,8 +207,14 @@ export LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
 # Set the RPC URL for the local blockchain
 export MOCK_RPC_URL=http://localhost:8546
 
+# Generate a new private key for the staker (needs ETH for transactions)
+MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+MOCK_DEPLOYER_ADDRESS=$(cast wallet addr --private-key "$MOCK_DEPLOYER_KEY")
+echo "Mock deployer address: $MOCK_DEPLOYER_ADDRESS"
+
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
    -v $LOCAL_CONFIG_PATH:/wavs/contracts/deployments/wavs-mock-config.json \
+   -e MOCK_DEPLOYER_KEY=${MOCK_DEPLOYER_KEY} \
    -e MOCK_RPC_URL=${MOCK_RPC_URL} \
    wavs-middleware -m mock deploy
 ```

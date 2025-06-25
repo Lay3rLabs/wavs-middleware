@@ -10,8 +10,6 @@ import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 contract WavsMockDeployer is Script {
     using UpgradeableProxyLib for address;
 
-    string public constant ENV_CONFIG_FILE = "WAVS_MOCK_CONFIG";
-
     address public proxyAdmin;
     WavsMockDeploymentLib.DeploymentData public deployment;
     WavsMockDeploymentLib.InitialConfiguration public configuration;
@@ -22,7 +20,7 @@ contract WavsMockDeployer is Script {
 
     function setUp() public virtual {
         // Pass in the configuration as a file, load it
-        string memory configFile = vm.envString(ENV_CONFIG_FILE);
+        string memory configFile = "./deployments/wavs-mock-config.json";
         configuration = WavsMockDeploymentLib.loadConfiguration(configFile);
     }
 
