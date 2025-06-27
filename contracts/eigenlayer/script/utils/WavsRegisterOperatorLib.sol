@@ -88,7 +88,7 @@ library WavsRegisterOperatorLib {
         IDelegationManager delegationManager = IDelegationManager(coreDeployment.delegationManager);
         if (!delegationManager.isDelegated(operatorAddr)) {
             // TODO: allow to override foo.bar with env variable?
-            delegationManager.registerAsOperator(operatorAddr, 0, "foo.bar");
+            delegationManager.registerAsOperator(address(0), 0, "foo.bar");
         }
     }
 
