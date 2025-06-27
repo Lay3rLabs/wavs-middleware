@@ -118,6 +118,35 @@ Unpause Registration:
 docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware unpause
 ```
 
+Delegation to Operator:
+
+```bash
+# Generate a new private key for the staker (needs ETH for transactions)
+STAKER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+STAKER_ADDRESS=$(cast wallet addr --private-key "$STAKER_KEY")
+echo "Staker address: $STAKER_ADDRESS"
+
+docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
+   -e STAKER_KEY=${STAKER_KEY} \
+   -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   wavs-middleware delegate_to_operator "1000000000000000"
+
+# Only required when approver address is not 0
+DELEGATION_APPROVER_PRIVATE_KEY=
+DELEGATION_APPROVER_SALT=
+DELEGATION_DURATION=
+
+docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
+   -e STAKER_KEY=${STAKER_KEY} \
+   -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e DELEGATION_APPROVER_PRIVATE_KEY=${DELEGATION_APPROVER_PRIVATE_KEY} \
+   -e DELEGATION_APPROVER_SALT=${DELEGATION_APPROVER_SALT} \
+   -e DELEGATION_DURATION=${DELEGATION_DURATION} \
+   wavs-middleware delegate_to_operator
+```
+
 ## Deploying Mirror
 
 Run a second anvil at port 8546 with no eigenlayer deployed (can be not fork)
