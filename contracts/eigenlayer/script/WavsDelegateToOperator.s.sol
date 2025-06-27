@@ -11,7 +11,6 @@ contract WavsDelegateToOperator is Script {
     // Environment variables
     string public constant ENV_OPERATOR = "OPERATOR_ADDRESS";
     string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
-    string public constant ENV_DELEGATION_MANAGER = "DELEGATION_MANAGER_ADDRESS";
     string public constant ENV_DELEGATION_APPROVER_PRIVATE_KEY = "DELEGATION_APPROVER_PRIVATE_KEY";
     string public constant ENV_DELEGATION_APPROVER_SALT = "DELEGATION_APPROVER_SALT";
     string public constant ENV_DELEGATION_DURATION = "DELEGATION_DURATION";
@@ -30,7 +29,7 @@ contract WavsDelegateToOperator is Script {
 
     function setUp() public virtual {
         wavsServiceManager = WavsServiceManager(vm.envAddress(ENV_SERVICE_MANAGER));
-        delegationManager = IDelegationManager(vm.envAddress(ENV_DELEGATION_MANAGER));
+        delegationManager = IDelegationManager(wavsServiceManager.getDelegationManager());
         operatorAddress = vm.envAddress(ENV_OPERATOR);
         delegationApproverAddress = delegationManager.delegationApprover(operatorAddress);
 
@@ -52,6 +51,7 @@ contract WavsDelegateToOperator is Script {
         if (delegationApproverAddress == address(0)) {
             approverSignatureAndExpiry =
                 ISignatureUtilsMixinTypes.SignatureWithExpiry({signature: bytes(""), expiry: 0});
+            delegationManager.delegateTo(operatorAddress, approverSignatureAndExpiry, bytes32(0));
         } else {
             approverSignatureAndExpiry = _createDelegationApprovalSignature(
                 vm.addr(vm.envUint("STAKER_KEY")),
@@ -60,8 +60,8 @@ contract WavsDelegateToOperator is Script {
                 approverSalt,
                 delegationDuration
             );
+            delegationManager.delegateTo(operatorAddress, approverSignatureAndExpiry, approverSalt);
         }
-        delegationManager.delegateTo(operatorAddress, approverSignatureAndExpiry, approverSalt);
 
         vm.stopBroadcast();
     }

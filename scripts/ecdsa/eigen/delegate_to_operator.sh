@@ -41,13 +41,6 @@ fi
 export WAVS_SERVICE_MANAGER_ADDRESS
 echo "WAVS_SERVICE_MANAGER_ADDRESS: $WAVS_SERVICE_MANAGER_ADDRESS"
 
-# Get delegation manager address from environment variables or files
-if [ -z "${DELEGATION_MANAGER_ADDRESS:-}" ]; then
-    error_exit "DELEGATION_MANAGER_ADDRESS is not set in environment variables"
-fi
-export DELEGATION_MANAGER_ADDRESS
-echo "DELEGATION_MANAGER_ADDRESS: $DELEGATION_MANAGER_ADDRESS"
-
 # Validate required environment variables
 if [ -z "${OPERATOR_ADDRESS:-}" ]; then
     error_exit "OPERATOR_ADDRESS is not set in environment variables"
