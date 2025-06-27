@@ -26,7 +26,6 @@ contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler
         WavsServiceManager _serviceManager
     ) {
         serviceManager = _serviceManager;
-        serviceManager = _serviceManager;
         lastTriggerId = 0;
     }
 

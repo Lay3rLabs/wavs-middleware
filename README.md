@@ -161,6 +161,64 @@ docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
    wavs-middleware -m mirror list_operators
 ```
 
+## Mock Deployment
+
+This deployment process is for local testing and development. It deploys a "mock" version of the WAVS middleware contracts by using the mock stage of the mirror deployment scripts. This allows for rapid testing without needing to interact with a live EigenLayer environment.
+
+### 1. Create a Configuration File
+
+Create a `mock-config.json` file on your local machine. This file defines the initial operators, their signing keys, weights, and the threshold for the stake registry.
+
+```json
+{
+  "operators": [
+    "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf",
+    "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF",
+    "0x6813Eb9362372EEF6200f3b1dbC3f819671cBA69",
+    "0x1efF47bc3a10a45D4B230B5d10E37751FE6AA718",
+    "0xe1AB8145F7E55DC933d51a18c793F901A3A0b276"
+  ],
+  "quorumDenominator": 3,
+  "quorumNumerator": 2,
+  "signingKeys": [
+    "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf",
+    "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF",
+    "0x6813Eb9362372EEF6200f3b1dbC3f819671cBA69",
+    "0x1efF47bc3a10a45D4B230B5d10E37751FE6AA718",
+    "0xe1AB8145F7E55DC933d51a18c793F901A3A0b276"
+  ],
+  "threshold": 12345,
+  "weights": [10000, 10000, 10000, 10000, 10000]
+}
+```
+
+### 2. Run a Local Blockchain
+
+```bash
+anvil --host 0.0.0.0 --port 8546
+```
+
+### 3. Deploy the Mock Contracts
+
+```bash
+# Set the path to your local config file
+export LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
+
+# Set the RPC URL for the local blockchain
+export MOCK_RPC_URL=http://localhost:8546
+
+# Generate a new private key for the staker (needs ETH for transactions)
+MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+MOCK_DEPLOYER_ADDRESS=$(cast wallet addr --private-key "$MOCK_DEPLOYER_KEY")
+echo "Mock deployer address: $MOCK_DEPLOYER_ADDRESS"
+
+docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+   -v $LOCAL_CONFIG_PATH:/wavs/contracts/deployments/wavs-mock-config.json \
+   -e MOCK_DEPLOYER_KEY=${MOCK_DEPLOYER_KEY} \
+   -e MOCK_RPC_URL=${MOCK_RPC_URL} \
+   wavs-middleware -m mock deploy
+```
+
 ## Deploy Testnet
 
 Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"` and make sure the `FUNDED_KEY` is actually funded on testnet
