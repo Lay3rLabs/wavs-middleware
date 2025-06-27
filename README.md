@@ -130,7 +130,7 @@ docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
    -e STAKER_KEY=${STAKER_KEY} \
    -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware delegate_to_operator
+   wavs-middleware delegate_to_operator "1000000000000000"
 
 # Only required when approver address is not 0
 DELEGATION_APPROVER_PRIVATE_KEY=

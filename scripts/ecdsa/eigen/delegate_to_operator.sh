@@ -48,6 +48,20 @@ fi
 export OPERATOR_ADDRESS
 echo "OPERATOR_ADDRESS: $OPERATOR_ADDRESS"
 
+if [ -z "${LST_CONTRACT_ADDRESS:-}" ]; then
+    error_exit "LST_CONTRACT_ADDRESS is not set in environment variables"
+fi
+export LST_CONTRACT_ADDRESS
+echo "LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
+
+if [ -z "${LST_STRATEGY_ADDRESS:-}" ]; then
+    error_exit "LST_STRATEGY_ADDRESS is not set in environment variables"
+fi
+export LST_STRATEGY_ADDRESS
+echo "LST_STRATEGY_ADDRESS: $LST_STRATEGY_ADDRESS"
+
+export WAVS_DELEGATE_AMOUNT="$1"
+
 if [ "$DEPLOY_ENV" = "TESTNET" ]; then
     LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
     if [ -z "$LOCAL_ETHEREUM_RPC_URL" ]; then
