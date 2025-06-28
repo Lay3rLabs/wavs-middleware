@@ -216,6 +216,16 @@ docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
    wavs-middleware update_quorum 3 5
 ```
 
+Update Quorum:
+
+```bash
+export STRATEGIES_CONFIG_PATH=$(pwd)/strategies-config.json
+
+docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   wavs-middleware update_quorum 3 5
+```
+
 Pause Registration:
 
 ```bash
