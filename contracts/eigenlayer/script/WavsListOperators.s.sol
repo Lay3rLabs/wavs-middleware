@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
+import {IECDSAStakeRegistry} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -23,19 +23,21 @@ contract WavsListOperators is Script {
     string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
 
     // configuration
-    address private serviceManagerAddr;
+    WavsServiceManager private serviceManager;
 
     function setUp() public virtual {
-        serviceManagerAddr = vm.envAddress(ENV_SERVICE_MANAGER);
+        serviceManager = WavsServiceManager(vm.envAddress(ENV_SERVICE_MANAGER));
     }
 
     function run() external {
         vm.startBroadcast();
-        OperatorInfo memory opInfo = listOperators(serviceManagerAddr);
+        OperatorInfo memory opInfo = listOperators();
+        uint256 quorumNumerator = serviceManager.quorumNumerator();
+        uint256 quorumDenominator = serviceManager.quorumDenominator();
         vm.stopBroadcast();
 
         console.log("=== List Operators ===");
-        console.log("Service Manager Address:", serviceManagerAddr);
+        console.log("Service Manager Address:", address(serviceManager));
         console.log("Stake Registry Address:", address(opInfo.stakeRegistry));
 
         console.log(" "); // Blank line for separation
@@ -63,20 +65,22 @@ contract WavsListOperators is Script {
             string memory weight = string.concat("= ", Strings.toString(opInfo.weights[i]));
             console.log(op, sign, weight);
         }
+
+        console.log(" "); // Blank line for separation
+        console.log("=== Service Manager Quorum Information ===");
+        console.log(string.concat("Quorum Numerator: ", Strings.toString(quorumNumerator)));
+        console.log(string.concat("Quorum Denominator: ", Strings.toString(quorumDenominator)));
     }
 
-    function listOperators(
-        address serviceManagerAddress
-    ) internal view returns (OperatorInfo memory) {
-        WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
-        ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
+    function listOperators() private view returns (OperatorInfo memory) {
+        IECDSAStakeRegistry stakeRegistry = IECDSAStakeRegistry(serviceManager.stakeRegistry());
 
         uint256 totalWeight = stakeRegistry.getLastCheckpointTotalWeight();
         uint256 thresholdWeight = stakeRegistry.getLastCheckpointThresholdWeight();
 
         IAllocationManager allocationManager =
             IAllocationManager(serviceManager.allocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 1});
+        OperatorSet memory opSetQuery = OperatorSet({avs: address(serviceManager), id: 1});
         address[] memory operators = allocationManager.getMembers(opSetQuery);
 
         uint256[] memory weights = new uint256[](operators.length);
