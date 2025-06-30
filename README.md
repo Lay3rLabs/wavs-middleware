@@ -46,7 +46,7 @@ cp docker/env.example docker/.env
 Start anvil in one terminal:
 
 ```bash
-source docker/.env
+export RPC_URL=https://ethereum-holesky-rpc.publicnode.com
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
 
@@ -61,15 +61,32 @@ cd docker/
 Deploy:
 
 ```bash
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware deploy
+export METADATA_URI=https://wavs.xyz/metadata.json
+export FUNDED_KEY=
+export LST_STRATEGY_ADDRESS=0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e FUNDED_KEY=${FUNDED_KEY} \
+   -e METADATA_URI=${METADATA_URI} \
+   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   wavs-middleware deploy
 ```
 
 Set Service URI:
 
 ```bash
-SERVICE_URI="https://ipfs.url/for-custom-service.json"
+export SERVICE_URI="https://ipfs.url/for-custom-service.json"
 
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware set_service_uri "$SERVICE_URI"
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e SERVICE_URI=${SERVICE_URI} \
+   wavs-middleware set_service_uri
 ```
 
 Register:
@@ -81,6 +98,8 @@ OPERATOR_ADDRESS=$(cast wallet addr --private-key "$OPERATOR_KEY")
 echo "Operator address: $OPERATOR_ADDRESS"
 
 export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+export LST_CONTRACT_ADDRESS=0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034
+export WAVS_DELEGATE_AMOUNT=1000000000000000
 
 # Generate or use an existing AVS signing key address
 # Option 1: Generate a new AVS signing key
@@ -92,16 +111,27 @@ echo "AVS signing address: $AVS_SIGNING_ADDRESS"
 # AVS_SIGNING_ADDRESS="0x..." # Address of the key that will sign for the AVS
 
 # Register the operator using the operator key and AVS signing address
-docker run --rm --network host --env-file .env \
+docker run --rm --network host \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
+   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware register "$OPERATOR_KEY" "$AVS_SIGNING_ADDRESS" "1000000000000000"
+   -e OPERATOR_KEY=${OPERATOR_KEY} \
+   -e WAVS_SIGNING_KEY=${AVS_SIGNING_ADDRESS} \
+   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
+   wavs-middleware register
 ```
 
 List Operators:
 
 ```bash
 # View stake registry status, including registered operators and their weights
-docker run --rm --network host  --env-file .env \
+docker run --rm --network host \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    wavs-middleware list_operators
 ```
@@ -109,23 +139,37 @@ docker run --rm --network host  --env-file .env \
 Update Quorum:
 
 ```bash
-export STRATEGIES_CONFIG_PATH=$(pwd)/strategies-config.json
+export QUORUM_NUMERATOR=3
+export QUORUM_DENOMINATOR=5
 
-docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e QUORUM_NUMERATOR=${QUORUM_NUMERATOR} \
+   -e QUORUM_DENOMINATOR=${QUORUM_DENOMINATOR} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware update_quorum 3 5
+   wavs-middleware update_quorum
 ```
 
 Pause Registration:
 
 ```bash
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware pause
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   wavs-middleware pause
 ```
 
 Unpause Registration:
 
 ```bash
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes wavs-middleware unpause
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   wavs-middleware unpause
 ```
 
 Delegation to Operator:
@@ -136,21 +180,33 @@ STAKER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 STAKER_ADDRESS=$(cast wallet addr --private-key "$STAKER_KEY")
 echo "Staker address: $STAKER_ADDRESS"
 
-docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
+   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e STAKER_KEY=${STAKER_KEY} \
    -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware delegate_to_operator "1000000000000000"
+   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
+   wavs-middleware delegate_to_operator
 
 # Only required when approver address is not 0
 DELEGATION_APPROVER_PRIVATE_KEY=
 DELEGATION_APPROVER_SALT=
 DELEGATION_DURATION=
 
-docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
+   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e STAKER_KEY=${STAKER_KEY} \
    -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
    -e DELEGATION_APPROVER_PRIVATE_KEY=${DELEGATION_APPROVER_PRIVATE_KEY} \
    -e DELEGATION_APPROVER_SALT=${DELEGATION_APPROVER_SALT} \
    -e DELEGATION_DURATION=${DELEGATION_DURATION} \
@@ -168,13 +224,9 @@ anvil --host 0.0.0.0 --port 8546
 Deploy mirror contracts to match first anvil
 
 ```bash
-export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
-
-export SOURCE_RPC_URL=http://localhost:8545
-export MIRROR_RPC_URL=http://localhost:8546
-
 # Register the operator using the operator key and AVS signing address
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e SOURCE_RPC_URL=${SOURCE_RPC_URL} \
    -e MIRROR_RPC_URL=${MIRROR_RPC_URL} \
@@ -184,15 +236,13 @@ docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
 List Mirror Operators:
 
 ```bash
-source .env
+MIRROR_CHAIN_ID=$(cast chain-id --rpc-url http://localhost:8546)
 export SOURCE_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ".nodes/avs_deploy.json")
 export MIRROR_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ".nodes/mirror-$MIRROR_CHAIN_ID.json")
 
-export SOURCE_RPC_URL=http://localhost:8545
-export MIRROR_RPC_URL=http://localhost:8546
-
 # View stake registry status, including registered operators and their weights
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
    -e SOURCE_SERVICE_MANAGER_ADDRESS=${SOURCE_SERVICE_MANAGER_ADDRESS} \
    -e MIRROR_SERVICE_MANAGER_ADDRESS=${MIRROR_SERVICE_MANAGER_ADDRESS} \
    -e SOURCE_RPC_URL=${SOURCE_RPC_URL} \
@@ -243,16 +293,14 @@ anvil --host 0.0.0.0 --port 8546
 # Set the path to your local config file
 export LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
 
-# Set the RPC URL for the local blockchain
-export MOCK_RPC_URL=http://localhost:8546
-
 # Generate a new private key for the staker (needs ETH for transactions)
 MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 MOCK_DEPLOYER_ADDRESS=$(cast wallet addr --private-key "$MOCK_DEPLOYER_KEY")
 echo "Mock deployer address: $MOCK_DEPLOYER_ADDRESS"
 
-docker run --rm --network host --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host -v ./.nodes:/root/.nodes \
    -v $LOCAL_CONFIG_PATH:/wavs/contracts/deployments/wavs-mock-config.json \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
    -e MOCK_DEPLOYER_KEY=${MOCK_DEPLOYER_KEY} \
    -e MOCK_RPC_URL=${MOCK_RPC_URL} \
    wavs-middleware -m mock deploy
