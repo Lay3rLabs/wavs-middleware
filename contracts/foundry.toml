@@ -21,17 +21,6 @@ remappings = [
     "forge-std/=lib/forge-std/src/",
 ]
 
-[rpc_endpoints]
-mainnet = "${MAINNET_RPC_URL}"
-holesky = "${HOLESKY_RPC_URL}"
-sepolia = "${SEPOLIA_RPC_URL}"
-anvil = "${ANVIL_RPC_URL}"
-
-[etherscan]
-mainnet = { key = "${ETHERSCAN_API_KEY}" }
-sepolia = { key = "${ETHERSCAN_API_KEY}" }
-holesky = { key = "${ETHERSCAN_API_KEY}" }
-
 [fmt]
 line_length = 100
 multiline_func_header = "params_first"

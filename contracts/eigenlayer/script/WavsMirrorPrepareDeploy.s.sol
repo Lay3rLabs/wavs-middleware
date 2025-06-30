@@ -11,7 +11,6 @@ import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 contract WavsMirrorPrepareDeploy is Script, IECDSAStakeRegistryTypes {
     using UpgradeableProxyLib for address;
 
-    string public constant ENV_CONFIG_FILE = "WAVS_MIRROR_CONFIG";
     string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
 
     string private configFile;
@@ -19,7 +18,7 @@ contract WavsMirrorPrepareDeploy is Script, IECDSAStakeRegistryTypes {
 
     function setUp() public virtual {
         // read env vars
-        configFile = vm.envString(ENV_CONFIG_FILE);
+        configFile = "./deployments/wavs-mirror-config.json";
         serviceManagerAddress = vm.envAddress(ENV_SERVICE_MANAGER);
     }
 

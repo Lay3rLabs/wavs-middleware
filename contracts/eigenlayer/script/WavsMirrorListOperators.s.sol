@@ -64,9 +64,11 @@ contract WavsMirrorListOperators is Script {
         // Get operator information
         OperatorInfo memory opInfo =
             listOperators(sourceServiceManagerAddr, mirrorServiceManagerAddr);
+        uint256 quorumNumerator = WavsServiceManager(mirrorServiceManagerAddr).quorumNumerator();
+        uint256 quorumDenominator = WavsServiceManager(mirrorServiceManagerAddr).quorumDenominator();
 
         // Display results
-        displayResults(opInfo);
+        displayResults(opInfo, quorumNumerator, quorumDenominator);
     }
 
     /// @notice Internal function to fetch operator information from both chains
@@ -130,7 +132,9 @@ contract WavsMirrorListOperators is Script {
     /// @notice Internal function to display the results in a formatted way
     /// @param opInfo The operator information to display
     function displayResults(
-        OperatorInfo memory opInfo
+        OperatorInfo memory opInfo,
+        uint256 quorumNumerator,
+        uint256 quorumDenominator
     ) internal view {
         console.log("=== List Operators ===");
         console.log("Source Service Manager Address:", sourceServiceManagerAddr);
@@ -159,6 +163,13 @@ contract WavsMirrorListOperators is Script {
             string memory weight = string.concat("= ", Strings.toString(opInfo.weights[i]));
             console.log(op, sign, weight);
         }
+
+        console.log(" "); // Blank line for separation
+        console.log("=== Mirror Service Manager Quorum Information ===");
+        string memory quorum = string.concat(
+            "Quorum: ", Strings.toString(quorumNumerator), "/", Strings.toString(quorumDenominator)
+        );
+        console.log(quorum);
     }
 
     function writeOperatorListJson(uint256 chainId, OperatorInfo memory opInfo) internal {
