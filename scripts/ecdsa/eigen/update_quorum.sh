@@ -32,8 +32,11 @@ echo "Deployer address: $deployer_address"
 # Ensure deployer has sufficient balance
 ensure_balance "$deployer_address"
 
-echo "Updating quorum configuration..."
-cd contracts && forge script eigenlayer/script/WavsUpdateQuorum.s.sol -vvv --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $deployer_private_key --broadcast \
-  || error_exit "Failed to run WavsUpdateQuorum"
+echo "WAVS_SERVICE_MANAGER_ADDRESS: $WAVS_SERVICE_MANAGER_ADDRESS"
+echo "Updating quorum configuration to $QUORUM_NUMERATOR/$QUORUM_DENOMINATOR..."
+
+# Update quorum configuration
+cd contracts || handle_error "Failed to change to contracts directory"
+forge script eigenlayer/script/WavsUpdateQuorum.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$deployer_private_key" --broadcast || handle_error "Failed to update quorum configuration"
 
 echo "Quorum configuration updated successfully"
