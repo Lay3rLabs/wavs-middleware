@@ -3,20 +3,26 @@
 # -x echos all lines for debug
 # set -x
 
-export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
-
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
-if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-    LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
-else
-    LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
-fi
+SCRIPT_DIR="$(realpath "$(dirname "$0")")"
+# shellcheck source=../../helper.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../../helper.sh"
 
-if [ -z "$WAVS_SERVICE_MANAGER_ADDRESS" ]; then
-    echo "Error: WAVS_SERVICE_MANAGER_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
-    exit 1
-fi
+# Parse command line arguments in key=value format
+parse_args "$@"
 
-cd contracts && forge script eigenlayer/script/WavsListOperators.s.sol -vvv --rpc-url $LOCAL_ETHEREUM_RPC_URL --broadcast
+# Check required parameters with defaults
+check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
+check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json")}"
+
+# Set up environment based on DEPLOY_ENV
+setup_environment
+
+echo "Listing operators for service manager: $WAVS_SERVICE_MANAGER_ADDRESS"
+
+# List operators
+cd contracts || handle_error "Failed to change to contracts directory"
+forge script eigenlayer/script/WavsListOperators.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --broadcast || handle_error "Failed to list operators"
