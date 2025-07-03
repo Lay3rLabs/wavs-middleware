@@ -1,7 +1,7 @@
 [profile.default]
-src = "eigenlayer/src"
-test = "eigenlayer/test"
-script = "eigenlayer/script"
+src = "src"
+test = "test"
+script = "script"
 out = "out"
 libs = ["lib"]
 fs_permissions = [{ access = "read-write", path = "./" }, { access = "read", path = "/root/.nodes" }]

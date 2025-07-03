@@ -47,7 +47,7 @@ echo "Deploying contracts"
 cd contracts || handle_error "Failed to change to contracts directory"
 ensure_dir deployments/wavs-mock/
 
-forge script eigenlayer/script/WavsMockDeployer.s.sol --rpc-url "$MOCK_RPC_URL" --private-key "$MOCK_DEPLOYER_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMockDeployer"
+forge script script/eigenlayer/ecdsa/WavsMockDeployer.s.sol --rpc-url "$MOCK_RPC_URL" --private-key "$MOCK_DEPLOYER_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMockDeployer"
 
 echo "Mock contracts deployed with addresses:"
 cat "deployments/wavs-mock/$MOCK_CHAIN_ID.json" | jq .addresses

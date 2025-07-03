@@ -32,6 +32,6 @@ echo "Pausing WAVS registration..."
 
 # Pause registration
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script eigenlayer/script/PauseWavsRegistration.s.sol --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$deployer_private_key" --broadcast || handle_error "Failed to pause WAVS registration"
+forge script script/eigenlayer/ecdsa/PauseWavsRegistration.s.sol --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$deployer_private_key" --broadcast || handle_error "Failed to pause WAVS registration"
 
 echo "WAVS registration paused successfully"

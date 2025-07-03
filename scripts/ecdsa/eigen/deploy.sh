@@ -47,7 +47,7 @@ ensure_balance "$deployer_address"
 echo "Deployer address: $deployer_address configured for $DEPLOY_ENV environment"
 
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script eigenlayer/script/WavsMiddlewareDeployer.s.sol --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$FUNDED_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMiddlewareDeployer"
+forge script script/eigenlayer/ecdsa/WavsMiddlewareDeployer.s.sol --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$FUNDED_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMiddlewareDeployer"
 
 echo "Middleware contracts deployed with addresses:"
 cat deployments/wavs-middleware/$CHAIN_ID.json | jq .addresses
