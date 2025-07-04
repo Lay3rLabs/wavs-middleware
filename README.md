@@ -175,7 +175,7 @@ docker run --rm --network host \
    wavs-middleware list_operators
 
 # BLS list operators
-docker run --rm --network host -v ./.nodes:/root/.nodes \
+docker run --rm --network host \
    -e DEPLOY_ENV=${DEPLOY_ENV} \
    -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
    -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
