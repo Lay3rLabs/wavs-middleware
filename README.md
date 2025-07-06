@@ -140,6 +140,26 @@ docker run --rm --network host \
    -e OPERATOR_KEY=${OPERATOR_KEY} \
    -e WAVS_SIGNING_KEY=${AVS_SIGNING_ADDRESS} \
    wavs-middleware register WAVS_DELEGATE_AMOUNT=1000000000000000
+
+# BLS operator registeration
+LST_CONTRACT_ADDRESS=0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034
+LST_STRATEGY_ADDRESS=0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3
+WAVS_DELEGATE_AMOUNT=1000000000000000000
+WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+OPERATOR_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+OPERATOR_ADDRESS=$(cast wallet addr --private-key "$OPERATOR_KEY")
+echo "Operator address: $OPERATOR_ADDRESS"
+
+docker run --rm --network host \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
+   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e OPERATOR_KEY=${OPERATOR_KEY} \
+   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
+   wavs-middleware -s bls register
 ```
 
 List Operators:
@@ -155,7 +175,7 @@ docker run --rm --network host \
    wavs-middleware list_operators
 
 # BLS list operators
-docker run --rm --network host \
+docker run --rm --network host -v ./.nodes:/root/.nodes \
    -e DEPLOY_ENV=${DEPLOY_ENV} \
    -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
    -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \

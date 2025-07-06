@@ -138,7 +138,7 @@ ensure_balance() {
 
     while [ "$balance" = "0" ]; do
         if [ "${DEPLOY_ENV:-}" = "LOCAL" ]; then
-            cast rpc anvil_setBalance "$address" 0x10000000000000000000 -r "$rpc_url" > /dev/null 2>&1 || \
+            cast rpc anvil_setBalance "$address" 0x10000000000000000000000 -r "$rpc_url" > /dev/null 2>&1 || \
                 handle_error "Failed to set balance for $address"
         else
             echo "Waiting for $address to have a balance. Current: $balance..."

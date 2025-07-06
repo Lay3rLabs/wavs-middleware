@@ -33,7 +33,7 @@ library BLSKeyGenerator {
         // Generate G2 public key: P' = G2 * privateKey using BN254 precompile
         (uint256 g2x0, uint256 g2x1, uint256 g2y0, uint256 g2y1) =
             BN256G2.ECTwistMul(privateKey, BN254.G2x0, BN254.G2x1, BN254.G2y0, BN254.G2y1);
-        BN254.G2Point memory pubkeyG2 = BN254.G2Point({X: [g2x0, g2x1], Y: [g2y0, g2y1]});
+        BN254.G2Point memory pubkeyG2 = BN254.G2Point({X: [g2x1, g2x0], Y: [g2y1, g2y0]});
 
         // Generate BLS signature: sigma = H(m) * privateKey
         // The pubkeyRegistrationMessageHash is already the hashed message as a G1Point
