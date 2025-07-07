@@ -182,8 +182,7 @@ docker run --rm --network host \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e STAKER_KEY=${STAKER_KEY} \
    -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
-   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
-   wavs-middleware delegate_to_operator
+   wavs-middleware delegate_to_operator WAVS_DELEGATE_AMOUNT=1000000000000000
 
 # Only required when approver address is not 0
 DELEGATION_APPROVER_PRIVATE_KEY=
@@ -199,11 +198,10 @@ docker run --rm --network host \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e STAKER_KEY=${STAKER_KEY} \
    -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
-   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
    -e DELEGATION_APPROVER_PRIVATE_KEY=${DELEGATION_APPROVER_PRIVATE_KEY} \
    -e DELEGATION_APPROVER_SALT=${DELEGATION_APPROVER_SALT} \
    -e DELEGATION_DURATION=${DELEGATION_DURATION} \
-   wavs-middleware delegate_to_operator
+   wavs-middleware delegate_to_operator WAVS_DELEGATE_AMOUNT=1000000000000000
 ```
 
 ## Deploying Mirror
