@@ -99,7 +99,6 @@ echo "Operator address: $OPERATOR_ADDRESS"
 
 export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
 export LST_CONTRACT_ADDRESS=0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034
-export WAVS_DELEGATE_AMOUNT=1000000000000000
 
 # Generate or use an existing AVS signing key address
 # Option 1: Generate a new AVS signing key
@@ -120,8 +119,7 @@ docker run --rm --network host \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e OPERATOR_KEY=${OPERATOR_KEY} \
    -e WAVS_SIGNING_KEY=${AVS_SIGNING_ADDRESS} \
-   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
-   wavs-middleware register
+   wavs-middleware register WAVS_DELEGATE_AMOUNT=1000000000000000
 ```
 
 List Operators:
@@ -139,17 +137,12 @@ docker run --rm --network host \
 Update Quorum:
 
 ```bash
-export QUORUM_NUMERATOR=3
-export QUORUM_DENOMINATOR=5
-
 docker run --rm --network host -v ./.nodes:/root/.nodes \
    -e DEPLOY_ENV=${DEPLOY_ENV} \
    -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
    -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e QUORUM_NUMERATOR=${QUORUM_NUMERATOR} \
-   -e QUORUM_DENOMINATOR=${QUORUM_DENOMINATOR} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware update_quorum
+   wavs-middleware update_quorum QUORUM_NUMERATOR=3 QUORUM_DENOMINATOR=5
 ```
 
 Pause Registration:

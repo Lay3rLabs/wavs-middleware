@@ -18,10 +18,11 @@ parse_args "$@"
 check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
 check_param "LST_CONTRACT_ADDRESS" "${LST_CONTRACT_ADDRESS:-}"
 check_param "LST_STRATEGY_ADDRESS" "${LST_STRATEGY_ADDRESS:-}"
-check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json")}"
+DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SERVICE_MANAGER}"
 check_param "OPERATOR_KEY" "${OPERATOR_KEY:-}"
 check_param "WAVS_SIGNING_KEY" "${WAVS_SIGNING_KEY:-}"
-check_param "WAVS_DELEGATE_AMOUNT" "${WAVS_DELEGATE_AMOUNT:-}"
+check_param "WAVS_DELEGATE_AMOUNT" "${WAVS_DELEGATE_AMOUNT:-$1}"
 
 # Set up environment based on DEPLOY_ENV
 setup_environment
@@ -33,8 +34,6 @@ OP_ADDR=$(cast wallet address "$OPERATOR_KEY")
 ensure_balance "$OP_ADDR"
 
 echo "Operator address: $OP_ADDR"
-echo "AVS signing key: $WAVS_SIGNING_KEY"
-echo "Delegate amount: $WAVS_DELEGATE_AMOUNT"
 
 # Register operator
 cd contracts || handle_error "Failed to change to contracts directory"

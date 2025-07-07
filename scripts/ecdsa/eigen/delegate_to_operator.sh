@@ -26,7 +26,8 @@ check_param "OPERATOR_ADDRESS" "${OPERATOR_ADDRESS:-}"
 check_param "LST_CONTRACT_ADDRESS" "${LST_CONTRACT_ADDRESS:-}"
 check_param "LST_STRATEGY_ADDRESS" "${LST_STRATEGY_ADDRESS:-}"
 check_param "WAVS_DELEGATE_AMOUNT" "${WAVS_DELEGATE_AMOUNT:-}"
-check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json")}"
+DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SERVICE_MANAGER}"
 
 # Optional parameters with defaults
 check_param "DELEGATION_APPROVER_PRIVATE_KEY" "${DELEGATION_APPROVER_PRIVATE_KEY:-0x0000000000000000000000000000000000000000000000000000000000000000}"
@@ -35,11 +36,6 @@ check_param "DELEGATION_DURATION" "${DELEGATION_DURATION:-0}"
 
 # Create necessary directories and save staker key
 staker_address=$(cast wallet address "$STAKER_KEY")
-
-echo "WAVS_SERVICE_MANAGER_ADDRESS: $WAVS_SERVICE_MANAGER_ADDRESS"
-echo "OPERATOR_ADDRESS: $OPERATOR_ADDRESS"
-echo "LST_CONTRACT_ADDRESS: $LST_CONTRACT_ADDRESS"
-echo "LST_STRATEGY_ADDRESS: $LST_STRATEGY_ADDRESS"
 echo "Staker address: $staker_address"
 
 # Ensure staker has sufficient balance

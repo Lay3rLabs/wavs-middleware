@@ -184,30 +184,3 @@ load_deployment_data() {
         handle_error "Deployment file $filename not found"
     fi
 }
-
-# Display usage information
-# Usage: show_usage "script_name" "description" "usage_example"
-show_usage() {
-    local script_name="$1"
-    local description="$2"
-    local usage_example="$3"
-    
-    echo "Usage: $script_name"
-    echo "Description: $description"
-    echo "Example: $usage_example"
-    echo ""
-    echo "Environment variables (secrets):"
-    echo "  FUNDED_KEY - Private key for deployment"
-    echo "  METADATA_URI - Metadata URI for deployment"
-    echo "  TESTNET_RPC_URL - RPC URL for testnet (if DEPLOY_ENV=TESTNET)"
-    echo ""
-    echo "Command line parameters (key=value format):"
-    echo "  DEPLOY_ENV=LOCAL|TESTNET - Deployment environment"
-    echo "  CHAIN_ID=17000 - Chain ID for deployment"
-    echo "  LST_STRATEGY_ADDRESS=0x... - LST strategy contract address"
-    echo "  LST_CONTRACT_ADDRESS=0x... - LST contract address"
-    echo "  WAVS_SERVICE_MANAGER_ADDRESS=0x... - WAVS service manager address"
-    echo ""
-    echo "Parameters can be provided in any order and can override environment variables."
-    exit 1
-} 

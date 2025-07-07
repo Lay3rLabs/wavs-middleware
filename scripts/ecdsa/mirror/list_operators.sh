@@ -32,8 +32,10 @@ export MIRROR_CHAIN_ID
 echo "Mirror Chain ID: $MIRROR_CHAIN_ID"
 
 # Get service manager addresses from environment variables or files
-check_param "SOURCE_SERVICE_MANAGER_ADDRESS" "${SOURCE_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json")}"
-check_param "MIRROR_SERVICE_MANAGER_ADDRESS" "${MIRROR_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/mirror-$MIRROR_CHAIN_ID.json")}"
+DEFAULT_SOURCE_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+check_param "SOURCE_SERVICE_MANAGER_ADDRESS" "${SOURCE_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SOURCE_SERVICE_MANAGER}"
+DEFAULT_MIRROR_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/mirror-$MIRROR_CHAIN_ID.json" || true)
+check_param "MIRROR_SERVICE_MANAGER_ADDRESS" "${MIRROR_SERVICE_MANAGER_ADDRESS:-$DEFAULT_MIRROR_SERVICE_MANAGER}"
 
 # Change to contracts directory and run the script
 cd contracts || handle_error "Failed to change to contracts directory"
