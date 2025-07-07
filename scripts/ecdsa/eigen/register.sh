@@ -6,51 +6,35 @@
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
-export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
+SCRIPT_DIR="$(realpath "$(dirname "$0")")"
+# shellcheck source=../../helper.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../../helper.sh"
 
-if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-    LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
-else
-    LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
-fi
+# Parse command line arguments in key=value format
+parse_args "$@"
 
+# Check required parameters with defaults
+check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
+check_param "LST_CONTRACT_ADDRESS" "${LST_CONTRACT_ADDRESS:-}"
+check_param "LST_STRATEGY_ADDRESS" "${LST_STRATEGY_ADDRESS:-}"
+DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SERVICE_MANAGER}"
+check_param "OPERATOR_KEY" "${OPERATOR_KEY:-}"
+check_param "WAVS_SIGNING_KEY" "${WAVS_SIGNING_KEY:-}"
+check_param "WAVS_DELEGATE_AMOUNT" "${WAVS_DELEGATE_AMOUNT:-$1}"
 
-# Env Vars
-if [ -z "$LST_CONTRACT_ADDRESS" ]; then
-    echo "Error: LST_CONTRACT_ADDRESS is not set in the environment variables."
-    exit 1
-fi
-if [ -z "$LST_STRATEGY_ADDRESS" ]; then
-    echo "Error: LST_STRATEGY_ADDRESS is not set in the environment variables."
-    exit 1
-fi
+# Set up environment based on DEPLOY_ENV
+setup_environment
 
-if [ -z "$WAVS_SERVICE_MANAGER_ADDRESS" ]; then
-    echo "Error: WAVS_SERVICE_MANAGER_ADDRESS is not set in the environment variables (tip: grab from .nodes/avs_deploy.json)."
-    exit 1
-fi
+# Get operator address
+OP_ADDR=$(cast wallet address "$OPERATOR_KEY")
 
-# CLI Args
-if [ -z "$1" ]; then
-    echo "Error: Pass operator private key as first arg"
-    exit 1
-fi
-OP_KEY="$1"
-if [ -z "$2" ]; then
-    echo "Error: Pass AVS signing key address as second arg"
-    exit 1
-fi
-export WAVS_SIGNING_KEY="$2"
-if [ -z "$3" ]; then
-    echo "Error: Pass amount to deposit as third arg (0.01ether for example)"
-    exit 1
-fi
-export WAVS_DELEGATE_AMOUNT="$3"
+# Ensure operator has sufficient balance
+ensure_balance "$OP_ADDR"
 
-OP_ADDR=$(cast wallet address "$OP_KEY")
-if [ "$DEPLOY_ENV" = "LOCAL" ]; then
-    cast rpc anvil_setBalance $OP_ADDR 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || (echo "Error: Failed to set balance for operator" && exit 1)
-fi
+echo "Operator address: $OP_ADDR"
 
-cd contracts && forge script eigenlayer/script/WavsRegisterOperator.s.sol -vvv --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $OP_KEY --broadcast \
-  || (echo "Error: Failed to run WavsRegisterOperator" && exit 1)
+# Register operator
+cd contracts || handle_error "Failed to change to contracts directory"
+forge script eigenlayer/script/WavsRegisterOperator.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$OPERATOR_KEY" --broadcast || handle_error "Failed to register operator"

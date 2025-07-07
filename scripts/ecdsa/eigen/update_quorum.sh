@@ -6,50 +6,31 @@
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
-export FOUNDRY_DISABLE_NIGHTLY_WARNING=1
-
-# Function to display error message and exit
-error_exit() {
-    echo "Error: $1" >&2
-    exit 1
-}
-
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"
-# shellcheck source=./helpers.sh
+# shellcheck source=../../helper.sh
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR"/helpers.sh
+source "$SCRIPT_DIR/../../helper.sh"
+
+# Parse command line arguments in key=value format
+parse_args "$@"
+
+# Check required parameters with defaults
+check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
+DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SERVICE_MANAGER}"
+check_param "QUORUM_NUMERATOR" "${QUORUM_NUMERATOR:-$1}"
+check_param "QUORUM_DENOMINATOR" "${QUORUM_DENOMINATOR:-$2}"
+
+# Set up environment based on DEPLOY_ENV
+setup_environment
 
 # Read the deployer private key from file
-if [ -f "$HOME/.nodes/deployer" ]; then
-    deployer_private_key=$(cat "$HOME/.nodes/deployer")
-    echo "Read deployer key from file."
-    deployer_address=$(cast wallet address "$deployer_private_key")
-    echo "Deployer address: $deployer_address"
-else
-    error_exit "Deployer key file not found at $HOME/.nodes/deployer"
-fi
+deployer_private_key=$(load_deployment_data "$HOME/.nodes/deployer")
+deployer_address=$(cast wallet address "$deployer_private_key")
+echo "Deployer address: $deployer_address"
 
-if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-    LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
-    if [ -z "$LOCAL_ETHEREUM_RPC_URL" ]; then
-        error_exit "TESTNET_RPC_URL environment variable is not set"
-    fi
-else
-    LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
-    wait_for_ethereum
-    cast rpc anvil_setBalance $deployer_address 0x10000000000000000000 -r $LOCAL_ETHEREUM_RPC_URL > /dev/null 2>&1 || error_exit "Failed to set balance for deployer"
-fi
-
-# Get service manager address from environment variables or files
-WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "/root/.nodes/avs_deploy.json")}
-if [ -z "${WAVS_SERVICE_MANAGER_ADDRESS:-}" ]; then
-    error_exit "WAVS_SERVICE_MANAGER_ADDRESS is not set in environment variables or found in .nodes/avs_deploy.json"
-fi
-export WAVS_SERVICE_MANAGER_ADDRESS
-echo "WAVS_SERVICE_MANAGER_ADDRESS: $WAVS_SERVICE_MANAGER_ADDRESS"
-
-export QUORUM_NUMERATOR=${1}
-export QUORUM_DENOMINATOR=${2}
+# Ensure deployer has sufficient balance
+ensure_balance "$deployer_address"
 
 echo "Updating quorum configuration..."
 cd contracts && forge script eigenlayer/script/WavsUpdateQuorum.s.sol -vvv --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $deployer_private_key --broadcast \

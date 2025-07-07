@@ -6,21 +6,32 @@
 set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
-if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-    LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
-else
-    LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
-fi
+SCRIPT_DIR="$(realpath "$(dirname "$0")")"
+# shellcheck source=../../helper.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../../helper.sh"
 
-# TODO: this should work outside docker as well - $HOME/.nodes/deployer ?
-# We can also pass in AVS_DEPLOY_FILE for avs_deploy.json path
-if [ -f "/root/.nodes/deployer" ]; then
-    DEPLOYER_KEY=$(cat "/root/.nodes/deployer")
-else
-    echo "Error: /root/.nodes/deployer file must exist"
-    exit 1
-fi
+# Parse command line arguments in key=value format
+parse_args "$@"
 
+# Check required parameters with defaults
+check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
 
-cd contracts
-forge script eigenlayer/script/PauseWavsRegistration.s.sol --rpc-url $LOCAL_ETHEREUM_RPC_URL --private-key $DEPLOYER_KEY --broadcast
+# Set up environment based on DEPLOY_ENV
+setup_environment
+
+# Read the deployer private key from file
+deployer_private_key=$(load_deployment_data "$HOME/.nodes/deployer")
+deployer_address=$(cast wallet address "$deployer_private_key")
+echo "Deployer address: $deployer_address"
+
+# Ensure deployer has sufficient balance
+ensure_balance "$deployer_address"
+
+echo "Pausing WAVS registration..."
+
+# Pause registration
+cd contracts || handle_error "Failed to change to contracts directory"
+forge script eigenlayer/script/PauseWavsRegistration.s.sol --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$deployer_private_key" --broadcast || handle_error "Failed to pause WAVS registration"
+
+echo "WAVS registration paused successfully"

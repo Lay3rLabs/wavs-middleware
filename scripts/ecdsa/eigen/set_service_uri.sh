@@ -7,31 +7,26 @@ set -o errexit -o nounset -o pipefail
 command -v shellcheck >/dev/null && shellcheck "$0"
 
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"
-# shellcheck source=./helpers.sh
+# shellcheck source=../../helper.sh
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR"/helpers.sh
+source "$SCRIPT_DIR/../../helper.sh"
 
-if [ -z "$DEPLOY_ENV" ]; then
-    echo "Error: DEPLOY_ENV environment variable is not set"
-    exit 1
-fi
+# Parse command line arguments in key=value format
+parse_args "$@"
 
-if [ "$DEPLOY_ENV" = "TESTNET" ]; then
-    LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
-else
-    LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}
-fi
+# Check required parameters with defaults
+check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
+check_param "SERVICE_URI" "${SERVICE_URI:-}"
+DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SERVICE_MANAGER}"
+
+# Set up environment based on DEPLOY_ENV
+setup_environment
 
 # Read the deployer private key from file
-if [ -f "$HOME/.nodes/deployer" ]; then
-    deployer_private_key=$(cat "$HOME/.nodes/deployer")
-    echo "Read deployer key from file."
-    deployer_address=$(cast wallet address "$deployer_private_key")
-    echo "Deployer address: $deployer_address"
-else
-    echo "Error: Deployer key file not found at $HOME/.nodes/deployer"
-    exit 1
-fi
+deployer_private_key=$(load_deployment_data "$HOME/.nodes/deployer")
+deployer_address=$(cast wallet address "$deployer_private_key")
+echo "Deployer address: $deployer_address"
 
 set_service_uri() {
   local service_manager_address="$1"
@@ -57,12 +52,4 @@ set_service_uri() {
   stop_impersonating "$owner"
 }
 
-if [ -z "$1" ]; then
-    echo "Error: Pass SERVICE_URI as first arg"
-    exit 1
-fi
-SERVICE_URI="$1"
-
-SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' /root/.nodes/avs_deploy.json)
-
-set_service_uri $SERVICE_MANAGER_ADDRESS $SERVICE_URI
+set_service_uri "$WAVS_SERVICE_MANAGER_ADDRESS" "$SERVICE_URI"
