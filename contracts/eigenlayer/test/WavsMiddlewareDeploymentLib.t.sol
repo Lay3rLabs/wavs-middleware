@@ -5,7 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 import {IECDSAStakeRegistryTypes} from
     "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
-import {WavsMiddlewareDeploymentLib} from "../script/utils/WavsMiddlewareDeplomentLib.sol";
+import {WavsMiddlewareDeploymentLib} from "../script/utils/WavsMiddlewareDeploymentLib.sol";
 import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 
 uint256 constant OPERATOR_WEIGHT = 10_000;
