@@ -26,4 +26,4 @@ echo "Listing operators for service manager: $WAVS_SERVICE_MANAGER_ADDRESS"
 
 # List operators
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script eigenlayer/script/WavsListOperators.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --broadcast || handle_error "Failed to list operators"
+forge script script/eigenlayer/ecdsa/WavsListOperators.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --broadcast || handle_error "Failed to list operators"
