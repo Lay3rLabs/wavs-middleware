@@ -8,7 +8,7 @@ fs_permissions = [{ access = "read-write", path = "./" }, { access = "read", pat
 solc = "0.8.27"
 via-ir = true
 optimizer = true
-optimizer_runs = 1000000
+optimizer_runs = 100
  # Higher number optimizes for frequent contract calls, lower number optimizes for deployment cost
 
 
