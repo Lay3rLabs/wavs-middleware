@@ -42,7 +42,7 @@ cp docker/env.example docker/.env
 Start anvil in one terminal:
 
 ```bash
-export RPC_URL=https://ethereum-holesky-rpc.publicnode.com
+RPC_URL=https://ethereum-holesky-rpc.publicnode.com
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
 
@@ -57,9 +57,10 @@ cd docker/
 Deploy:
 
 ```bash
-export METADATA_URI=https://wavs.xyz/metadata.json
-export FUNDED_KEY=
-export LST_STRATEGY_ADDRESS=0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3
+# ecdsa contracts deployment
+FUNDED_KEY=
+METADATA_URI=https://wavs.xyz/metadata.json
+LST_STRATEGY_ADDRESS=0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
    -e DEPLOY_ENV=${DEPLOY_ENV} \
@@ -69,12 +70,24 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    -e METADATA_URI=${METADATA_URI} \
    -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
    wavs-middleware deploy
+
+# bls contracts deployment
+FUNDED_KEY=
+METADATA_URI=https://wavs.xyz/metadata.json
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e FUNDED_KEY=${FUNDED_KEY} \
+   -e METADATA_URI=${METADATA_URI} \
+   wavs-middleware -s bls deploy
 ```
 
 Set Service URI:
 
 ```bash
-export SERVICE_URI="https://ipfs.url/for-custom-service.json"
+SERVICE_URI="https://ipfs.url/for-custom-service.json"
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
    -e DEPLOY_ENV=${DEPLOY_ENV} \
@@ -236,8 +249,8 @@ List Mirror Operators:
 
 ```bash
 MIRROR_CHAIN_ID=$(cast chain-id --rpc-url http://localhost:8546)
-export SOURCE_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ".nodes/avs_deploy.json")
-export MIRROR_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ".nodes/mirror-$MIRROR_CHAIN_ID.json")
+SOURCE_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ".nodes/avs_deploy.json")
+MIRROR_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ".nodes/mirror-$MIRROR_CHAIN_ID.json")
 
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host \
@@ -290,7 +303,7 @@ anvil --host 0.0.0.0 --port 8546
 
 ```bash
 # Set the path to your local config file
-export LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
+LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
 
 # Generate a new private key for the staker (needs ETH for transactions)
 MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
