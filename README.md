@@ -96,11 +96,22 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e SERVICE_URI=${SERVICE_URI} \
    wavs-middleware set_service_uri
+
+SERVICE_URI="https://ipfs.url/for-custom-service.json"
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e SERVICE_URI=${SERVICE_URI} \
+   wavs-middleware -s bls set_service_uri
 ```
 
 Register:
 
 ```bash
+# ECDSA opeartor registration
 # Generate a new private key for the operator (needs ETH for transactions)
 OPERATOR_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 OPERATOR_ADDRESS=$(cast wallet addr --private-key "$OPERATOR_KEY")
@@ -129,6 +140,26 @@ docker run --rm --network host \
    -e OPERATOR_KEY=${OPERATOR_KEY} \
    -e WAVS_SIGNING_KEY=${AVS_SIGNING_ADDRESS} \
    wavs-middleware register WAVS_DELEGATE_AMOUNT=1000000000000000
+
+# BLS operator registeration
+LST_CONTRACT_ADDRESS=0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034
+LST_STRATEGY_ADDRESS=0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3
+WAVS_DELEGATE_AMOUNT=1000000000000000000
+WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+OPERATOR_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+OPERATOR_ADDRESS=$(cast wallet addr --private-key "$OPERATOR_KEY")
+echo "Operator address: $OPERATOR_ADDRESS"
+
+docker run --rm --network host \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
+   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e OPERATOR_KEY=${OPERATOR_KEY} \
+   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
+   wavs-middleware -s bls register
 ```
 
 Deregister:
@@ -146,6 +177,7 @@ docker run --rm --network host \
 List Operators:
 
 ```bash
+# ECDSA list operators
 # View stake registry status, including registered operators and their weights
 docker run --rm --network host \
    -e DEPLOY_ENV=${DEPLOY_ENV} \
@@ -153,6 +185,14 @@ docker run --rm --network host \
    -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    wavs-middleware list_operators
+
+# BLS list operators
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   wavs-middleware -s bls list_operators
 ```
 
 Update Quorum:

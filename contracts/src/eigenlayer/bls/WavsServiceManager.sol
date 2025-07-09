@@ -88,4 +88,16 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
         _avsDirectory.updateAVSMetadataURI(_metadataURI);
         _allocationManager.updateAVSMetadataURI(address(this), _metadataURI);
     }
+
+    function getRegistryCoordinator() external view returns (address) {
+        return address(_registryCoordinator);
+    }
+
+    function getAllocationManager() external view returns (address) {
+        return address(_allocationManager);
+    }
+
+    function getStakeRegistry() external view returns (address) {
+        return address(_stakeRegistry);
+    }
 }

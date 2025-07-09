@@ -297,9 +297,9 @@ library WavsMiddlewareDeploymentLib {
         return string.concat(
             "{\"proxyAdmin\":\"",
             proxyAdmin.toHexString(),
-            "\",\"wavsServiceManager\":\"",
+            "\",\"WavsServiceManager\":\"",
             data.wavsServiceManager.toHexString(),
-            "\",\"wavsServiceManagerImpl\":\"",
+            "\",\"WavsServiceManagerImpl\":\"",
             data.wavsServiceManager.getImplementation().toHexString(),
             "\",\"stakeRegistry\":\"",
             data.stakeRegistry.toHexString(),
