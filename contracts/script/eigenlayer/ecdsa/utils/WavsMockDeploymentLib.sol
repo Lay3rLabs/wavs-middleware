@@ -23,7 +23,7 @@ library WavsMockDeploymentLib {
     struct InitialConfiguration {
         // original operators
         address[] operators;
-        address[] signingKeys;
+        address[] signingKeyAddresses;
         uint256[] weights;
         // stake registry threshold
         uint256 thresholdWeight;
@@ -121,7 +121,7 @@ library WavsMockDeploymentLib {
         // TODO: fails here on broadcast, no error message. removing as unused in README.md
         // stakeRegistry.updateStakeThreshold(configuration.thresholdWeight);
         stakeRegistry.batchSetOperatorDetails(
-            configuration.operators, configuration.signingKeys, configuration.weights
+            configuration.operators, configuration.signingKeyAddresses, configuration.weights
         );
         serviceManager.setQuorumThreshold(
             configuration.quorumNumerator, configuration.quorumDenominator
@@ -140,9 +140,10 @@ library WavsMockDeploymentLib {
         // parse it
         WavsMockDeploymentLib.InitialConfiguration memory cfg;
         cfg.operators = abi.decode(VM.parseJson(json, ".operators"), (address[]));
-        cfg.signingKeys = abi.decode(VM.parseJson(json, ".signingKeys"), (address[]));
+        cfg.signingKeyAddresses =
+            abi.decode(VM.parseJson(json, ".signingKeyAddresses"), (address[]));
         cfg.weights = abi.decode(VM.parseJson(json, ".weights"), (uint256[]));
-        if (cfg.operators.length != cfg.signingKeys.length) {
+        if (cfg.operators.length != cfg.signingKeyAddresses.length) {
             revert WavsMockDeploymentLib__OperatorsAndSigningKeysLengthMismatch();
         }
         if (cfg.operators.length != cfg.weights.length) {

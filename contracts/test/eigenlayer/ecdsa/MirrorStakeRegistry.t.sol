@@ -24,9 +24,9 @@ contract MirrorStakeRegistryTest is Test {
     address public operator1;
     address public operator2;
     address public operator3;
-    address public signingKey1;
-    address public signingKey2;
-    address public signingKey3;
+    address public signingKeyAddress1;
+    address public signingKeyAddress2;
+    address public signingKeyAddress3;
     uint256 public privateKey1;
     uint256 public privateKey2;
     uint256 public privateKey3;
@@ -44,9 +44,9 @@ contract MirrorStakeRegistryTest is Test {
         privateKey1 = 0x11;
         privateKey2 = 0x22;
         privateKey3 = 0x33;
-        signingKey1 = vm.addr(privateKey1);
-        signingKey2 = vm.addr(privateKey2);
-        signingKey3 = vm.addr(privateKey3);
+        signingKeyAddress1 = vm.addr(privateKey1);
+        signingKeyAddress2 = vm.addr(privateKey2);
+        signingKeyAddress3 = vm.addr(privateKey3);
         serviceManager = address(0x456);
 
         // Deploy the MirrorStakeRegistry contract
@@ -93,7 +93,7 @@ contract MirrorStakeRegistryTest is Test {
         // Test registerOperatorWithSignature reverts
         ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry memory sig;
         vm.expectRevert(MirrorStakeRegistry.RegistrationNotSupported.selector);
-        registry.registerOperatorWithSignature(sig, signingKey1);
+        registry.registerOperatorWithSignature(sig, signingKeyAddress1);
 
         // Test deregisterOperator reverts
         vm.expectRevert(MirrorStakeRegistry.DeregistrationNotSupported.selector);
@@ -101,7 +101,7 @@ contract MirrorStakeRegistryTest is Test {
 
         // Test updateOperatorSigningKey reverts
         vm.expectRevert(MirrorStakeRegistry.SigningKeyUpdateNotSupported.selector);
-        registry.updateOperatorSigningKey(signingKey1);
+        registry.updateOperatorSigningKey(signingKeyAddress1);
 
         // Test updateOperators reverts
         address[] memory operators = new address[](1);
@@ -144,18 +144,18 @@ contract MirrorStakeRegistryTest is Test {
 
         // Test setOperatorDetails reverts for non-owners
         vm.expectRevert("Ownable: caller is not the owner");
-        registry.setOperatorDetails(operator1, signingKey1, WEIGHT_1);
+        registry.setOperatorDetails(operator1, signingKeyAddress1, WEIGHT_1);
 
         // Test batchSetOperatorDetails reverts for non-owners
         address[] memory operators = new address[](1);
-        address[] memory signingKeys = new address[](1);
+        address[] memory signingKeyAddresses = new address[](1);
         uint256[] memory weights = new uint256[](1);
         operators[0] = operator1;
-        signingKeys[0] = signingKey1;
+        signingKeyAddresses[0] = signingKeyAddress1;
         weights[0] = WEIGHT_1;
 
         vm.expectRevert("Ownable: caller is not the owner");
-        registry.batchSetOperatorDetails(operators, signingKeys, weights);
+        registry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
 
         vm.stopPrank();
     }
@@ -165,7 +165,7 @@ contract MirrorStakeRegistryTest is Test {
         vm.startPrank(owner);
 
         // Set operator details
-        registry.setOperatorDetails(operator1, signingKey1, WEIGHT_1);
+        registry.setOperatorDetails(operator1, signingKeyAddress1, WEIGHT_1);
 
         // Verify the operator weight is set correctly
         assertEq(
@@ -177,13 +177,13 @@ contract MirrorStakeRegistryTest is Test {
         // Verify the signing key is associated with the operator
         assertEq(
             registry.getLatestOperatorSigningKey(operator1),
-            signingKey1,
+            signingKeyAddress1,
             "Signing key should be set correctly"
         );
 
         // Verify the operator is associated with the signing key
         assertEq(
-            registry.getLatestOperatorForSigningKey(signingKey1),
+            registry.getLatestOperatorForSigningKey(signingKeyAddress1),
             operator1,
             "Operator should be associated with signing key"
         );
@@ -197,23 +197,23 @@ contract MirrorStakeRegistryTest is Test {
 
         // Set up batch data
         address[] memory operators = new address[](3);
-        address[] memory signingKeys = new address[](3);
+        address[] memory signingKeyAddresses = new address[](3);
         uint256[] memory weights = new uint256[](3);
 
         operators[0] = operator1;
         operators[1] = operator2;
         operators[2] = operator3;
 
-        signingKeys[0] = signingKey1;
-        signingKeys[1] = signingKey2;
-        signingKeys[2] = signingKey3;
+        signingKeyAddresses[0] = signingKeyAddress1;
+        signingKeyAddresses[1] = signingKeyAddress2;
+        signingKeyAddresses[2] = signingKeyAddress3;
 
         weights[0] = WEIGHT_1;
         weights[1] = WEIGHT_2;
         weights[2] = WEIGHT_3;
 
         // Batch set operator details
-        registry.batchSetOperatorDetails(operators, signingKeys, weights);
+        registry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
 
         // Verify all operators' weights are set correctly
         assertEq(
@@ -235,33 +235,33 @@ contract MirrorStakeRegistryTest is Test {
         // Verify all signing keys are associated with their operators
         assertEq(
             registry.getLatestOperatorSigningKey(operator1),
-            signingKey1,
+            signingKeyAddress1,
             "Signing key1 should be set correctly"
         );
         assertEq(
             registry.getLatestOperatorSigningKey(operator2),
-            signingKey2,
+            signingKeyAddress2,
             "Signing key2 should be set correctly"
         );
         assertEq(
             registry.getLatestOperatorSigningKey(operator3),
-            signingKey3,
+            signingKeyAddress3,
             "Signing key3 should be set correctly"
         );
 
         // Verify all operators are associated with their signing keys
         assertEq(
-            registry.getLatestOperatorForSigningKey(signingKey1),
+            registry.getLatestOperatorForSigningKey(signingKeyAddress1),
             operator1,
             "Operator1 should be associated with signing key1"
         );
         assertEq(
-            registry.getLatestOperatorForSigningKey(signingKey2),
+            registry.getLatestOperatorForSigningKey(signingKeyAddress2),
             operator2,
             "Operator2 should be associated with signing key2"
         );
         assertEq(
-            registry.getLatestOperatorForSigningKey(signingKey3),
+            registry.getLatestOperatorForSigningKey(signingKeyAddress3),
             operator3,
             "Operator3 should be associated with signing key3"
         );
@@ -274,12 +274,12 @@ contract MirrorStakeRegistryTest is Test {
         vm.startPrank(owner);
 
         // Set initial operator details
-        registry.setOperatorDetails(operator1, signingKey1, WEIGHT_1);
+        registry.setOperatorDetails(operator1, signingKeyAddress1, WEIGHT_1);
 
         // Update operator with new signing key and weight
-        address newSigningKey = address(0x111);
+        address newSigningKeyAddress = address(0x111);
         uint256 newWeight = 150;
-        registry.setOperatorDetails(operator1, newSigningKey, newWeight);
+        registry.setOperatorDetails(operator1, newSigningKeyAddress, newWeight);
 
         // Verify the operator weight is updated
         assertEq(
@@ -289,20 +289,20 @@ contract MirrorStakeRegistryTest is Test {
         // Verify the new signing key is associated with the operator
         assertEq(
             registry.getLatestOperatorSigningKey(operator1),
-            newSigningKey,
+            newSigningKeyAddress,
             "New signing key should be set"
         );
 
         // Verify the old signing key is no longer associated with the operator
         assertEq(
-            registry.getLatestOperatorForSigningKey(signingKey1),
+            registry.getLatestOperatorForSigningKey(signingKeyAddress1),
             address(0),
             "Old signing key should not be associated"
         );
 
         // Verify the operator is associated with the new signing key
         assertEq(
-            registry.getLatestOperatorForSigningKey(newSigningKey),
+            registry.getLatestOperatorForSigningKey(newSigningKeyAddress),
             operator1,
             "Operator should be associated with new signing key"
         );
@@ -316,15 +316,15 @@ contract MirrorStakeRegistryTest is Test {
 
         // Set up batch data with mismatched array lengths
         address[] memory operators = new address[](3);
-        address[] memory signingKeys = new address[](2); // One less than operators
+        address[] memory signingKeyAddresses = new address[](2); // One less than operators
         uint256[] memory weights = new uint256[](3);
 
         operators[0] = operator1;
         operators[1] = operator2;
         operators[2] = operator3;
 
-        signingKeys[0] = signingKey1;
-        signingKeys[1] = signingKey2;
+        signingKeyAddresses[0] = signingKeyAddress1;
+        signingKeyAddresses[1] = signingKeyAddress2;
 
         weights[0] = WEIGHT_1;
         weights[1] = WEIGHT_2;
@@ -332,22 +332,22 @@ contract MirrorStakeRegistryTest is Test {
 
         // Expect revert due to mismatched array lengths
         vm.expectRevert(MirrorStakeRegistry.InvalidArrayLengths.selector);
-        registry.batchSetOperatorDetails(operators, signingKeys, weights);
+        registry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
 
         // Try another mismatch
-        signingKeys = new address[](3); // Now correct
+        signingKeyAddresses = new address[](3); // Now correct
         weights = new uint256[](2); // Now this is wrong
 
-        signingKeys[0] = signingKey1;
-        signingKeys[1] = signingKey2;
-        signingKeys[2] = signingKey3;
+        signingKeyAddresses[0] = signingKeyAddress1;
+        signingKeyAddresses[1] = signingKeyAddress2;
+        signingKeyAddresses[2] = signingKeyAddress3;
 
         weights[0] = WEIGHT_1;
         weights[1] = WEIGHT_2;
 
         // Expect revert due to mismatched array lengths
         vm.expectRevert(MirrorStakeRegistry.InvalidArrayLengths.selector);
-        registry.batchSetOperatorDetails(operators, signingKeys, weights);
+        registry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
 
         vm.stopPrank();
     }
@@ -357,7 +357,7 @@ contract MirrorStakeRegistryTest is Test {
         vm.startPrank(owner);
 
         // Set operator details
-        registry.setOperatorDetails(operator1, signingKey1, WEIGHT_1);
+        registry.setOperatorDetails(operator1, signingKeyAddress1, WEIGHT_1);
 
         // We need to roll to the next block to make the checkpoint available
         vm.roll(block.number + 1);
@@ -381,23 +381,23 @@ contract MirrorStakeRegistryTest is Test {
 
         // Set up batch data
         address[] memory operators = new address[](3);
-        address[] memory signingKeys = new address[](3);
+        address[] memory signingKeyAddresses = new address[](3);
         uint256[] memory weights = new uint256[](3);
 
         operators[0] = operator1;
         operators[1] = operator2;
         operators[2] = operator3;
 
-        signingKeys[0] = signingKey1;
-        signingKeys[1] = signingKey2;
-        signingKeys[2] = signingKey3;
+        signingKeyAddresses[0] = signingKeyAddress1;
+        signingKeyAddresses[1] = signingKeyAddress2;
+        signingKeyAddresses[2] = signingKeyAddress3;
 
         weights[0] = WEIGHT_1;
         weights[1] = WEIGHT_2;
         weights[2] = WEIGHT_3;
 
         // Batch set operator details
-        registry.batchSetOperatorDetails(operators, signingKeys, weights);
+        registry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
 
         // Calculate expected total weight
         uint256 expectedTotalWeight = WEIGHT_1 + WEIGHT_2 + WEIGHT_3;
@@ -497,23 +497,23 @@ contract MirrorStakeRegistryTest is Test {
 
         // Set up operators with weights
         address[] memory operators = new address[](3);
-        address[] memory signingKeys = new address[](3);
+        address[] memory signingKeyAddresses = new address[](3);
         uint256[] memory weights = new uint256[](3);
 
         operators[0] = operator1;
         operators[1] = operator2;
         operators[2] = operator3;
 
-        signingKeys[0] = signingKey1;
-        signingKeys[1] = signingKey2;
-        signingKeys[2] = signingKey3;
+        signingKeyAddresses[0] = signingKeyAddress1;
+        signingKeyAddresses[1] = signingKeyAddress2;
+        signingKeyAddresses[2] = signingKeyAddress3;
 
         weights[0] = WEIGHT_1;
         weights[1] = WEIGHT_2;
         weights[2] = WEIGHT_3;
 
         // Batch set operator details
-        registry.batchSetOperatorDetails(operators, signingKeys, weights);
+        registry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
         vm.stopPrank();
 
         // Create a message to sign
@@ -528,9 +528,9 @@ contract MirrorStakeRegistryTest is Test {
         uint32 referenceBlock = uint32(block.number - 1); // Use the previous block as reference
 
         // Add signing keys to signers array
-        signers[0] = signingKey1;
-        signers[1] = signingKey2;
-        signers[2] = signingKey3;
+        signers[0] = signingKeyAddress1;
+        signers[1] = signingKeyAddress2;
+        signers[2] = signingKeyAddress3;
 
         // Generate actual signatures using the private keys
         signatures[0] = generateSignature(privateKey1, digest);

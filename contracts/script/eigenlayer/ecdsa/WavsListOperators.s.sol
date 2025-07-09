@@ -16,7 +16,7 @@ contract WavsListOperators is Script {
         uint256 totalWeight;
         uint256 thresholdWeight;
         address[] operators;
-        address[] signingKeys;
+        address[] signingKeyAddresses;
         uint256[] weights;
     }
 
@@ -60,8 +60,9 @@ contract WavsListOperators is Script {
                 ": ",
                 Strings.toHexString(uint160(opInfo.operators[i]), 20)
             );
-            string memory sign =
-                string.concat("-> ", Strings.toHexString(uint160(opInfo.signingKeys[i]), 20));
+            string memory sign = string.concat(
+                "-> ", Strings.toHexString(uint160(opInfo.signingKeyAddresses[i]), 20)
+            );
             string memory weight = string.concat("= ", Strings.toString(opInfo.weights[i]));
             console.log(op, sign, weight);
         }
@@ -88,9 +89,9 @@ contract WavsListOperators is Script {
             weights[i] = stakeRegistry.getOperatorWeight(operators[i]);
         }
 
-        address[] memory signingKeys = new address[](operators.length);
+        address[] memory signingKeyAddresses = new address[](operators.length);
         for (uint256 i = 0; i < operators.length; i++) {
-            signingKeys[i] = stakeRegistry.getLatestOperatorSigningKey(operators[i]);
+            signingKeyAddresses[i] = stakeRegistry.getLatestOperatorSigningKey(operators[i]);
         }
 
         return OperatorInfo({
@@ -98,7 +99,7 @@ contract WavsListOperators is Script {
             totalWeight: totalWeight,
             thresholdWeight: thresholdWeight,
             operators: operators,
-            signingKeys: signingKeys,
+            signingKeyAddresses: signingKeyAddresses,
             weights: weights
         });
     }

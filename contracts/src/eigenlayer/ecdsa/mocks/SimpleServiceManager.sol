@@ -113,8 +113,8 @@ contract SimpleServiceManager is IWavsServiceManager {
     }
 
     function getLatestOperatorForSigningKey(
-        address signingKey
+        address signingKeyAddress
     ) external pure override returns (address) {
-        return signingKey;
+        return signingKeyAddress;
     }
 }
