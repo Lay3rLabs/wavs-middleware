@@ -21,11 +21,15 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
     error WavsMirrorDeployer__MirrorServiceHandlerAddressCannotBeZero();
     error WavsMirrorDeployer__MirrorServiceManagerHandlerAddressCannotBeZero();
     error WavsMirrorDeployer__ProxyAdminAddressCannotBeZero();
+    error WavsMirrorDeployer__NoOperators();
 
     function setUp() public virtual {
         // Pass in the configuration as a file, load it
         string memory configFile = "./deployments/wavs-mirror-config.json";
         configuration = WavsMirrorDeploymentLib.loadConfiguration(configFile);
+        if (configuration.operators.length == 0) {
+            revert WavsMirrorDeployer__NoOperators();
+        }
     }
 
     function run() external {
