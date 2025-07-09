@@ -32,7 +32,7 @@ contract MirrorServiceHandlerTest is Test {
 
     // Basic operator data
     address[] private operators;
-    address[] private signingKeys;
+    address[] private signingKeyAddresses;
     uint256[] private weights;
     uint256[] private privateKeys;
 
@@ -61,13 +61,13 @@ contract MirrorServiceHandlerTest is Test {
         // Create test info for 5 operators
         privateKeys = new uint256[](5);
         operators = new address[](5);
-        signingKeys = new address[](5);
+        signingKeyAddresses = new address[](5);
         weights = new uint256[](5);
 
         for (uint256 i = 0; i < 5; i++) {
             privateKeys[i] = i + 1;
             operators[i] = vm.addr(privateKeys[i]);
-            signingKeys[i] = vm.addr(privateKeys[i]);
+            signingKeyAddresses[i] = vm.addr(privateKeys[i]);
             weights[i] = OPERATOR_WEIGHT;
         }
 
@@ -76,7 +76,7 @@ contract MirrorServiceHandlerTest is Test {
 
         // Set up test operator weights as the actual owner
         vm.startPrank(actualOwner);
-        stakeRegistry.batchSetOperatorDetails(operators, signingKeys, weights);
+        stakeRegistry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
         vm.stopPrank();
 
         // Deploy MirrorServiceHandler
@@ -137,7 +137,7 @@ contract MirrorServiceHandlerTest is Test {
     function test_invalid_trigger_id() public {
         // Keep the same operators
         address[] memory newOperators = operators;
-        address[] memory newSigningKeys = signingKeys;
+        address[] memory newSigningKeyAddresses = signingKeyAddresses;
         uint256[] memory newWeights = weights;
 
         // Update to triggerId 5
@@ -145,7 +145,7 @@ contract MirrorServiceHandlerTest is Test {
             triggerId: 5,
             thresholdWeight: 5000,
             operators: newOperators,
-            signingKeys: newSigningKeys,
+            signingKeyAddresses: newSigningKeyAddresses,
             weights: newWeights
         });
         // Create envelope with the encoded payload
@@ -172,7 +172,7 @@ contract MirrorServiceHandlerTest is Test {
             triggerId: 3, // 3 < 5
             thresholdWeight: 5000,
             operators: newOperators,
-            signingKeys: newSigningKeys,
+            signingKeyAddresses: newSigningKeyAddresses,
             weights: newWeights
         });
         // Create envelope with the encoded payload
@@ -192,11 +192,11 @@ contract MirrorServiceHandlerTest is Test {
     function test_insufficient_quorum() public {
         // Create a valid UpdateWithId payload with triggerId = 1
         address[] memory newOperators = new address[](1);
-        address[] memory newSigningKeys = new address[](1);
+        address[] memory newSigningKeyAddresses = new address[](1);
         uint256[] memory newWeights = new uint256[](1);
 
         newOperators[0] = address(0x123);
-        newSigningKeys[0] = address(0x456);
+        newSigningKeyAddresses[0] = address(0x456);
         newWeights[0] = 10_000;
 
         // Create the UpdateWithId struct with triggerId = 1
@@ -204,7 +204,7 @@ contract MirrorServiceHandlerTest is Test {
             triggerId: 1,
             thresholdWeight: 5000,
             operators: newOperators,
-            signingKeys: newSigningKeys,
+            signingKeyAddresses: newSigningKeyAddresses,
             weights: newWeights
         });
 
@@ -238,13 +238,13 @@ contract MirrorServiceHandlerTest is Test {
         // let's change the weights and a public key
         // now op1 and op2 have 2/3 and can pass a future round
         address[] memory newOperators = new address[](2);
-        address[] memory newSigningKeys = new address[](2);
+        address[] memory newSigningKeyAddresses = new address[](2);
         uint256[] memory newWeights = new uint256[](2);
 
         // after this, we have 30k, 30k, 10k, 10k, 10k
         for (uint256 i = 0; i < 2; i++) {
             newOperators[i] = operators[i];
-            newSigningKeys[i] = signingKeys[i];
+            newSigningKeyAddresses[i] = signingKeyAddresses[i];
             newWeights[i] = OPERATOR_WEIGHT * 3;
         }
 
@@ -253,7 +253,7 @@ contract MirrorServiceHandlerTest is Test {
             triggerId: 1,
             thresholdWeight: 8000,
             operators: newOperators,
-            signingKeys: newSigningKeys,
+            signingKeyAddresses: newSigningKeyAddresses,
             weights: newWeights
         });
 
@@ -290,13 +290,13 @@ contract MirrorServiceHandlerTest is Test {
         assertEq(totalWeight, 90_000, "Total weight not updated");
 
         newOperators = new address[](3);
-        newSigningKeys = new address[](3);
+        newSigningKeyAddresses = new address[](3);
         newWeights = new uint256[](3);
 
         // Set up the next update - setting weights to 0 for the last 3 operators
         for (uint256 i = 0; i < 3; i++) {
             newOperators[i] = operators[i + 2];
-            newSigningKeys[i] = signingKeys[i + 2];
+            newSigningKeyAddresses[i] = signingKeyAddresses[i + 2];
             newWeights[i] = 0;
         }
 
@@ -305,7 +305,7 @@ contract MirrorServiceHandlerTest is Test {
             triggerId: 2,
             thresholdWeight: 6500,
             operators: newOperators,
-            signingKeys: newSigningKeys,
+            signingKeyAddresses: newSigningKeyAddresses,
             weights: newWeights
         });
 

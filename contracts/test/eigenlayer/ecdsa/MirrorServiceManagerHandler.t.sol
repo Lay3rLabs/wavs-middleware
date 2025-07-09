@@ -33,7 +33,7 @@ contract MirrorServiceManagerHandlerTest is Test {
 
     // Basic operator data
     address[] private operators;
-    address[] private signingKeys;
+    address[] private signingKeyAddresses;
     uint256[] private weights;
     uint256[] private privateKeys;
 
@@ -61,13 +61,13 @@ contract MirrorServiceManagerHandlerTest is Test {
         // Create test info for 5 operators
         privateKeys = new uint256[](5);
         operators = new address[](5);
-        signingKeys = new address[](5);
+        signingKeyAddresses = new address[](5);
         weights = new uint256[](5);
 
         for (uint256 i = 0; i < 5; i++) {
             privateKeys[i] = i + 1;
             operators[i] = vm.addr(privateKeys[i]);
-            signingKeys[i] = vm.addr(privateKeys[i]);
+            signingKeyAddresses[i] = vm.addr(privateKeys[i]);
             weights[i] = OPERATOR_WEIGHT;
         }
 
@@ -76,7 +76,7 @@ contract MirrorServiceManagerHandlerTest is Test {
 
         // Set up test operator weights as the actual owner
         vm.startPrank(actualOwner);
-        stakeRegistry.batchSetOperatorDetails(operators, signingKeys, weights);
+        stakeRegistry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
         vm.stopPrank();
 
         // Deploy MirrorServiceManagerHandler

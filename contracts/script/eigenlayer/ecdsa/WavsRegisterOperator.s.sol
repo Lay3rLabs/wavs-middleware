@@ -22,7 +22,7 @@ contract WavsRegisterOperator is Script {
     address private lstContractAddress;
     address private lstStrategyAddress;
     address private serviceManagerAddress;
-    address private signingKey;
+    address private signingKeyAddress;
     uint256 private stakeAmount;
 
     ReadCoreLib.DeploymentData public coreDeployment;
@@ -36,7 +36,7 @@ contract WavsRegisterOperator is Script {
         lstStrategyAddress = vm.envAddress(ENV_LST_STRATEGY);
         serviceManagerAddress = vm.envAddress(ENV_SERVICE_MANAGER);
 
-        signingKey = vm.envAddress(ENV_SIGNING_KEY);
+        signingKeyAddress = vm.envAddress(ENV_SIGNING_KEY);
         stakeAmount = vm.envUint(ENV_AMOUNT);
     }
 
@@ -46,7 +46,7 @@ contract WavsRegisterOperator is Script {
         WavsRegisterOperatorLib.setupOperator(
             coreDeployment, lstContractAddress, lstStrategyAddress, stakeAmount
         );
-        WavsRegisterOperatorLib.registerToAvs(serviceManagerAddress, signingKey);
+        WavsRegisterOperatorLib.registerToAvs(serviceManagerAddress, signingKeyAddress);
 
         vm.stopBroadcast();
     }

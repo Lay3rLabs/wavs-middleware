@@ -118,44 +118,44 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
      * @notice Sets the operator weight and signing key lookup
      * @dev This is the owner-only entrypoint to set all lookups (weights and operator <-> signing key lookups)
      * @param operator The operator address
-     * @param signingKey The signing key to associate with the operator
+     * @param signingKeyAddress The signing key to associate with the operator
      * @param weight The weight to assign to the operator
      */
     function setOperatorDetails(
         address operator,
-        address signingKey,
+        address signingKeyAddress,
         uint256 weight
     ) external onlyOwner {
-        _setOperatorDetails(operator, signingKey, weight);
+        _setOperatorDetails(operator, signingKeyAddress, weight);
     }
 
     /**
      * @notice Batch sets multiple operator details at once
      * @dev This is the owner-only entrypoint to set multiple operator lookups at once
      * @param operators Array of operator addresses
-     * @param signingKeys Array of signing keys corresponding to the operators
+     * @param signingKeyAddresses Array of signing keys corresponding to the operators
      * @param weights Array of weights corresponding to the operators
      */
     function batchSetOperatorDetails(
         address[] calldata operators,
-        address[] calldata signingKeys,
+        address[] calldata signingKeyAddresses,
         uint256[] calldata weights
     ) external onlyOwner {
         // Validate array lengths match
-        if (operators.length != signingKeys.length || operators.length != weights.length) {
+        if (operators.length != signingKeyAddresses.length || operators.length != weights.length) {
             revert InvalidArrayLengths();
         }
 
         uint256 length = operators.length;
         for (uint256 i = 0; i < length; i++) {
-            _setOperatorDetails(operators[i], signingKeys[i], weights[i]);
+            _setOperatorDetails(operators[i], signingKeyAddresses[i], weights[i]);
         }
     }
 
     /**
      * @dev Internal function to set operator details
      * @param operator The operator address
-     * @param signingKey The signing key to associate with the operator
+     * @param signingKeyAddress The signing key to associate with the operator
      * @param weight The weight to assign to the operator
      */
     /**
@@ -166,7 +166,11 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
         return _serviceManager;
     }
 
-    function _setOperatorDetails(address operator, address signingKey, uint256 weight) internal {
+    function _setOperatorDetails(
+        address operator,
+        address signingKeyAddress,
+        uint256 weight
+    ) internal {
         // Get the current weight of the operator
         uint256 currentWeight = _operatorWeightHistory[operator].latest();
 
@@ -183,7 +187,7 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
         address currentSigningKey = address(uint160(_operatorSigningKeyHistory[operator].latest()));
 
         // If the signing key is different, update the mappings
-        if (currentSigningKey != signingKey) {
+        if (currentSigningKey != signingKeyAddress) {
             // Remove the old signing key mapping if it exists
             if (currentSigningKey != address(0)) {
                 // Clear the old signing key to operator mapping in history
@@ -191,8 +195,8 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
             }
 
             // Set the new signing key mapping
-            _operatorSigningKeyHistory[operator].push(uint256(uint160(signingKey)));
-            _signingKeyToOperatorHistory[signingKey].push(uint256(uint160(operator)));
+            _operatorSigningKeyHistory[operator].push(uint256(uint160(signingKeyAddress)));
+            _signingKeyToOperatorHistory[signingKeyAddress].push(uint256(uint160(operator)));
         }
 
         // Mark the operator as registered
@@ -202,8 +206,8 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
         emit OperatorWeightUpdated(operator, currentWeight, weight);
         emit TotalWeightUpdated(oldTotalWeight, newTotalWeight);
 
-        if (currentSigningKey != signingKey) {
-            emit SigningKeyUpdate(operator, block.number, signingKey, currentSigningKey);
+        if (currentSigningKey != signingKeyAddress) {
+            emit SigningKeyUpdate(operator, block.number, signingKeyAddress, currentSigningKey);
         }
     }
 }

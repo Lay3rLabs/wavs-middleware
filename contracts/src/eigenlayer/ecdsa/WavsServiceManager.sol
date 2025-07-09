@@ -302,9 +302,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
 
     /// @inheritdoc IWavsServiceManager
     function getLatestOperatorForSigningKey(
-        address signingKey
+        address signingKeyAddress
     ) external view returns (address) {
-        return ECDSAStakeRegistry(stakeRegistry).getLatestOperatorForSigningKey(signingKey);
+        return ECDSAStakeRegistry(stakeRegistry).getLatestOperatorForSigningKey(signingKeyAddress);
     }
 
     function getDelegationManager() external view returns (address) {

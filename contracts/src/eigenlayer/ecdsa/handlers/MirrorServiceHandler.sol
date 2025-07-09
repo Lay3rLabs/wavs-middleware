@@ -13,7 +13,7 @@ interface IMirrorUpdateTypes {
         uint64 triggerId;
         uint256 thresholdWeight;
         address[] operators;
-        address[] signingKeys;
+        address[] signingKeyAddresses;
         uint256[] weights;
     }
 }
@@ -54,7 +54,7 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
         // call stake registry to update
         STAKE_REGISTRY.updateStakeThreshold(updateData.thresholdWeight);
         STAKE_REGISTRY.batchSetOperatorDetails(
-            updateData.operators, updateData.signingKeys, updateData.weights
+            updateData.operators, updateData.signingKeyAddresses, updateData.weights
         );
     }
 

@@ -26,7 +26,7 @@ contract WavsMirrorDeploymentLibTest is Test {
 
     // basic operator data
     address[] public operators;
-    address[] public signingKeys;
+    address[] public signingKeyAddresses;
     uint256[] public weights;
     uint256[] public privateKeys;
 
@@ -57,12 +57,12 @@ contract WavsMirrorDeploymentLibTest is Test {
         // Create test info for 5 operators
         privateKeys = new uint256[](5);
         operators = new address[](5);
-        signingKeys = new address[](5);
+        signingKeyAddresses = new address[](5);
         weights = new uint256[](5);
         for (uint256 i = 0; i < 5; i++) {
             privateKeys[i] = i + 1;
             operators[i] = vm.addr(privateKeys[i]); // Operators same as signing keys for now
-            signingKeys[i] = vm.addr(privateKeys[i]); // Signing keys derived from private keys
+            signingKeyAddresses[i] = vm.addr(privateKeys[i]); // Signing keys derived from private keys
             weights[i] = OPERATOR_WEIGHT; // Same weight for all operators
         }
 
@@ -71,7 +71,7 @@ contract WavsMirrorDeploymentLibTest is Test {
 
         // Set up test operator weights as the actual owner
         vm.startPrank(actualOwner);
-        stakeRegistry.batchSetOperatorDetails(operators, signingKeys, weights);
+        stakeRegistry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
         vm.stopPrank();
 
         // Roll to block 10 to make sure we have plenty of blocks for reference blocks
@@ -188,20 +188,26 @@ contract WavsMirrorDeploymentLibTest is Test {
 
         // Set a new private key and signing key
         privateKeys[0] = 0x13579;
-        signingKeys[0] = vm.addr(privateKeys[0]);
+        signingKeyAddresses[0] = vm.addr(privateKeys[0]);
 
         // Update operator to use new signing key
         // Change quorum to 1 of 5, so we just test one signer
         vm.startPrank(actualOwner);
         serviceManager.setQuorumThreshold(1, 5);
-        stakeRegistry.setOperatorDetails(operators[0], signingKeys[0], OPERATOR_WEIGHT);
+        stakeRegistry.setOperatorDetails(operators[0], signingKeyAddresses[0], OPERATOR_WEIGHT);
         vm.roll(block.number + 4);
         vm.stopPrank();
 
         // Add a query to check the signing key registered properly
-        address registeredSigningKey = stakeRegistry.getLatestOperatorSigningKey(operators[0]);
-        assertEq(registeredSigningKey, signingKeys[0], "Signing key not registered correctly");
-        address registeredOperator = stakeRegistry.getLatestOperatorForSigningKey(signingKeys[0]);
+        address registeredSigningKeyAddress =
+            stakeRegistry.getLatestOperatorSigningKey(operators[0]);
+        assertEq(
+            registeredSigningKeyAddress,
+            signingKeyAddresses[0],
+            "Signing key not registered correctly"
+        );
+        address registeredOperator =
+            stakeRegistry.getLatestOperatorForSigningKey(signingKeyAddresses[0]);
         assertEq(registeredOperator, operators[0], "Operator not registered correctly");
 
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
@@ -382,7 +388,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         // 1. Define a sample InitialConfiguration
         WavsMirrorDeploymentLib.InitialConfiguration memory originalConfig;
         originalConfig.operators = operators; // Use operators from setUp
-        originalConfig.signingKeys = signingKeys; // Use signingKeys from setUp
+        originalConfig.signingKeyAddresses = signingKeyAddresses; // Use signingKeyAddresses from setUp
         originalConfig.weights = weights; // Use weights from setUp
         originalConfig.thresholdWeight = 12_345;
         originalConfig.quorumNumerator = 2;
@@ -412,13 +418,15 @@ contract WavsMirrorDeploymentLibTest is Test {
         }
 
         assertEq(
-            loadedConfig.signingKeys.length,
-            originalConfig.signingKeys.length,
+            loadedConfig.signingKeyAddresses.length,
+            originalConfig.signingKeyAddresses.length,
             "Signing keys length mismatch"
         );
-        for (uint256 i = 0; i < originalConfig.signingKeys.length; i++) {
+        for (uint256 i = 0; i < originalConfig.signingKeyAddresses.length; i++) {
             assertEq(
-                loadedConfig.signingKeys[i], originalConfig.signingKeys[i], "Signing key mismatch"
+                loadedConfig.signingKeyAddresses[i],
+                originalConfig.signingKeyAddresses[i],
+                "Signing key mismatch"
             );
         }
 

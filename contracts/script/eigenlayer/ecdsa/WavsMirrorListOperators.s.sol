@@ -26,7 +26,7 @@ contract WavsMirrorListOperators is Script {
         uint256 totalWeight;
         uint256 thresholdWeight;
         address[] operators;
-        address[] signingKeys;
+        address[] signingKeyAddresses;
         uint256[] weights;
     }
 
@@ -101,11 +101,11 @@ contract WavsMirrorListOperators is Script {
 
         // Get operator weights and signing keys
         uint256[] memory weights = new uint256[](operators.length);
-        address[] memory signingKeys = new address[](operators.length);
+        address[] memory signingKeyAddresses = new address[](operators.length);
 
         for (uint256 i = 0; i < operators.length; i++) {
             weights[i] = mirrorStakeRegistry.getOperatorWeight(operators[i]);
-            signingKeys[i] = mirrorStakeRegistry.getLatestOperatorSigningKey(operators[i]);
+            signingKeyAddresses[i] = mirrorStakeRegistry.getLatestOperatorSigningKey(operators[i]);
         }
 
         writeOperatorListJson(
@@ -115,7 +115,7 @@ contract WavsMirrorListOperators is Script {
                 totalWeight: totalWeight,
                 thresholdWeight: thresholdWeight,
                 operators: operators,
-                signingKeys: signingKeys,
+                signingKeyAddresses: signingKeyAddresses,
                 weights: weights
             })
         );
@@ -125,7 +125,7 @@ contract WavsMirrorListOperators is Script {
             totalWeight: totalWeight,
             thresholdWeight: thresholdWeight,
             operators: operators,
-            signingKeys: signingKeys,
+            signingKeyAddresses: signingKeyAddresses,
             weights: weights
         });
     }
@@ -159,8 +159,9 @@ contract WavsMirrorListOperators is Script {
                 ": ",
                 Strings.toHexString(uint160(opInfo.operators[i]), 20)
             );
-            string memory sign =
-                string.concat("-> ", Strings.toHexString(uint160(opInfo.signingKeys[i]), 20));
+            string memory sign = string.concat(
+                "-> ", Strings.toHexString(uint160(opInfo.signingKeyAddresses[i]), 20)
+            );
             string memory weight = string.concat("= ", Strings.toString(opInfo.weights[i]));
             console.log(op, sign, weight);
         }
@@ -210,8 +211,8 @@ contract WavsMirrorListOperators is Script {
                 "\"operator\":\"",
                 Strings.toHexString(uint160(opInfo.operators[i]), 20),
                 "\",",
-                "\"signingKey\":\"",
-                Strings.toHexString(uint160(opInfo.signingKeys[i]), 20),
+                "\"signingKeyAddress\":\"",
+                Strings.toHexString(uint160(opInfo.signingKeyAddresses[i]), 20),
                 "\",",
                 "\"weight\":\"",
                 Strings.toString(opInfo.weights[i]),
