@@ -168,4 +168,45 @@ library WavsRegisterOperatorLib {
             console2.log("Operator %s is already registered with AVS", operatorAddr);
         }
     }
+
+    function deregisterFromAvs(
+        address serviceManagerAddress
+    ) internal {
+        WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
+        ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
+
+        // This is the address for private key forge is running the script as.
+        // Calculated from the --private-key argument
+        (, address operatorAddr,) = VM.readCallers();
+
+        // query if already in opset and add if if not in it yet.
+        IAllocationManager allocationManager =
+            IAllocationManager(serviceManager.allocationManager());
+        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 1});
+        if (allocationManager.isMemberOfOperatorSet(operatorAddr, opSetQuery)) {
+            uint32[] memory opSetIds = new uint32[](1);
+            opSetIds[0] = 1;
+            IAllocationManagerTypes.DeregisterParams memory params = IAllocationManagerTypes
+                .DeregisterParams({
+                operator: operatorAddr,
+                avs: serviceManagerAddress,
+                operatorSetIds: opSetIds
+            });
+            allocationManager.deregisterFromOperatorSets(params);
+
+            console2.log(
+                "Successfully deregistered operator %s from operator sets [1]", operatorAddr
+            );
+        } else {
+            console2.log("%s not registered to operator sets [1]", operatorAddr);
+        }
+
+        if (stakeRegistry.operatorRegistered(operatorAddr)) {
+            console2.log("Deregistering operator %s with AVS ...", operatorAddr);
+            stakeRegistry.deregisterOperator();
+            console2.log("Successfully deregistered operator %s with AVS", operatorAddr);
+        } else {
+            console2.log("Operator %s is not registered with AVS", operatorAddr);
+        }
+    }
 }
