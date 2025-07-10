@@ -40,7 +40,10 @@ contract WavsRegisterOperator is Script {
             coreDeployment, _lstContractAddress, _lstStrategyAddress, _stakeAmount
         );
         WavsRegisterOperatorLib.registerToAvs(
-            _operatorKey, _serviceManagerAddress, coreDeployment.allocationManager
+            _operatorKey,
+            _serviceManagerAddress,
+            coreDeployment.allocationManager,
+            _lstStrategyAddress
         );
 
         vm.stopBroadcast();

@@ -204,16 +204,19 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    wavs-middleware update_quorum QUORUM_NUMERATOR=3 QUORUM_DENOMINATOR=5
-```
 
-Update Quorum:
+# BLS
+QUORUM_NUMERATOR=3
+QUORUM_DENOMINATOR=5
 
-```bash
-export STRATEGIES_CONFIG_PATH=$(pwd)/strategies-config.json
-
-docker run --rm --network host  --env-file .env -v ./.nodes:/root/.nodes \
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
+   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   -e QUORUM_NUMERATOR=${QUORUM_NUMERATOR} \
+   -e QUORUM_DENOMINATOR=${QUORUM_DENOMINATOR} \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware update_quorum 3 5
+   wavs-middleware -s bls update_quorum
 ```
 
 Pause Registration:
