@@ -3,17 +3,7 @@ pragma solidity ^0.8.27;
 
 import {IWavsServiceHandler} from "../interfaces/IWavsServiceHandler.sol";
 import {WavsServiceManager} from "../WavsServiceManager.sol";
-
-interface IManagerUpdateTypes {
-    error InvalidTriggerId(uint64 expectedTriggerId);
-
-    /// @notice DataWithId is a struct containing a trigger ID and updated operator info
-    struct UpdateWithId {
-        uint64 triggerId;
-        uint256 numerator;
-        uint256 denominator;
-    }
-}
+import {IManagerUpdateTypes} from "../interfaces/IMirrorServiceManagerHandler.sol";
 
 contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler {
     /// @notice Ensures all updates are deployed in order and no duplicates.
