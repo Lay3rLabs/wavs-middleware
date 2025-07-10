@@ -59,13 +59,15 @@ contract WavsMiddlewareDeployer is Script {
 
         // WAVS configuration
         uint96 minimumWeight = 100;
+        uint32 lookAheadPeriod = 0;
         WavsMiddlewareDeploymentLib.configureContracts(
             wavsMiddlewareDeployment,
             strategyParams,
             _metadataUri,
             coreDeployment.allocationManager,
             coreDeployment.permissionController,
-            minimumWeight
+            minimumWeight,
+            lookAheadPeriod
         );
 
         vm.stopBroadcast();

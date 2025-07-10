@@ -161,7 +161,8 @@ library WavsMiddlewareDeploymentLib {
         string memory metadataUri,
         address allocationManagerAddress,
         address permissionControllerAddress,
-        uint96 minimumWeight
+        uint96 minimumWeight,
+        uint32 lookAheadPeriod
     ) internal {
         // set avs registrar
         WavsServiceManager wavsServiceManager = WavsServiceManager(deployment.wavsServiceManager);
@@ -175,14 +176,15 @@ library WavsMiddlewareDeploymentLib {
 
         ISlashingRegistryCoordinator slashingRegistryCoordinator =
             ISlashingRegistryCoordinator(deployment.registryCoordinator);
-        slashingRegistryCoordinator.createTotalDelegatedStakeQuorum(
+        slashingRegistryCoordinator.createSlashableStakeQuorum(
             ISlashingRegistryCoordinatorTypes.OperatorSetParam({
                 maxOperatorCount: 100,
                 kickBIPsOfOperatorStake: 10_500,
                 kickBIPsOfTotalStake: 100
             }),
             minimumWeight,
-            strategyParams
+            strategyParams,
+            lookAheadPeriod
         );
 
         wavsServiceManager.addPendingAdmin(msg.sender);

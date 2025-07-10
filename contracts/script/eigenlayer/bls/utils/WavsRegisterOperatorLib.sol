@@ -36,6 +36,7 @@ library WavsRegisterOperatorLib {
 
     error WavsRegisterOperatorLib__FailedToMintLSTTokens();
     error WavsRegisterOperatorLib__FailedToApproveLSTTokens();
+    error WavsRegisterOperatorLib__FailedToGetAllocationConfigurationDelay();
 
     function setupOperator(
         ReadCoreLib.DeploymentData memory coreDeployment,
@@ -125,7 +126,8 @@ library WavsRegisterOperatorLib {
     function registerToAvs(
         uint256 operatorKey,
         address serviceManagerAddress,
-        address allocationManagerAddress
+        address allocationManagerAddress,
+        address lstStrategyAddress
     ) internal {
         // This is the address for private key forge is running the script as.
         // Calculated from the --private-key argument
@@ -135,6 +137,30 @@ library WavsRegisterOperatorLib {
         IAllocationManager allocationManager = IAllocationManager(allocationManagerAddress);
         OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
         if (!allocationManager.isMemberOfOperatorSet(operatorAddr, opSetQuery)) {
+            (bool success, bytes memory result) = address(allocationManager).call(
+                abi.encodeWithSignature("ALLOCATION_CONFIGURATION_DELAY()")
+            );
+            if (!success) {
+                revert WavsRegisterOperatorLib__FailedToGetAllocationConfigurationDelay();
+            }
+            uint32 allocationConfigurationDelay = abi.decode(result, (uint32));
+            VM.roll(block.number + allocationConfigurationDelay + 1); // Workaround for testnet, txs can't be in the same block
+            IStrategy[] memory strategies = new IStrategy[](1);
+            strategies[0] = IStrategy(lstStrategyAddress);
+            uint64[] memory newMagnitudes = new uint64[](1);
+            // Ref: https://github.com/Layr-Labs/eigenlayer-contracts/blob/734f7361884d24fe51961b342e93dde1290961d0/src/contracts/libraries/SlashingLib.sol#L12
+            // 1e18 is 100%
+            newMagnitudes[0] = 1e18;
+
+            IAllocationManagerTypes.AllocateParams[] memory allocationMods =
+                new IAllocationManagerTypes.AllocateParams[](1);
+            allocationMods[0] = IAllocationManagerTypes.AllocateParams({
+                operatorSet: OperatorSet({avs: serviceManagerAddress, id: 0}),
+                strategies: strategies,
+                newMagnitudes: newMagnitudes
+            });
+            allocationManager.modifyAllocations(operatorAddr, allocationMods);
+
             uint32[] memory opSetIds = new uint32[](1);
             opSetIds[0] = 0;
 
@@ -150,6 +176,7 @@ library WavsRegisterOperatorLib {
             );
             IAllocationManagerTypes.RegisterParams memory params = IAllocationManagerTypes
                 .RegisterParams({avs: serviceManagerAddress, operatorSetIds: opSetIds, data: data});
+
             allocationManager.registerForOperatorSets(operatorAddr, params);
 
             console2.log(
