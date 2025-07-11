@@ -54,22 +54,6 @@ handle_error() {
     exit 1
 }
 
-# Execute a transaction and handle errors
-# Usage: execute_transaction "description" "command"
-execute_transaction() {
-    local description="$1"
-    local command="$2"
-
-    echo "Executing: $description"
-    eval "$command"
-
-    if [ $? -eq 0 ]; then
-        echo "Successfully $description"
-    else
-        handle_error "Failed to $description"
-    fi
-}
-
 # Wait for Ethereum node to be ready
 # Usage: wait_for_ethereum
 wait_for_ethereum() {
@@ -82,33 +66,6 @@ wait_for_ethereum() {
         sleep 1
     done
     echo "Ethereum node is ready!"
-}
-
-# Impersonate an account (for local development)
-# Usage: impersonate_account "0x..."
-impersonate_account() {
-    local account="$1"
-    if [ "${DEPLOY_ENV:-}" = "TESTNET" ]; then
-        return 0
-    fi
-    
-    cast rpc anvil_impersonateAccount "$account" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1 || \
-        handle_error "Failed to impersonate account $account"
-    
-    cast rpc anvil_setBalance "$account" 0x10000000000000000000 -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1 || \
-        handle_error "Failed to set balance for account $account"
-}
-
-# Stop impersonating an account (for local development)
-# Usage: stop_impersonating "0x..."
-stop_impersonating() {
-    local account="$1"
-    if [ "${DEPLOY_ENV:-}" = "TESTNET" ]; then
-        return 0
-    fi
-    
-    cast rpc anvil_stopImpersonatingAccount "$account" -r "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1 || \
-        echo "Warning: Failed to stop impersonating account $account" >&2
 }
 
 # Set up environment based on DEPLOY_ENV
