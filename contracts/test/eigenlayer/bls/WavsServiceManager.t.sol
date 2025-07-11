@@ -35,6 +35,7 @@ contract WavsServiceManagerTest is Test {
     address public permissionController = makeAddr("permissionController");
     /// @notice The allocation manager.
     address public allocationManager = makeAddr("allocationManager");
+    address public wavsTaskManager = makeAddr("wavsTaskManager");
 
     /// @notice The setUp function.
     function setUp() public {
@@ -48,7 +49,8 @@ contract WavsServiceManagerTest is Test {
             registryCoordinator,
             stakeRegistry,
             permissionController,
-            allocationManager
+            allocationManager,
+            wavsTaskManager
         );
         vm.stopPrank();
 

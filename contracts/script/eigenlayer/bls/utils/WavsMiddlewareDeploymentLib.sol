@@ -12,6 +12,8 @@ import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol";
 import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
 import {SlashingRegistryCoordinator} from
     "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
+import {InstantSlasher} from "@eigenlayer-middleware/src/slashers/InstantSlasher.sol";
+import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
 import {
     IStakeRegistry,
@@ -40,13 +42,8 @@ import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
+import {WavsTaskManager} from "src/eigenlayer/bls/WavsTaskManager.sol";
 
-/**
- * @title WavsMiddlewareDeploymentLib
- * @author Lay3rLabs
- * @notice This library contains functions for deploying the WAVS middleware contracts.
- * @dev This library is used to deploy the WAVS middleware contracts.
- */
 library WavsMiddlewareDeploymentLib {
     // using stdJson for *;
     using Strings for *;
@@ -64,12 +61,15 @@ library WavsMiddlewareDeploymentLib {
      */
     struct DeploymentData {
         address wavsServiceManager;
+        address wavsTaskManager;
         address stakeRegistry;
         address registryCoordinator;
         address blsApkRegistry;
         address indexRegistry;
         address socketRegistry;
         address pauserRegistry;
+        address slasher;
+        address operatorStateRetriever;
     }
 
     /**
@@ -88,11 +88,6 @@ library WavsMiddlewareDeploymentLib {
     error WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
     /// @notice The error for the deployment file not found.
     error WavsMiddlewareDeploymentLib__DeploymentFileNotFound();
-    /// @notice The error for the strategies and multipliers length mismatch.
-    error WavsMiddlewareDeploymentLib__StrategiesAndMultipliersLengthMismatch();
-    /// @notice The error for the total multiplier not 10000.
-    error WavsMiddlewareDeploymentLib__TotalMultiplierNot10000();
-    /// @notice The error for the AVS directory mismatch.
     error WavsMiddlewareDeploymentLib__AVSDirectoryMismatch();
 
     /**
@@ -107,15 +102,18 @@ library WavsMiddlewareDeploymentLib {
     ) internal returns (DeploymentData memory) {
         // First, deploy upgradeable proxy contracts that will point to the implementations.
         address wavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        address wavsTaskManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address registryCoordinator = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address blsApkRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address indexRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address socketRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        address slasher = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
 
         address[] memory pausers = new address[](1);
         pausers[0] = msg.sender;
         address pauserRegistry = address(new PauserRegistry(pausers, msg.sender));
+        address operatorStateRetriever = address(new OperatorStateRetriever());
 
         address wavsServiceManagerImpl = address(
             new WavsServiceManager(
@@ -124,7 +122,8 @@ library WavsMiddlewareDeploymentLib {
                 registryCoordinator,
                 stakeRegistry,
                 core.permissionController,
-                core.allocationManager
+                core.allocationManager,
+                wavsTaskManager
             )
         );
         address stakeRegistryImpl = address(
@@ -157,6 +156,13 @@ library WavsMiddlewareDeploymentLib {
             address(new IndexRegistry(ISlashingRegistryCoordinator(registryCoordinator)));
         address socketRegistryImpl =
             address(new SocketRegistry(ISlashingRegistryCoordinator(registryCoordinator)));
+        address slasherImpl = address(
+            new InstantSlasher(
+                IAllocationManager(core.allocationManager),
+                ISlashingRegistryCoordinator(registryCoordinator),
+                wavsTaskManager
+            )
+        );
 
         UpgradeableProxyLib.upgradeAndCall(
             wavsServiceManager,
@@ -175,15 +181,42 @@ library WavsMiddlewareDeploymentLib {
         UpgradeableProxyLib.upgrade(blsApkRegistry, blsApkRegistryImpl);
         UpgradeableProxyLib.upgrade(indexRegistry, indexRegistryImpl);
         UpgradeableProxyLib.upgrade(socketRegistry, socketRegistryImpl);
+        UpgradeableProxyLib.upgrade(slasher, slasherImpl);
+
+        address wavsTaskManagerImpl = address(
+            new WavsTaskManager(
+                ISlashingRegistryCoordinator(registryCoordinator),
+                IPauserRegistry(pauserRegistry),
+                30
+            )
+        );
+        UpgradeableProxyLib.upgradeAndCall(
+            wavsTaskManager,
+            wavsTaskManagerImpl,
+            abi.encodeCall(
+                WavsTaskManager.initialize,
+                (
+                    msg.sender,
+                    msg.sender,
+                    msg.sender,
+                    core.allocationManager,
+                    slasher,
+                    wavsServiceManager
+                )
+            )
+        );
 
         return DeploymentData({
             wavsServiceManager: wavsServiceManager,
+            wavsTaskManager: wavsTaskManager,
             stakeRegistry: stakeRegistry,
             registryCoordinator: registryCoordinator,
             blsApkRegistry: blsApkRegistry,
             indexRegistry: indexRegistry,
             socketRegistry: socketRegistry,
-            pauserRegistry: pauserRegistry
+            pauserRegistry: pauserRegistry,
+            slasher: slasher,
+            operatorStateRetriever: operatorStateRetriever
         });
     }
 
@@ -211,7 +244,7 @@ library WavsMiddlewareDeploymentLib {
         wavsServiceManager.setAppointee(
             deployment.registryCoordinator,
             allocationManagerAddress,
-            bytes4(keccak256("createOperatorSets(address,(uint32,address[])[])"))
+            IAllocationManager.createOperatorSets.selector
         );
 
         wavsServiceManager.updateAVSMetadataURI(metadataUri);
@@ -220,7 +253,7 @@ library WavsMiddlewareDeploymentLib {
             ISlashingRegistryCoordinator(deployment.registryCoordinator);
         slashingRegistryCoordinator.createSlashableStakeQuorum(
             ISlashingRegistryCoordinatorTypes.OperatorSetParam({
-                maxOperatorCount: 100,
+                maxOperatorCount: 10_000,
                 kickBIPsOfOperatorStake: 10_500,
                 kickBIPsOfTotalStake: 100
             }),
@@ -255,56 +288,25 @@ library WavsMiddlewareDeploymentLib {
         // load the strategies config
         string memory json = VM.readFile(fileName);
         address[] memory strategies = abi.decode(VM.parseJson(json, ".strategies"), (address[]));
-        uint96[] memory multipliers = abi.decode(VM.parseJson(json, ".multipliers"), (uint96[]));
-        if (strategies.length != multipliers.length) {
-            revert WavsMiddlewareDeploymentLib__StrategiesAndMultipliersLengthMismatch();
+        uint256 strategyCount = strategies.length;
+        uint96[] memory multipliers = new uint96[](strategyCount);
+        for (uint256 i; i < strategyCount; i++) {
+            multipliers[i] = 1 ether;
         }
 
         // convert to quorum
-        uint256 size = strategies.length;
-        uint256 totalMultiplier = 0;
         IStakeRegistryTypes.StrategyParams[] memory strategyParams =
-            new IStakeRegistryTypes.StrategyParams[](size);
-        for (uint256 i; i < size; ++i) {
-            totalMultiplier += multipliers[i];
+            new IStakeRegistryTypes.StrategyParams[](strategyCount);
+        for (uint256 i; i < strategyCount; i++) {
             strategyParams[i] = IStakeRegistryTypes.StrategyParams({
                 strategy: IStrategy(strategies[i]),
                 multiplier: multipliers[i]
             });
         }
-        if (totalMultiplier != 10_000) {
-            revert WavsMiddlewareDeploymentLib__TotalMultiplierNot10000();
-        }
 
         return strategyParams;
     }
 
-    // function readDeploymentJson(
-    //     string memory directoryPath,
-    //     uint256 chainId
-    // ) internal returns (DeploymentData memory) {
-    //     string memory fileName = string.concat(directoryPath, VM.toString(chainId), ".json");
-
-    //     if (!VM.exists(fileName)) {
-    //         revert WavsMiddlewareDeploymentLib__DeploymentFileNotFound();
-    //     }
-
-    //     string memory json = VM.readFile(fileName);
-
-    //     DeploymentData memory data;
-    //     /// TODO: 2 Step for reading deployment json.  Read to the core and the AVS data
-    //     data.wavsServiceManager = json.readAddress(".contracts.wavsServiceManager");
-    //     data.stakeRegistry = json.readAddress(".contracts.stakeRegistry");
-    //     data.strategy = json.readAddress(".contracts.strategy");
-    //     data.avsRegistrar = json.readAddress(".contracts.avsRegistrar");
-
-    //     return data;
-    // }
-
-    /**
-     * @notice The write deployment JSON function.
-     * @param data The deployment data.
-     */
     function writeDeploymentJson(
         DeploymentData memory data
     ) internal {
@@ -363,6 +365,10 @@ library WavsMiddlewareDeploymentLib {
             data.wavsServiceManager.toHexString(),
             "\",\"WavsServiceManagerImpl\":\"",
             data.wavsServiceManager.getImplementation().toHexString(),
+            "\",\"wavsTaskManager\":\"",
+            data.wavsTaskManager.toHexString(),
+            "\",\"wavsTaskManagerImpl\":\"",
+            data.wavsTaskManager.getImplementation().toHexString(),
             "\",\"stakeRegistry\":\"",
             data.stakeRegistry.toHexString(),
             "\",\"stakeRegistryImpl\":\"",
@@ -385,6 +391,12 @@ library WavsMiddlewareDeploymentLib {
             data.socketRegistry.getImplementation().toHexString(),
             "\",\"pauserRegistry\":\"",
             data.pauserRegistry.toHexString(),
+            "\",\"slasher\":\"",
+            data.slasher.toHexString(),
+            "\",\"slasherImpl\":\"",
+            data.slasher.getImplementation().toHexString(),
+            "\",\"operatorStateRetriever\":\"",
+            data.operatorStateRetriever.toHexString(),
             "\"}"
         );
     }

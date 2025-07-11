@@ -11,15 +11,10 @@ import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissio
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 
 import {IWavsServiceManager} from "./interfaces/IWavsServiceManager.sol";
+import {IWavsTaskManager} from "./interfaces/IWavsTaskManager.sol";
 
-/**
- * @title WavsServiceManager
- * @author Lay3r Labs
- * @notice Contract for managing the Wavs service
- * @dev This contract extends ServiceManagerBase and implements the IWavsServiceManager interface
- */
 contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
-    /// @notice The URI of the service
+    IWavsTaskManager public immutable WAVS_TASK_MANAGER;
     string public serviceURI;
 
     /// @notice The numerator of the quorum threshold
@@ -28,22 +23,19 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
     /// @notice The denominator of the quorum threshold
     uint256 public quorumDenominator;
 
-    /**
-     * @notice Constructor
-     * @param __avsDirectory The address of the AVS directory
-     * @param __rewardsCoordinator The address of the rewards coordinator
-     * @param __registryCoordinator The address of the registry coordinator
-     * @param __stakeRegistry The address of the stake registry
-     * @param __permissionController The address of the permission controller
-     * @param __allocationManager The address of the allocation manager
-     */
+    modifier onlyWavsTaskManager() {
+        require(msg.sender == address(WAVS_TASK_MANAGER), WavsServiceManager__OnlyWavsTaskManager());
+        _;
+    }
+
     constructor(
         address __avsDirectory,
         address __rewardsCoordinator,
         address __registryCoordinator,
         address __stakeRegistry,
         address __permissionController,
-        address __allocationManager
+        address __allocationManager,
+        address __wavsTaskManager
     )
         ServiceManagerBase(
             IAVSDirectory(__avsDirectory),
@@ -53,7 +45,9 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
             IPermissionController(__permissionController),
             IAllocationManager(__allocationManager)
         )
-    {}
+    {
+        WAVS_TASK_MANAGER = IWavsTaskManager(__wavsTaskManager);
+    }
 
     /**
      * @notice Initializes the contract

@@ -10,6 +10,7 @@ pragma solidity ^0.8.27;
 interface IWavsServiceManager {
     /// @notice The error for the invalid quorum parameters.
     error InvalidQuorumParameters();
+    error WavsServiceManager__OnlyWavsTaskManager();
 
     // ------------------------------------------------------------------------
     // Events
