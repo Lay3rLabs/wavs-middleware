@@ -20,7 +20,7 @@ check_param "LST_CONTRACT_ADDRESS" "${LST_CONTRACT_ADDRESS:-}"
 check_param "LST_STRATEGY_ADDRESS" "${LST_STRATEGY_ADDRESS:-}"
 check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json")}"
 check_param "OPERATOR_KEY" "${OPERATOR_KEY:-}"
-check_param "WAVS_DELEGATE_AMOUNT" "${WAVS_DELEGATE_AMOUNT:-}"
+check_param "WAVS_DELEGATE_AMOUNT" "${WAVS_DELEGATE_AMOUNT:-$1}"
 
 # Set up environment based on DEPLOY_ENV
 setup_environment
@@ -36,4 +36,4 @@ echo "Delegate amount: $WAVS_DELEGATE_AMOUNT"
 
 # Register operator
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/bls/WavsRegisterOperator.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$OPERATOR_KEY" --broadcast || handle_error "Failed to register operator"
+forge script script/eigenlayer/bls/WavsRegisterOperator.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --skip-simulation --slow || handle_error "Failed to register operator"

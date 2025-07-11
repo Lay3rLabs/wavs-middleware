@@ -12,7 +12,7 @@ To run the test suite, make sure you have [Foundry](https://book.getfoundry.sh/)
 make test
 ```
 
-# Docker Quick start
+# Docker Quick Start
 
 ## Build
 
@@ -46,7 +46,7 @@ RPC_URL=https://ethereum-holesky-rpc.publicnode.com
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
 
-## Deploy
+## Commands
 
 **Run all the following scripts in the `docker/` directory.**
 
@@ -54,240 +54,266 @@ anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 cd docker/
 ```
 
-Deploy:
+### Deploy ECDSA Contracts
+
+Deploys the ECDSA-based WAVS middleware contracts.
 
 ```bash
-# ecdsa contracts deployment
-FUNDED_KEY=
-METADATA_URI=https://wavs.xyz/metadata.json
-LST_STRATEGY_ADDRESS=0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3
-
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e FUNDED_KEY=${FUNDED_KEY} \
-   -e METADATA_URI=${METADATA_URI} \
-   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   --env-file .env \
    wavs-middleware deploy
+```
 
-# bls contracts deployment
-FUNDED_KEY=
-METADATA_URI=https://wavs.xyz/metadata.json
+| Environment Variable     | Required              | Default                 | Source | Description                                   |
+| ------------------------ | --------------------- | ----------------------- | ------ | --------------------------------------------- |
+| `DEPLOY_ENV`             | for non-default value | `LOCAL`                 | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL` | for non-default value | `http://localhost:8545` | `.env` | RPC URL for local development                 |
+| `TESTNET_RPC_URL`        | for testnet           | -                       | `.env` | RPC URL for testnet deployment                |
+| `FUNDED_KEY`             | Yes                   | -                       | `.env` | Private key with funds for deployment         |
+| `METADATA_URI`           | Yes                   | -                       | `.env` | URI for AVS metadata                          |
+| `LST_STRATEGY_ADDRESS`   | Yes                   | -                       | `.env` | Liquid staking token strategy address         |
 
+### Deploy BLS Contracts
+
+Deploys the BLS-based WAVS middleware contracts.
+
+```bash
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e FUNDED_KEY=${FUNDED_KEY} \
-   -e METADATA_URI=${METADATA_URI} \
+   --env-file .env \
    wavs-middleware -s bls deploy
 ```
 
-Set Service URI:
+| Environment Variable     | Required              | Default                 | Source | Description                                   |
+| ------------------------ | --------------------- | ----------------------- | ------ | --------------------------------------------- |
+| `DEPLOY_ENV`             | for non-default value | `LOCAL`                 | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL` | for non-default value | `http://localhost:8545` | `.env` | RPC URL for local development                 |
+| `TESTNET_RPC_URL`        | for testnet           | -                       | `.env` | RPC URL for testnet deployment                |
+| `FUNDED_KEY`             | Yes                   | -                       | `.env` | Private key with funds for deployment         |
+| `METADATA_URI`           | Yes                   | -                       | `.env` | URI for AVS metadata                          |
+
+### Set Service URI
+
+Sets the service URI for the service manager.
 
 ```bash
-SERVICE_URI="https://ipfs.url/for-custom-service.json"
+# -s bls for BLS option
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   -e SERVICE_URI=${SERVICE_URI} \
-   wavs-middleware set_service_uri
-
-SERVICE_URI="https://ipfs.url/for-custom-service.json"
-
-docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   -e SERVICE_URI=${SERVICE_URI} \
-   wavs-middleware -s bls set_service_uri
+   --env-file .env \
+   wavs-middleware set_service_uri SERVICE_URI="https://ipfs.url/for-custom-service.json"
 ```
 
-Register:
+| Environment Variable           | Required              | Default                       | Source       | Description                                   |
+| ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
+| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
+| `SERVICE_URI`                  | Yes                   | -                             | Command line | URI for the service                           |
+
+### Register ECDSA Operator
+
+Registers an operator for the ECDSA service.
 
 ```bash
-# ECDSA opeartor registration
-# Generate a new private key for the operator (needs ETH for transactions)
+WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+
 OPERATOR_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 OPERATOR_ADDRESS=$(cast wallet addr --private-key "$OPERATOR_KEY")
 echo "Operator address: $OPERATOR_ADDRESS"
 
-export WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
-export LST_CONTRACT_ADDRESS=0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034
-
-# Generate or use an existing AVS signing key address
-# Option 1: Generate a new AVS signing key
 AVS_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 AVS_SIGNING_ADDRESS=$(cast wallet addr --private-key "$AVS_KEY")
 echo "AVS signing address: $AVS_SIGNING_ADDRESS"
 
-# Option 2: Use an existing AVS signing address from your AVS node
-# AVS_SIGNING_ADDRESS="0x..." # Address of the key that will sign for the AVS
-
-# Register the operator using the operator key and AVS signing address
 docker run --rm --network host \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
-   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e OPERATOR_KEY=${OPERATOR_KEY} \
    -e WAVS_SIGNING_KEY=${AVS_SIGNING_ADDRESS} \
    wavs-middleware register WAVS_DELEGATE_AMOUNT=1000000000000000
+```
 
-# BLS operator registeration
-LST_CONTRACT_ADDRESS=0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034
-LST_STRATEGY_ADDRESS=0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3
-WAVS_DELEGATE_AMOUNT=1000000000000000000
+### Register BLS Operator
+
+Registers an operator for the BLS service.
+
+```bash
 WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+
 OPERATOR_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 OPERATOR_ADDRESS=$(cast wallet addr --private-key "$OPERATOR_KEY")
 echo "Operator address: $OPERATOR_ADDRESS"
 
 docker run --rm --network host \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
-   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e OPERATOR_KEY=${OPERATOR_KEY} \
-   -e WAVS_DELEGATE_AMOUNT=${WAVS_DELEGATE_AMOUNT} \
-   wavs-middleware -s bls register
+   wavs-middleware -s bls register WAVS_DELEGATE_AMOUNT=1000000000000000000
 ```
 
-Deregister:
+| Environment Variable           | Required              | Default                       | Source       | Description                                   |
+| ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
+| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `LST_CONTRACT_ADDRESS`         | Yes                   | -                             | `.env`       | Liquid staking token contract address         |
+| `LST_STRATEGY_ADDRESS`         | Yes                   | -                             | `.env`       | Liquid staking token strategy address         |
+| `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
+| `OPERATOR_KEY`                 | Yes                   | -                             | Command line | Private key for the operator                  |
+| `WAVS_SIGNING_KEY`             | for ecdsa             | -                             | Command line | Address of the AVS signing key                |
+| `WAVS_DELEGATE_AMOUNT`         | Yes                   | -                             | Command line | Amount to delegate to the operator            |
+
+### Deregister ECDSA Operator
+
+Deregisters an operator from the ECDSA service.
 
 ```bash
+WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+
 docker run --rm --network host \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e OPERATOR_KEY=${OPERATOR_KEY} \
    wavs-middleware deregister
 ```
 
-List Operators:
+| Environment Variable           | Required              | Default                       | Source       | Description                                   |
+| ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
+| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
+| `OPERATOR_KEY`                 | Yes                   | -                             | Command line | Private key for the operator                  |
+
+### List Operators
+
+Lists all registered operators for the service.
 
 ```bash
-# ECDSA list operators
-# View stake registry status, including registered operators and their weights
+# -s bls for BLS option
+
+WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+
 docker run --rm --network host \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    wavs-middleware list_operators
-
-# BLS list operators
-docker run --rm --network host \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware -s bls list_operators
 ```
 
-Update Quorum:
+| Environment Variable           | Required              | Default                       | Source       | Description                                   |
+| ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
+| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
+
+### Update Quorum
+
+Updates the quorum configuration for the service.
 
 ```bash
+# -s bls for BLS option
+
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   --env-file .env \
    wavs-middleware update_quorum QUORUM_NUMERATOR=3 QUORUM_DENOMINATOR=5
-
-# BLS
-QUORUM_NUMERATOR=3
-QUORUM_DENOMINATOR=5
-
-docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e QUORUM_NUMERATOR=${QUORUM_NUMERATOR} \
-   -e QUORUM_DENOMINATOR=${QUORUM_DENOMINATOR} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   wavs-middleware -s bls update_quorum
 ```
 
-Pause Registration:
+| Environment Variable           | Required              | Default                       | Source       | Description                                   |
+| ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
+| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
+| `QUORUM_NUMERATOR`             | Yes                   | -                             | Command line | Numerator for quorum calculation              |
+| `QUORUM_DENOMINATOR`           | Yes                   | -                             | Command line | Denominator for quorum calculation            |
+
+### Pause ECDSA Registration
+
+Pauses operator registration for the ECDSA service.
 
 ```bash
-# ECDSA
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   --env-file .env \
    wavs-middleware pause
+```
 
-# BLS
+### Unpause ECDSA Registration
+
+Unpauses operator registration for the ECDSA service.
+
+```bash
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   --env-file .env \
+   wavs-middleware unpause
+```
+
+| Environment Variable     | Required              | Default                 | Source | Description                                   |
+| ------------------------ | --------------------- | ----------------------- | ------ | --------------------------------------------- |
+| `DEPLOY_ENV`             | for non-default value | `LOCAL`                 | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL` | for non-default value | `http://localhost:8545` | `.env` | RPC URL for local development                 |
+| `TESTNET_RPC_URL`        | for testnet           | -                       | `.env` | RPC URL for testnet deployment                |
+
+### Pause BLS Registration
+
+Pauses operator registration for the BLS service.
+
+```bash
+SLASHING_REGISTRY_COORDINATOR_ADDRESS=$(jq -r '.addresses.registryCoordinator' "$HOME/.nodes/avs_deploy.json")
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   --env-file .env \
    -e SLASHING_REGISTRY_COORDINATOR_ADDRESS=${SLASHING_REGISTRY_COORDINATOR_ADDRESS} \
    wavs-middleware -s bls pause
 ```
 
-Unpause Registration:
+### Unpause BLS Registration
+
+Unpauses operator registration for the BLS service.
 
 ```bash
-# ECDSA
-docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   wavs-middleware unpause
+SLASHING_REGISTRY_COORDINATOR_ADDRESS=$(jq -r '.addresses.registryCoordinator' "$HOME/.nodes/avs_deploy.json")
 
-# BLS
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
+   --env-file .env \
    -e SLASHING_REGISTRY_COORDINATOR_ADDRESS=${SLASHING_REGISTRY_COORDINATOR_ADDRESS} \
    wavs-middleware -s bls unpause
 ```
 
-Delegation to Operator:
+| Environment Variable                    | Required              | Default                       | Source       | Description                                   |
+| --------------------------------------- | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                            | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL`                | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
+| `TESTNET_RPC_URL`                       | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `SLASHING_REGISTRY_COORDINATOR_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Slashing registry coordinator address         |
+
+### Delegate to Operator
+
+Delegates tokens to an operator.
 
 ```bash
-# Generate a new private key for the staker (needs ETH for transactions)
+WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+
 STAKER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 STAKER_ADDRESS=$(cast wallet addr --private-key "$STAKER_KEY")
 echo "Staker address: $STAKER_ADDRESS"
 
 docker run --rm --network host \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
-   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
+   --env-file .env \
    -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
    -e STAKER_KEY=${STAKER_KEY} \
    -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
    wavs-middleware delegate_to_operator WAVS_DELEGATE_AMOUNT=1000000000000000
+```
 
-# Only required when approver address is not 0
-DELEGATION_APPROVER_PRIVATE_KEY=
-DELEGATION_APPROVER_SALT=
-DELEGATION_DURATION=
+### Delegate to Operator with Approver
 
+Delegates tokens to an operator with delegation approver.
+
+```bash
 docker run --rm --network host \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e LOCAL_ETHEREUM_RPC_URL=${LOCAL_ETHEREUM_RPC_URL} \
-   -e TESTNET_RPC_URL=${TESTNET_RPC_URL} \
-   -e LST_CONTRACT_ADDRESS=${LST_CONTRACT_ADDRESS} \
-   -e LST_STRATEGY_ADDRESS=${LST_STRATEGY_ADDRESS} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   --env-file .env \
    -e STAKER_KEY=${STAKER_KEY} \
    -e OPERATOR_ADDRESS=${OPERATOR_ADDRESS} \
    -e DELEGATION_APPROVER_PRIVATE_KEY=${DELEGATION_APPROVER_PRIVATE_KEY} \
@@ -296,42 +322,65 @@ docker run --rm --network host \
    wavs-middleware delegate_to_operator WAVS_DELEGATE_AMOUNT=1000000000000000
 ```
 
-## Deploying Mirror
+| Environment Variable              | Required              | Default                       | Source       | Description                                   |
+| --------------------------------- | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                      | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `LOCAL_ETHEREUM_RPC_URL`          | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
+| `TESTNET_RPC_URL`                 | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `LST_CONTRACT_ADDRESS`            | Yes                   | -                             | `.env`       | Liquid staking token contract address         |
+| `LST_STRATEGY_ADDRESS`            | Yes                   | -                             | `.env`       | Liquid staking token strategy address         |
+| `WAVS_SERVICE_MANAGER_ADDRESS`    | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
+| `STAKER_KEY`                      | Yes                   | -                             | Command line | Private key for the staker                    |
+| `OPERATOR_ADDRESS`                | Yes                   | -                             | Command line | Address of the operator to delegate to        |
+| `DELEGATION_APPROVER_PRIVATE_KEY` | if approver is active | `0x0000...`                   | Command line | Private key for delegation approver           |
+| `DELEGATION_APPROVER_SALT`        | if approve is active  | `0x0000...`                   | Command line | Salt for delegation approver                  |
+| `DELEGATION_DURATION`             | if approve is active  | `0`                           | Command line | Duration for delegation                       |
+| `WAVS_DELEGATE_AMOUNT`            | Yes                   | -                             | Command line | Amount to delegate to the operator            |
 
-Run a second anvil at port 8546 with no eigenlayer deployed (can be not fork)
+## Mirror Deployment
+
+### Deploy Mirror Contracts
+
+Deploys mirror contracts to match the first anvil instance.
 
 ```bash
 anvil --host 0.0.0.0 --port 8546
 ```
 
-Deploy mirror contracts to match first anvil
-
 ```bash
-# Register the operator using the operator key and AVS signing address
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
-   -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
-   -e SOURCE_RPC_URL=${SOURCE_RPC_URL} \
-   -e MIRROR_RPC_URL=${MIRROR_RPC_URL} \
    wavs-middleware -m mirror deploy
 ```
 
-List Mirror Operators:
+| Environment Variable           | Required              | Default                       | Source       | Description                                   |
+| ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
+| `SOURCE_RPC_URL`               | for non-default value | `http://localhost:8545`       | Command line | RPC URL for source chain                      |
+| `MIRROR_RPC_URL`               | for non-default value | `http://localhost:8546`       | Command line | RPC URL for mirror chain                      |
+
+### List Mirror Operators
+
+Lists operators on the mirror chain.
 
 ```bash
 MIRROR_CHAIN_ID=$(cast chain-id --rpc-url http://localhost:8546)
 SOURCE_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ".nodes/avs_deploy.json")
 MIRROR_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' ".nodes/mirror-$MIRROR_CHAIN_ID.json")
 
-# View stake registry status, including registered operators and their weights
 docker run --rm --network host \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
    -e SOURCE_SERVICE_MANAGER_ADDRESS=${SOURCE_SERVICE_MANAGER_ADDRESS} \
    -e MIRROR_SERVICE_MANAGER_ADDRESS=${MIRROR_SERVICE_MANAGER_ADDRESS} \
-   -e SOURCE_RPC_URL=${SOURCE_RPC_URL} \
-   -e MIRROR_RPC_URL=${MIRROR_RPC_URL} \
    wavs-middleware -m mirror list_operators
 ```
+
+| Environment Variable             | Required              | Default                              | Source       | Description                                   |
+| -------------------------------- | --------------------- | ------------------------------------ | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                     | for non-default value | `LOCAL`                              | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `SOURCE_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json`        | Command line | Source service manager address                |
+| `MIRROR_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/mirror-{CHAIN_ID}.json` | Command line | Mirror service manager address                |
+| `SOURCE_RPC_URL`                 | for non-default value | -                                    | Command line | RPC URL for source chain                      |
+| `MIRROR_RPC_URL`                 | for non-default value | -                                    | Command line | RPC URL for mirror chain                      |
 
 ## Mock Deployment
 
@@ -383,11 +432,16 @@ echo "Mock deployer address: $MOCK_DEPLOYER_ADDRESS"
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
    -v $LOCAL_CONFIG_PATH:/wavs/contracts/deployments/wavs-mock-config.json \
-   -e DEPLOY_ENV=${DEPLOY_ENV} \
+   --env-file .env \
    -e MOCK_DEPLOYER_KEY=${MOCK_DEPLOYER_KEY} \
-   -e MOCK_RPC_URL=${MOCK_RPC_URL} \
    wavs-middleware -m mock deploy
 ```
+
+| Environment Variable | Required              | Default                 | Source       | Description                                   |
+| -------------------- | --------------------- | ----------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`         | for non-default value | `LOCAL`                 | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `MOCK_DEPLOYER_KEY`  | Yes                   | -                       | Command line | Private key for mock deployment               |
+| `MOCK_RPC_URL`       | for non-default value | `http://localhost:8546` | Command line | RPC URL for mock blockchain                   |
 
 ## Deploy Testnet
 
