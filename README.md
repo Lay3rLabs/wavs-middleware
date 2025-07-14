@@ -33,7 +33,8 @@ docker build -t wavs-middleware .
 Prepare the env file:
 
 ```bash
-cp docker/env.example docker/.env
+CHAIN=
+cp docker/env.example.$CHAIN docker/.env
 # edit the RPC_URL for a paid testnet rpc endpoint, add funded key, and TESTNET_RPC_URL
 ```
 
@@ -42,8 +43,8 @@ cp docker/env.example docker/.env
 Start anvil in one terminal:
 
 ```bash
-RPC_URL=https://ethereum-holesky-rpc.publicnode.com
-anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
+source docker/.env
+anvil --fork-url $FORK_RPC_URL --host 0.0.0.0 --port 8545
 ```
 
 ## Commands
@@ -147,7 +148,7 @@ docker run --rm --network host \
 | `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
 | `OPERATOR_KEY`                 | Yes                   | -                             | Command line | Private key for the operator                  |
 | `WAVS_SIGNING_KEY`             | for ecdsa             | -                             | Command line | Address of the AVS signing key                |
-| `WAVS_DELEGATE_AMOUNT`         | Yes                   | -                             | Command line | Amount to delegate to the operator            |
+| `WAVS_DELEGATE_AMOUNT`         | Yes                   | -                             | Params       | Amount to delegate to the operator            |
 
 ### Deregister ECDSA Operator
 
@@ -312,7 +313,7 @@ docker run --rm --network host \
 | `DELEGATION_APPROVER_PRIVATE_KEY` | if approver is active | `0x0000...`                   | Command line | Private key for delegation approver           |
 | `DELEGATION_APPROVER_SALT`        | if approve is active  | `0x0000...`                   | Command line | Salt for delegation approver                  |
 | `DELEGATION_DURATION`             | if approve is active  | `0`                           | Command line | Duration for delegation                       |
-| `WAVS_DELEGATE_AMOUNT`            | Yes                   | -                             | Command line | Amount to delegate to the operator            |
+| `WAVS_DELEGATE_AMOUNT`            | Yes                   | -                             | Params       | Amount to delegate to the operator            |
 
 ## Mirror Deployment
 
