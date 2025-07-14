@@ -1,0 +1,7 @@
+{
+  "strategies": [
+    "0x424246eF71b01ee33aA33aC590fd9a0855F5eFbc",
+    "0x8b29d91e67b013e855EaFe0ad704aC4Ab086a574"
+  ],
+  "multipliers": [5000, 5000]
+}
