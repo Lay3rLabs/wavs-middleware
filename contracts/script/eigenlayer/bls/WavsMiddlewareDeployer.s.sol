@@ -73,9 +73,7 @@ contract WavsMiddlewareDeployer is Script {
         vm.stopBroadcast();
 
         _verifyDeployment();
-        WavsMiddlewareDeploymentLib.writeDeploymentJson(
-            "deployments/wavs-middleware/", block.chainid, wavsMiddlewareDeployment
-        );
+        WavsMiddlewareDeploymentLib.writeDeploymentJson(wavsMiddlewareDeployment);
     }
 
     function _verifyDeployment() internal view {

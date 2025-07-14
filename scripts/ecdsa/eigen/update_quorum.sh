@@ -24,9 +24,10 @@ check_param "QUORUM_DENOMINATOR" "${QUORUM_DENOMINATOR:-$2}"
 # Set up environment based on DEPLOY_ENV
 setup_environment
 
-# Read the deployer private key from file
-deployer_private_key=$(load_deployment_data "$HOME/.nodes/deployer")
-deployer_address=$(cast wallet address "$deployer_private_key")
+# Read the deployer private key
+deployer_private_key=$(load_deployment_data "$HOME/.nodes/deployer" || true)
+check_param "FUNDED_KEY" "${FUNDED_KEY:-$deployer_private_key}"
+deployer_address=$(cast wallet address "$FUNDED_KEY")
 echo "Deployer address: $deployer_address"
 
 # Ensure deployer has sufficient balance
@@ -37,6 +38,6 @@ echo "Updating quorum configuration to $QUORUM_NUMERATOR/$QUORUM_DENOMINATOR..."
 
 # Update quorum configuration
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/ecdsa/WavsUpdateQuorum.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$deployer_private_key" --broadcast || handle_error "Failed to update quorum configuration"
+forge script script/eigenlayer/ecdsa/WavsUpdateQuorum.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$FUNDED_KEY" --broadcast || handle_error "Failed to update quorum configuration"
 
 echo "Quorum configuration updated successfully"

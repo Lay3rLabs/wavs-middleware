@@ -12,14 +12,12 @@ import {Pausable} from "@eigenlayer/contracts/permissions/Pausable.sol";
 contract UnpauseWavsRegistration is Script {
     using stdJson for *;
 
-    string private constant ENV_SLASHING_REGISTRY_COORDINATOR_ADDRESS =
-        "SLASHING_REGISTRY_COORDINATOR_ADDRESS";
+    string private constant ENV_REGISTRY_ADDRESS = "REGISTRY_ADDRESS";
 
     Pausable private slashingRegistryCoordinator;
 
     function setUp() public virtual {
-        slashingRegistryCoordinator =
-            Pausable(vm.envAddress(ENV_SLASHING_REGISTRY_COORDINATOR_ADDRESS));
+        slashingRegistryCoordinator = Pausable(vm.envAddress(ENV_REGISTRY_ADDRESS));
     }
 
     function run() external {

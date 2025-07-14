@@ -109,7 +109,6 @@ contract WavsMirrorListOperators is Script {
         }
 
         writeOperatorListJson(
-            block.chainid,
             OperatorInfo({
                 stakeRegistry: address(mirrorStakeRegistry),
                 totalWeight: totalWeight,
@@ -174,11 +173,11 @@ contract WavsMirrorListOperators is Script {
         console.log(quorum);
     }
 
-    function writeOperatorListJson(uint256 chainId, OperatorInfo memory opInfo) internal {
-        string memory fileName =
-            string.concat("deployments/wavs-mirror/list-operators-", vm.toString(chainId), ".json");
-        if (!vm.exists("deployments/wavs-mirror")) {
-            vm.createDir("deployments/wavs-mirror", true);
+    function writeOperatorListJson(
+        OperatorInfo memory opInfo
+    ) internal {
+        if (!vm.exists("deployments/wavs-ecdsa")) {
+            vm.createDir("deployments/wavs-ecdsa", true);
         }
 
         string memory json = string.concat(
@@ -222,7 +221,7 @@ contract WavsMirrorListOperators is Script {
         }
 
         json = string.concat(json, "]}");
-        vm.writeFile(fileName, json);
-        console.log("Operator list written to:", fileName);
+        vm.writeFile("deployments/wavs-ecdsa/mirror_list_operators.json", json);
+        console.log("Operator list written to: deployments/wavs-ecdsa/mirror_list_operators.json");
     }
 }

@@ -25,11 +25,6 @@ check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
 # Set up environment based on DEPLOY_ENV
 setup_environment
 
-# Get chain ID from RPC endpoint
-CHAIN_ID=$(get_chain_id)
-export CHAIN_ID
-echo "Detected chain ID: $CHAIN_ID"
-
 #############################################
 ###### Start of script execution ############
 #############################################
@@ -50,7 +45,7 @@ cd contracts || handle_error "Failed to change to contracts directory"
 forge script script/eigenlayer/ecdsa/WavsMiddlewareDeployer.s.sol --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$FUNDED_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMiddlewareDeployer"
 
 echo "Middleware contracts deployed with addresses:"
-cat deployments/wavs-middleware/$CHAIN_ID.json | jq .addresses
+cat deployments/wavs-ecdsa/avs_deploy.json | jq .addresses
 
 # Save deployment data
-cp deployments/wavs-middleware/$CHAIN_ID.json "$HOME/.nodes/avs_deploy.json"
+cp deployments/wavs-ecdsa/avs_deploy.json "$HOME/.nodes/avs_deploy.json"
