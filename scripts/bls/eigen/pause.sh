@@ -23,7 +23,7 @@ check_param "REGISTRY_ADDRESS" "${REGISTRY_ADDRESS:-$DEFAULT_REGISTRY_ADDRESS}"
 setup_environment
 
 # Read the deployer private key
-deployer_private_key=$(load_deployment_data "$HOME/.nodes/deployer" || true)
+deployer_private_key=$(load_deployment_data "$HOME/.nodes/deployer")
 check_param "FUNDED_KEY" "${FUNDED_KEY:-$deployer_private_key}"
 deployer_address=$(cast wallet address "$FUNDED_KEY")
 echo "Deployer address: $deployer_address"

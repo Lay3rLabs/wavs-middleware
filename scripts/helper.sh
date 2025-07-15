@@ -135,9 +135,14 @@ save_deployment_data() {
 # Usage: load_deployment_data "filename"
 load_deployment_data() {
     local filename="$1"
+    local fail_on_missing="${2:-false}"
     if [ -f "$filename" ]; then
         cat "$filename"
     else
-        handle_error "Deployment file $filename not found"
+        if [ "$fail_on_missing" = "true" ]; then
+            handle_error "Deployment file $filename not found"
+        else
+            echo ""
+        fi
     fi
 }
