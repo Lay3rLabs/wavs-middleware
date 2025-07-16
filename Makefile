@@ -1,10 +1,16 @@
 # deps
 update:; cd contracts && forge update
-build  :; cd contracts && forge build
-size  :; cd contracts && forge build --sizes
+build-bls:; cd contracts && FOUNDRY_PROFILE=bls forge build
+build-ecdsa:; cd contracts && FOUNDRY_PROFILE=ecdsa forge build
+build: build-bls build-ecdsa
+size-bls:; cd contracts && FOUNDRY_PROFILE=bls forge build --sizes
+size-ecdsa:; cd contracts && FOUNDRY_PROFILE=ecdsa forge build --sizes
+size: size-bls size-ecdsa
 
 # storage inspection
-inspect :; cd contracts && forge inspect ${contract} storage-layout --pretty
+inspect-bls :; cd contracts && FOUNDRY_PROFILE=bls forge inspect ${contract} storage-layout --pretty
+inspect-ecdsa :; cd contracts && FOUNDRY_PROFILE=ecdsa forge inspect ${contract} storage-layout --pretty
+inspect: inspect-bls inspect-ecdsa
 
 # if we want to run only matching tests, set that here
 test := test_
@@ -13,22 +19,25 @@ test := test_
 .PHONY: test update build size inspect trace gas test-contract trace-contract test-test trace-test snapshot snapshot-diff trace-setup trace-max coverage coverage-report coverage-debug clean format format-check coverage-html
 
 # local tests without fork
-test :; cd contracts && forge test -vv
-trace :; cd contracts && forge test -vvv
-gas :; cd contracts && forge test --gas-report
-test-contract :; cd contracts && forge test -vv --match-contract $(contract)
-test-contract-gas :; cd contracts && forge test --gas-report --match-contract ${contract}
-trace-contract :; cd contracts && forge test -vvv --match-contract $(contract)
-test-test :; cd contracts && forge test -vv --match-test $(test)
-test-test-trace :; cd contracts && forge test -vvv --match-test $(test)
-trace-test :; cd contracts && forge test -vvvvv --match-test $(test)
-snapshot :; cd contracts && forge snapshot -vv
-snapshot-diff :; cd contracts && forge snapshot --diff -vv
-trace-setup :; cd contracts && forge test -vvvv
-trace-max :; cd contracts && forge test -vvvvv
-coverage :; cd contracts && forge coverage
-coverage-report :; cd contracts && forge coverage --report lcov
-coverage-debug :; cd contracts && forge coverage --report debug
+
+test-bls :; cd contracts && FOUNDRY_PROFILE=bls forge test -vv
+test-ecdsa :; cd contracts && FOUNDRY_PROFILE=ecdsa forge test -vv
+test : test-bls test-ecdsa
+
+gas-bls :; cd contracts && FOUNDRY_PROFILE=bls forge test --gas-report
+gas-ecdsa :; cd contracts && FOUNDRY_PROFILE=ecdsa forge test --gas-report
+gas : gas-bls gas-ecdsa
+
+snapshot-bls :; cd contracts && FOUNDRY_PROFILE=bls forge snapshot -vv
+snapshot-ecdsa :; cd contracts && FOUNDRY_PROFILE=ecdsa forge snapshot -vv
+snapshot : snapshot-bls snapshot-ecdsa
+
+coverage-bls :; cd contracts && FOUNDRY_PROFILE=bls forge coverage
+coverage-ecdsa :; cd contracts && FOUNDRY_PROFILE=ecdsa forge coverage
+coverage : coverage-bls coverage-ecdsa
+coverage-report-bls :; cd contracts && FOUNDRY_PROFILE=bls forge coverage --report lcov
+coverage-report-ecdsa :; cd contracts && FOUNDRY_PROFILE=ecdsa forge coverage --report lcov
+coverage-report : coverage-report-bls coverage-report-ecdsa
 
 clean :; cd contracts && forge clean
 format :; cd contracts && forge fmt

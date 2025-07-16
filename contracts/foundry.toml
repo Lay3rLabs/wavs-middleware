@@ -11,15 +11,31 @@ optimizer = true
 optimizer_runs = 100
  # Higher number optimizes for frequent contract calls, lower number optimizes for deployment cost
 
+[profile.bls]
+src = "src/eigenlayer/bls"
+test = "test/eigenlayer/bls"
+script = "script/eigenlayer/bls"
+out = "out/bls"
+libs = ["lib"]
+cache_path = "cache/bls"
+fs_permissions = [{ access = "read-write", path = "./" }, { access = "read", path = "/root/.nodes" }]
+solc = "0.8.27"
+via-ir = true
+optimizer = true
+optimizer_runs = 100
 
-remappings = [
-    "@eigenlayer/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/src/",
-    "@eigenlayer-scripts/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/script/",
-    "@eigenlayer-middleware/=lib/eigenlayer-middleware/",
-    "@openzeppelin/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts-v4.9.0/",
-    "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts-upgradeable-v4.9.0/",
-    "forge-std/=lib/forge-std/src/",
-]
+[profile.ecdsa]
+src = "src/eigenlayer/ecdsa"
+test = "test/eigenlayer/ecdsa"
+script = "script/eigenlayer/ecdsa"
+out = "out/ecdsa"
+libs = ["lib"]
+cache_path = "cache/ecdsa"
+fs_permissions = [{ access = "read-write", path = "./" }, { access = "read", path = "/root/.nodes" }]
+solc = "0.8.27"
+via-ir = true
+optimizer = true
+optimizer_runs = 100
 
 [fmt]
 line_length = 100

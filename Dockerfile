@@ -4,7 +4,7 @@ FROM ghcr.io/foundry-rs/foundry:latest AS build
 USER root
 
 COPY contracts /wavs/contracts
-RUN forge build --root /wavs/contracts
+RUN FOUNDRY_PROFILE=bls forge build --root /wavs/contracts && FOUNDRY_PROFILE=ecdsa forge build --root /wavs/contracts
 
 # Using bookworm image saves about 100MB off using foundry directly
 # bookworm-slim saves another 40MB
