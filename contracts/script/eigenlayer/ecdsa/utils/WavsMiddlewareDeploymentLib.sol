@@ -116,7 +116,7 @@ library WavsMiddlewareDeploymentLib {
         // Suggestion - use same both for opset and for initialize. But which one (or both)?
         //             ECDSAStakeRegistry.initialize, (result.WavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
         IAllocationManagerTypes.CreateSetParams memory opSetParams = IAllocationManagerTypes
-            .CreateSetParams({operatorSetId: 1, strategies: new IStrategy[](1)});
+            .CreateSetParams({operatorSetId: 0, strategies: new IStrategy[](1)});
         opSetParams.strategies[0] = IStrategy(deployment.strategy);
         IAllocationManagerTypes.CreateSetParams[] memory opSetParamsArray =
             new IAllocationManagerTypes.CreateSetParams[](1);

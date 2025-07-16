@@ -228,8 +228,8 @@ library WavsMirrorDeploymentLib {
 
         // get operators
         IAllocationManager allocationManager =
-            IAllocationManager(serviceManager.allocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 1});
+            IAllocationManager(serviceManager.getAllocationManager());
+        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
         cfg.operators = allocationManager.getMembers(opSetQuery);
 
         // get operator info

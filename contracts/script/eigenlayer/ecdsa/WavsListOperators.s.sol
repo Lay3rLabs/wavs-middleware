@@ -80,8 +80,8 @@ contract WavsListOperators is Script {
         uint256 thresholdWeight = stakeRegistry.getLastCheckpointThresholdWeight();
 
         IAllocationManager allocationManager =
-            IAllocationManager(serviceManager.allocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: address(serviceManager), id: 1});
+            IAllocationManager(serviceManager.getAllocationManager());
+        OperatorSet memory opSetQuery = OperatorSet({avs: address(serviceManager), id: 0});
         address[] memory operators = allocationManager.getMembers(opSetQuery);
 
         uint256[] memory weights = new uint256[](operators.length);
