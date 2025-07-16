@@ -118,11 +118,15 @@ contract SimpleServiceManager is IWavsServiceManager {
         return signingKeyAddress;
     }
 
-    function getDelegationManager() external view returns (address) {
+    function getDelegationManager() external pure returns (address) {
         return address(0);
     }
 
-    function getAllocationManager() external view returns (address) {
+    function getAllocationManager() external pure returns (address) {
+        return address(0);
+    }
+
+    function getStakeRegistry() external pure returns (address) {
         return address(0);
     }
 }

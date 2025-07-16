@@ -316,4 +316,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     function getAllocationManager() external view returns (address) {
         return allocationManager;
     }
+
+    /// @inheritdoc IWavsServiceManager
+    function getStakeRegistry() external view returns (address) {
+        return stakeRegistry;
+    }
 }
