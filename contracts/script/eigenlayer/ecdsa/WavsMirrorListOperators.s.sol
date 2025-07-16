@@ -85,8 +85,8 @@ contract WavsMirrorListOperators is Script {
         WavsServiceManager sourceServiceManager = WavsServiceManager(sourceServiceManagerAddress);
 
         IAllocationManager allocationManager =
-            IAllocationManager(sourceServiceManager.allocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: sourceServiceManagerAddress, id: 1});
+            IAllocationManager(sourceServiceManager.getAllocationManager());
+        OperatorSet memory opSetQuery = OperatorSet({avs: sourceServiceManagerAddress, id: 0});
         address[] memory operators = allocationManager.getMembers(opSetQuery);
 
         // Create mirror chain fork and get stake information

@@ -117,4 +117,12 @@ contract SimpleServiceManager is IWavsServiceManager {
     ) external pure override returns (address) {
         return signingKeyAddress;
     }
+
+    function getDelegationManager() external view returns (address) {
+        return address(0);
+    }
+
+    function getAllocationManager() external view returns (address) {
+        return address(0);
+    }
 }

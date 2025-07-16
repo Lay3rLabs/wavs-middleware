@@ -102,20 +102,20 @@ library WavsRegisterOperatorLib {
 
         //  query if already in opset and add if if not in it yet.
         IAllocationManager allocationManager =
-            IAllocationManager(serviceManager.allocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 1});
+            IAllocationManager(serviceManager.getAllocationManager());
+        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
         if (!allocationManager.isMemberOfOperatorSet(operatorAddr, opSetQuery)) {
             uint32[] memory opSetIds = new uint32[](1);
-            opSetIds[0] = 1;
+            opSetIds[0] = 0;
             // TODO: change this arbitrary code?
             bytes memory secretCode = bytes("0x1234");
             IAllocationManagerTypes.RegisterParams memory params = IAllocationManagerTypes
                 .RegisterParams({avs: serviceManagerAddress, operatorSetIds: opSetIds, data: secretCode});
             allocationManager.registerForOperatorSets(operatorAddr, params);
 
-            console2.log("Successfully registered operator %s to operator sets [1]", operatorAddr);
+            console2.log("Successfully registered operator %s to operator sets [0]", operatorAddr);
         } else {
-            console2.log("%s already registered to operator sets [1]", operatorAddr);
+            console2.log("%s already registered to operator sets [0]", operatorAddr);
         }
 
         if (!stakeRegistry.operatorRegistered(operatorAddr)) {
@@ -181,11 +181,11 @@ library WavsRegisterOperatorLib {
 
         // query if already in opset and add if if not in it yet.
         IAllocationManager allocationManager =
-            IAllocationManager(serviceManager.allocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 1});
+            IAllocationManager(serviceManager.getAllocationManager());
+        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
         if (allocationManager.isMemberOfOperatorSet(operatorAddr, opSetQuery)) {
             uint32[] memory opSetIds = new uint32[](1);
-            opSetIds[0] = 1;
+            opSetIds[0] = 0;
             IAllocationManagerTypes.DeregisterParams memory params = IAllocationManagerTypes
                 .DeregisterParams({
                 operator: operatorAddr,
@@ -195,10 +195,10 @@ library WavsRegisterOperatorLib {
             allocationManager.deregisterFromOperatorSets(params);
 
             console2.log(
-                "Successfully deregistered operator %s from operator sets [1]", operatorAddr
+                "Successfully deregistered operator %s from operator sets [0]", operatorAddr
             );
         } else {
-            console2.log("%s not registered to operator sets [1]", operatorAddr);
+            console2.log("%s not registered to operator sets [0]", operatorAddr);
         }
 
         if (stakeRegistry.operatorRegistered(operatorAddr)) {

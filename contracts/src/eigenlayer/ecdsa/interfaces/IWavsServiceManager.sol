@@ -62,4 +62,16 @@ interface IWavsServiceManager {
     function getLatestOperatorForSigningKey(
         address signingKeyAddress
     ) external view returns (address);
+
+    /**
+     * @notice Retrieves the allocation manager address.
+     * @return The allocation manager address.
+     */
+    function getAllocationManager() external view returns (address);
+
+    /**
+     * @notice Retrieves the delegation manager address.
+     * @return The delegation manager address.
+     */
+    function getDelegationManager() external view returns (address);
 }
