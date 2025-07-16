@@ -255,21 +255,18 @@ library WavsMiddlewareDeploymentLib {
     // }
 
     function writeDeploymentJson(
-        string memory outputPath,
-        uint256 chainId,
         DeploymentData memory data
     ) internal {
         address proxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(data.wavsServiceManager));
 
         string memory deploymentData = _generateDeploymentJson(data, proxyAdmin);
 
-        string memory fileName = string.concat(outputPath, VM.toString(chainId), ".json");
-        if (!VM.exists(outputPath)) {
-            VM.createDir(outputPath, true);
+        if (!VM.exists("deployments/wavs-bls")) {
+            VM.createDir("deployments/wavs-bls", true);
         }
 
-        VM.writeFile(fileName, deploymentData);
-        console2.log("Deployment artifacts written to:", fileName);
+        VM.writeFile("deployments/wavs-bls/avs_deploy.json", deploymentData);
+        console2.log("Deployment artifacts written to: deployments/wavs-bls/avs_deploy.json");
     }
 
     function _generateDeploymentJson(

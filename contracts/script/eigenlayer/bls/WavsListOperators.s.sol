@@ -36,7 +36,7 @@ contract WavsListOperators is Script {
         OperatorInfo memory opInfo = _listOperators(serviceManager.getStakeRegistry());
         _quorumNumerator = serviceManager.quorumNumerator();
         _quorumDenominator = serviceManager.quorumDenominator();
-        _writeOperatorListJson(block.chainid, opInfo);
+        _writeOperatorListJson(opInfo);
         vm.stopBroadcast();
 
         console.log("=== List Operators ===");
@@ -117,9 +117,9 @@ contract WavsListOperators is Script {
         });
     }
 
-    function _writeOperatorListJson(uint256 chainId, OperatorInfo memory opInfo) internal {
-        string memory fileName =
-            string.concat("deployments/wavs-bls/list-operators-", vm.toString(chainId), ".json");
+    function _writeOperatorListJson(
+        OperatorInfo memory opInfo
+    ) internal {
         if (!vm.exists("deployments/wavs-bls")) {
             vm.createDir("deployments/wavs-bls", true);
         }
@@ -167,6 +167,6 @@ contract WavsListOperators is Script {
         json = string.concat(json, "\"");
         json = string.concat(json, "}");
 
-        vm.writeFile(fileName, json);
+        vm.writeFile("deployments/wavs-bls/list_operators.json", json);
     }
 }

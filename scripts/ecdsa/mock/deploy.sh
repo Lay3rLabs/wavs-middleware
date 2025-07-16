@@ -24,11 +24,6 @@ else
     check_param "MOCK_RPC_URL" "${MOCK_RPC_URL:-http://localhost:8546}"
 fi
 
-# Get chain ID from RPC URL
-MOCK_CHAIN_ID=$(get_chain_id "$MOCK_RPC_URL")
-export MOCK_CHAIN_ID
-echo "Chain ID: $MOCK_CHAIN_ID"
-
 # Check required parameters
 check_param "MOCK_DEPLOYER_KEY" "${MOCK_DEPLOYER_KEY:-}"
 
@@ -50,7 +45,7 @@ ensure_dir deployments/wavs-mock/
 forge script script/eigenlayer/ecdsa/WavsMockDeployer.s.sol --rpc-url "$MOCK_RPC_URL" --private-key "$MOCK_DEPLOYER_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMockDeployer"
 
 echo "Mock contracts deployed with addresses:"
-cat "deployments/wavs-mock/$MOCK_CHAIN_ID.json" | jq .addresses
+cat "deployments/wavs-ecdsa/mock_deploy.json" | jq .addresses
 
 # Save deployment data
-save_deployment_data "$HOME/.nodes/mock-$MOCK_CHAIN_ID.json" "$(cat "deployments/wavs-mock/$MOCK_CHAIN_ID.json")"
+save_deployment_data "$HOME/.nodes/mock.json" "$(cat "deployments/wavs-ecdsa/mock_deploy.json")"

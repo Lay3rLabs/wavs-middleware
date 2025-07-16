@@ -22,14 +22,15 @@ check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$(jq
 # Set up environment based on DEPLOY_ENV
 setup_environment
 
-# Read the deployer private key from file
+# Read the deployer private key
 deployer_private_key=$(load_deployment_data "$HOME/.nodes/deployer")
-deployer_address=$(cast wallet address "$deployer_private_key")
+check_param "FUNDED_KEY" "${FUNDED_KEY:-$deployer_private_key}"
+deployer_address=$(cast wallet address "$FUNDED_KEY")
 echo "Deployer address: $deployer_address"
 
 ensure_balance "$deployer_address"
 
 echo "Updating AVS Service URI"
-cast send "$WAVS_SERVICE_MANAGER_ADDRESS" "setServiceURI(string)" "$SERVICE_URI" --private-key "$deployer_private_key" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"
+cast send "$WAVS_SERVICE_MANAGER_ADDRESS" "setServiceURI(string)" "$SERVICE_URI" --private-key "$FUNDED_KEY" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"
 
 echo "AVS Service URI updated successfully"

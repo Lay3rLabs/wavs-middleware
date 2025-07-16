@@ -21,11 +21,6 @@ check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$(jq
 # Set up environment based on DEPLOY_ENV
 setup_environment
 
-# Get chain ID from mirror RPC URL
-CHAIN_ID=$(get_chain_id)
-export CHAIN_ID
-echo "Chain ID: $CHAIN_ID"
-
 echo "Listing operators for service manager: $WAVS_SERVICE_MANAGER_ADDRESS"
 
 # List operators
@@ -33,4 +28,4 @@ cd contracts || handle_error "Failed to change to contracts directory"
 forge script script/eigenlayer/bls/WavsListOperators.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --broadcast || handle_error "Failed to list operators"
 
 # Save operator list data
-save_deployment_data "$HOME/.nodes/wavs-bls-list-operators-$CHAIN_ID.json" "$(cat "deployments/wavs-bls/list-operators-$CHAIN_ID.json")"
+save_deployment_data "$HOME/.nodes/wavs-bls-list-operators.json" "$(cat "deployments/wavs-bls/list_operators.json")"
