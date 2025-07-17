@@ -4,7 +4,8 @@ FROM ghcr.io/foundry-rs/foundry:latest AS build
 USER root
 
 COPY contracts /wavs/contracts
-RUN make build
+RUN apt-get install make
+RUN cd /wavs/contracts && make build
 
 # Using bookworm image saves about 100MB off using foundry directly
 # bookworm-slim saves another 40MB
