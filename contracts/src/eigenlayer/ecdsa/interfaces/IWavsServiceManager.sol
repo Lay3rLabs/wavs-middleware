@@ -74,4 +74,10 @@ interface IWavsServiceManager {
      * @return The delegation manager address.
      */
     function getDelegationManager() external view returns (address);
+
+    /**
+     * @notice Retrieves the stake registry address.
+     * @return The stake registry address.
+     */
+    function getStakeRegistry() external view returns (address);
 }

@@ -56,7 +56,7 @@ jobs:
 
       - name: Run Forge fmt
         run: |
-          make format-check
+          cd contracts && make format-check
         id: fmt
 
       - name: "Add lint summary"

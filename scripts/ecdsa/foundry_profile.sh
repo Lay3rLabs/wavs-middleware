@@ -1,0 +1,1 @@
+export FOUNDRY_PROFILE=ecdsa

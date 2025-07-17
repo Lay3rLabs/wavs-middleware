@@ -36,12 +36,12 @@ jobs:
 
       - name: Run Forge build
         run: |
-          make build
+          cd contracts && make build
         id: build
 
       - name: Run Forge tests
         run: |
-          make test
+          cd contracts && make test
         id: test
 
       - name: "Add test summary"

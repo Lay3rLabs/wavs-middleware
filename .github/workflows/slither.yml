@@ -28,11 +28,6 @@ jobs:
         run: |
           forge --version
 
-      - name: Run Forge build
-        run: |
-          make build
-        id: build
-
       - name: Slither analysis
         uses: crytic/slither-action@v0.4.0
         with:

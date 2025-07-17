@@ -32,4 +32,22 @@ interface IWavsServiceManager {
      *      required for a valid signature (e.g., 2/3 or 51/100)
      */
     function setQuorumThreshold(uint256 numerator, uint256 denominator) external;
+
+    /**
+     * @notice Returns the address of the registry coordinator.
+     * @return The address of the registry coordinator.
+     */
+    function getRegistryCoordinator() external view returns (address);
+
+    /**
+     * @notice Returns the address of the allocation manager.
+     * @return The address of the allocation manager.
+     */
+    function getAllocationManager() external view returns (address);
+
+    /**
+     * @notice Returns the address of the stake registry.
+     * @return The address of the stake registry.
+     */
+    function getStakeRegistry() external view returns (address);
 }

@@ -3,7 +3,7 @@ name: Publish Package to npm
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -18,19 +18,19 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
 
-      - run: make build
+      - run: cd contracts && make build
 
       - run: |
-            VERSION="${GITHUB_REF_NAME#v}"
-            npm version $VERSION --no-git-tag-version
-            npm publish
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm version $VERSION --no-git-tag-version
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
