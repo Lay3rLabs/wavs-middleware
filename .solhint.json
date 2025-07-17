@@ -8,6 +8,8 @@
     "no-inline-assembly": "off",
     "no-console": "off",
     "import-path-check": "off",
-    "no-empty-blocks": "off"
+    "no-empty-blocks": "off",
+    "avoid-low-level-calls": "off",
+    "payable-fallback": "off"
   }
 }
