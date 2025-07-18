@@ -22,7 +22,7 @@ docker build -t wavs-middleware .
 
 start holesky fork:
 
-```bash
+```bash docci-background docci-delay-after=2
 RPC_URL=https://ethereum-holesky-rpc.publicnode.com
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
@@ -73,7 +73,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 list operators:
 
-```bash
+```bash docci-output-contains="Operator 1:"
 docker run --rm --network host -v ./.nodes:/root/.nodes \
   wavs-middleware list_operators
 ```
@@ -122,13 +122,13 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 mirror chain start
 
-```bash
+```bash docci-delay-after=2 docci-background
 anvil --host 0.0.0.0 --port 8546
 ```
 
 mirror deploy
 
-```bash
+```bash docci-delay-after=2
 WAVS_SERVICE_MANAGER_ADDRESS=`jq -r .addresses.WavsServiceManager .nodes/avs_deploy.json`
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
@@ -139,14 +139,23 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 mirror list operators
 
-```bash
+```bash docci-ignore docci-output-contains="Operator 1:"
+SOURCE_RPC_URL=http://localhost:8545
+MIRROR_RPC_URL=http://localhost:8546
+WAVS_SERVICE_MANAGER_ADDRESS=`jq -r .addresses.WavsServiceManager .nodes/avs_deploy.json`
+MIRROR_SERVICE_MANAGER_ADDRESS=`jq -r .addresses.WavsServiceManager .nodes/mirror.json`
+
 docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e SOURCE_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
+   -e MIRROR_SERVICE_MANAGER_ADDRESS=${MIRROR_SERVICE_MANAGER_ADDRESS} \
+   -e SOURCE_RPC_URL=${SOURCE_RPC_URL} \
+   -e MIRROR_RPC_URL=${MIRROR_RPC_URL} \
   wavs-middleware -m mirror list_operators
 ```
 
 mock deploy
 
-```bash
+```bash docci-ignore
 LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
 
 MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
