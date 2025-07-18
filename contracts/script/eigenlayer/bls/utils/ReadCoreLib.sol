@@ -5,10 +5,26 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
+/**
+ * @title ReadCoreLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for reading the core deployment data.
+ * @dev This library is used to read the core deployment data.
+ */
 library ReadCoreLib {
     using stdJson for *;
     using Strings for *;
 
+    /**
+     * @notice The deployment data struct.
+     * @param delegationManager The delegation manager address.
+     * @param avsDirectory The AVS directory address.
+     * @param strategyManager The strategy manager address.
+     * @param eigenPodManager The eigen pod manager address.
+     * @param strategyFactory The strategy factory address.
+     * @param rewardsCoordinator The rewards coordinator address.
+     * @param allocationManager The allocation manager address.
+     */
     struct DeploymentData {
         address delegationManager;
         address avsDirectory;
@@ -22,15 +38,29 @@ library ReadCoreLib {
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    /// @notice The error for the delegation manager address cannot be zero.
     error ReadCoreLib__DelegationManagerAddressCannotBeZero();
+    /// @notice The error for the AVS directory address cannot be zero.
     error ReadCoreLib__AVSDirectoryAddressCannotBeZero();
+    /// @notice The error for the strategy manager address cannot be zero.
     error ReadCoreLib__StrategyManagerAddressCannotBeZero();
+    /// @notice The error for the eigen pod manager address cannot be zero.
     error ReadCoreLib__EigenPodManagerAddressCannotBeZero();
+    /// @notice The error for the strategy factory address cannot be zero.
     error ReadCoreLib__StrategyFactoryAddressCannotBeZero();
+    /// @notice The error for the rewards coordinator address cannot be zero.
     error ReadCoreLib__RewardsCoordinatorAddressCannotBeZero();
+    /// @notice The error for the allocation manager address cannot be zero.
     error ReadCoreLib__AllocationManagerAddressCannotBeZero();
+    /// @notice The error for the permission controller address cannot be zero.
     error ReadCoreLib__PermissionControllerAddressCannotBeZero();
 
+    /**
+     * @notice The read deployment JSON function.
+     * @param deploymentPath The deployment path.
+     * @param chainId The chain ID.
+     * @return data The deployment data.
+     */
     function readDeploymentJson(
         string memory deploymentPath,
         uint256 chainId
@@ -44,6 +74,12 @@ library ReadCoreLib {
         return data;
     }
 
+    /**
+     * @notice The read address set function.
+     * @param json The JSON string.
+     * @param data The deployment data.
+     * @return data The deployment data.
+     */
     function readAddressSet(
         string memory json,
         DeploymentData memory data
@@ -60,6 +96,10 @@ library ReadCoreLib {
         return data;
     }
 
+    /**
+     * @notice The validate deployment function.
+     * @param data The deployment data.
+     */
     function validateDeployment(
         DeploymentData memory data
     ) private pure {

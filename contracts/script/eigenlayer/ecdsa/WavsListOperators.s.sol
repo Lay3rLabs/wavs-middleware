@@ -10,7 +10,22 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 
+/**
+ * @title WavsListOperators
+ * @author Lay3rLabs
+ * @notice This script lists the operators for the WavsServiceManager contract.
+ * @dev This script is used to list the operators for the WavsServiceManager contract.
+ */
 contract WavsListOperators is Script {
+    /**
+     * @notice The operator info struct.
+     * @param stakeRegistry The stake registry address.
+     * @param totalWeight The total weight.
+     * @param thresholdWeight The threshold weight.
+     * @param operators The operators.
+     * @param signingKeyAddresses The signing key addresses.
+     * @param weights The weights.
+     */
     struct OperatorInfo {
         address stakeRegistry;
         uint256 totalWeight;
@@ -20,15 +35,17 @@ contract WavsListOperators is Script {
         uint256[] weights;
     }
 
+    /// @notice The environment variable for the WAVS service manager address.
     string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
 
-    // configuration
     WavsServiceManager private serviceManager;
 
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         serviceManager = WavsServiceManager(vm.envAddress(ENV_SERVICE_MANAGER));
     }
 
+    /// @notice The run function for the script.
     function run() external {
         vm.startBroadcast();
         OperatorInfo memory opInfo = listOperators();
@@ -53,7 +70,7 @@ contract WavsListOperators is Script {
 
         console.log(" "); // Blank line for separation
         console.log("=== Registered Operators ===");
-        for (uint256 i = 0; i < opInfo.operators.length; i++) {
+        for (uint256 i = 0; i < opInfo.operators.length; ++i) {
             string memory op = string.concat(
                 "Operator ",
                 Strings.toString(i + 1),
@@ -73,6 +90,10 @@ contract WavsListOperators is Script {
         console.log(string.concat("Quorum Denominator: ", Strings.toString(quorumDenominator)));
     }
 
+    /**
+     * @notice The list operators function.
+     * @return OperatorInfo struct containing all operator-related information
+     */
     function listOperators() private view returns (OperatorInfo memory) {
         IECDSAStakeRegistry stakeRegistry = IECDSAStakeRegistry(serviceManager.stakeRegistry());
 
@@ -85,12 +106,12 @@ contract WavsListOperators is Script {
         address[] memory operators = allocationManager.getMembers(opSetQuery);
 
         uint256[] memory weights = new uint256[](operators.length);
-        for (uint256 i = 0; i < operators.length; i++) {
+        for (uint256 i = 0; i < operators.length; ++i) {
             weights[i] = stakeRegistry.getOperatorWeight(operators[i]);
         }
 
         address[] memory signingKeyAddresses = new address[](operators.length);
-        for (uint256 i = 0; i < operators.length; i++) {
+        for (uint256 i = 0; i < operators.length; ++i) {
             signingKeyAddresses[i] = stakeRegistry.getLatestOperatorSigningKey(operators[i]);
         }
 

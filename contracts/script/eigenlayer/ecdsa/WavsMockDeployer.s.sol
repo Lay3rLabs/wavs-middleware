@@ -7,23 +7,37 @@ import {console2} from "forge-std/Test.sol";
 import {WavsMockDeploymentLib} from "./utils/WavsMockDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
+/**
+ * @title WavsMockDeployer
+ * @author Lay3rLabs
+ * @notice This script deploys the WavsMock contracts.
+ * @dev This script is used to deploy the WavsMock contracts.
+ */
 contract WavsMockDeployer is Script {
     using UpgradeableProxyLib for address;
 
+    /// @notice The proxy admin address.
     address public proxyAdmin;
+    /// @notice The deployment data.
     WavsMockDeploymentLib.DeploymentData public deployment;
+    /// @notice The initial configuration.
     WavsMockDeploymentLib.InitialConfiguration public configuration;
 
+    /// @notice The error for the stake registry address cannot be zero.
     error WavsMockDeployer__StakeRegistryAddressCannotBeZero();
+    /// @notice The error for the WAVS service manager address cannot be zero.
     error WavsMockDeployer__WavsServiceManagerAddressCannotBeZero();
+    /// @notice The error for the proxy admin address cannot be zero.
     error WavsMockDeployer__ProxyAdminAddressCannotBeZero();
 
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         // Pass in the configuration as a file, load it
         string memory configFile = "./deployments/wavs-mock-config.json";
         configuration = WavsMockDeploymentLib.loadConfiguration(configFile);
     }
 
+    /// @notice The run function for the script.
     function run() external {
         vm.startBroadcast();
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
@@ -42,6 +56,7 @@ contract WavsMockDeployer is Script {
         WavsMockDeploymentLib.writeDeploymentJson(deployment);
     }
 
+    /// @notice The verify deployment function.
     function verifyDeployment() internal view {
         if (deployment.stakeRegistry == address(0)) {
             revert WavsMockDeployer__StakeRegistryAddressCannotBeZero();

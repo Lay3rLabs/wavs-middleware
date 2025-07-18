@@ -13,28 +13,49 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {MirrorStakeRegistry} from "src/eigenlayer/ecdsa/MirrorStakeRegistry.sol";
 
+/**
+ * @title MirrorStakeRegistryTest
+ * @author Lay3rLabs
+ * @notice This contract contains tests for the MirrorStakeRegistry contract.
+ * @dev This contract is used to test the MirrorStakeRegistry contract.
+ */
 contract MirrorStakeRegistryTest is Test {
-    // these should sum to around 9,0000 (so 2/3 can pass)
+    /// @notice The weight 1.
     uint256 public constant WEIGHT_1 = 1500;
+    /// @notice The weight 2.
     uint256 public constant WEIGHT_2 = 3000;
+    /// @notice The weight 3.
     uint256 public constant WEIGHT_3 = 4500;
 
+    /// @notice The registry.
     MirrorStakeRegistry public registry;
+    /// @notice The owner.
     address public owner;
+    /// @notice The operator 1.
     address public operator1;
+    /// @notice The operator 2.
     address public operator2;
+    /// @notice The operator 3.
     address public operator3;
+    /// @notice The signing key address 1.
     address public signingKeyAddress1;
+    /// @notice The signing key address 2.
     address public signingKeyAddress2;
+    /// @notice The signing key address 3.
     address public signingKeyAddress3;
+    /// @notice The private key 1.
     uint256 public privateKey1;
+    /// @notice The private key 2.
     uint256 public privateKey2;
+    /// @notice The private key 3.
     uint256 public privateKey3;
+    /// @notice The service manager.
     address public serviceManager;
 
     error MirrorStakeRegistryTest__ArraysLengthMismatch();
     error MirrorStakeRegistryTest__SignatureRecoveryFailed();
 
+    /// @notice The setUp function.
     function setUp() public {
         // Set up test addresses
         owner = address(0x123);
@@ -78,8 +99,10 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test that the contract is properly initialized
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_initialization function.
     function test_initialization() public view {
+        /* solhint-enable func-name-mixedcase */
         assertEq(registry.owner(), owner, "Owner should be set correctly");
         assertEq(
             address(registry.serviceManager()),
@@ -88,8 +111,10 @@ contract MirrorStakeRegistryTest is Test {
         );
     }
 
-    // Test that public registration methods revert as expected
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_registrationMethodsRevert function.
     function test_registrationMethodsRevert() public {
+        /* solhint-enable func-name-mixedcase */
         // Test registerOperatorWithSignature reverts
         ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry memory sig;
         vm.expectRevert(MirrorStakeRegistry.RegistrationNotSupported.selector);
@@ -117,8 +142,10 @@ contract MirrorStakeRegistryTest is Test {
         registry.updateOperatorsForQuorum(operatorsArray, extraData);
     }
 
-    // Test that owner-only configuration methods revert as expected
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_ownerConfigMethodsRevert function.
     function test_ownerConfigMethodsRevert() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Test updateQuorumConfig reverts
@@ -138,8 +165,10 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test that non-owners cannot call owner-only methods
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_onlyOwnerRestriction function.
     function test_onlyOwnerRestriction() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(address(0x999)); // Not the owner
 
         // Test setOperatorDetails reverts for non-owners
@@ -160,8 +189,10 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test setting operator details by the owner
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_setOperatorDetails function.
     function test_setOperatorDetails() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set operator details
@@ -191,8 +222,10 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test batch setting operator details by the owner
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_batchSetOperatorDetails function.
     function test_batchSetOperatorDetails() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set up batch data
@@ -269,8 +302,10 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test updating an existing operator's details
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_updateExistingOperator function.
     function test_updateExistingOperator() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set initial operator details
@@ -310,8 +345,10 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test batch input validation for mismatched array lengths
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_batchSetOperatorDetails_mismatchedArrays function.
     function test_batchSetOperatorDetails_mismatchedArrays() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set up batch data with mismatched array lengths
@@ -352,8 +389,10 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test getting operator weight at block
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_getOperatorWeightAtBlock function.
     function test_getOperatorWeightAtBlock() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set operator details
@@ -375,8 +414,10 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    // Test getting total weight
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_getTotalWeight function.
     function test_getTotalWeight() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set up batch data
@@ -426,7 +467,7 @@ contract MirrorStakeRegistryTest is Test {
     }
 
     /**
-     * @notice Helper function to sort signers and their corresponding signatures in ascending order by signer address
+     * @notice The sortSignersAndSignatures function.
      * @dev ECDSAStakeRegistry requires signers to be sorted in ascending order
      * @param signers Array of signer addresses
      * @param signatures Array of signatures that correspond to signers at the same index
@@ -437,8 +478,8 @@ contract MirrorStakeRegistryTest is Test {
     ) internal pure {
         // Simple bubble sort since we're working with small arrays
         uint256 length = signers.length;
-        for (uint256 i = 0; i < length - 1; i++) {
-            for (uint256 j = 0; j < length - i - 1; j++) {
+        for (uint256 i = 0; i < length - 1; ++i) {
+            for (uint256 j = 0; j < length - i - 1; ++j) {
                 if (signers[j] > signers[j + 1]) {
                     // Swap signers
                     address tempAddr = signers[j];
@@ -455,7 +496,7 @@ contract MirrorStakeRegistryTest is Test {
     }
 
     /**
-     * @notice Helper function to generate an ECDSA signature using a private key
+     * @notice The generateSignature function.
      * @param privateKey The private key to sign with
      * @param digest The message hash to sign
      * @return The signature in bytes format ready for validation
@@ -469,7 +510,7 @@ contract MirrorStakeRegistryTest is Test {
     }
 
     /**
-     * @notice Helper function to verify that signatures can be recovered to the expected signers
+     * @notice The verifySignatures function.
      * @param digest Message hash that was signed
      * @param signers Array of signer addresses (should be sorted)
      * @param signatures Array of signatures corresponding to signers
@@ -483,7 +524,7 @@ contract MirrorStakeRegistryTest is Test {
             revert MirrorStakeRegistryTest__ArraysLengthMismatch();
         }
 
-        for (uint256 i = 0; i < signers.length; i++) {
+        for (uint256 i = 0; i < signers.length; ++i) {
             address recovered = ECDSA.recover(digest, signatures[i]);
             if (recovered != signers[i]) {
                 revert MirrorStakeRegistryTest__SignatureRecoveryFailed();
@@ -491,8 +532,10 @@ contract MirrorStakeRegistryTest is Test {
         }
     }
 
-    // Test isValidSignature functionality with real signatures
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_isValidSignature function.
     function test_isValidSignature() public {
+        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set up operators with weights
@@ -542,7 +585,7 @@ contract MirrorStakeRegistryTest is Test {
         sortSignersAndSignatures(signers, signatures);
 
         // Verify signers are properly sorted
-        for (uint256 i = 0; i < signers.length - 1; i++) {
+        for (uint256 i = 0; i < signers.length - 1; ++i) {
             assertTrue(signers[i] < signers[i + 1], "Signers not properly sorted");
         }
 

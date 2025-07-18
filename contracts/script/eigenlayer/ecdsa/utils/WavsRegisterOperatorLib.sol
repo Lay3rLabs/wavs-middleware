@@ -22,6 +22,12 @@ import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
 
+/**
+ * @title WavsRegisterOperatorLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for registering operators to the WavsServiceManager contract.
+ * @dev This library is used to register operators to the WavsServiceManager contract.
+ */
 library WavsRegisterOperatorLib {
     using stdJson for *;
     using Strings for *;
@@ -29,9 +35,18 @@ library WavsRegisterOperatorLib {
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    /// @notice The error for the failed to mint LST tokens.
     error WavsRegisterOperatorLib__FailedToMintLSTTokens();
+    /// @notice The error for the failed to approve LST tokens.
     error WavsRegisterOperatorLib__FailedToApproveLSTTokens();
 
+    /**
+     * @notice The setup operator function.
+     * @param coreDeployment The deployment data.
+     * @param lstContractAddress The LST contract address.
+     * @param lstStrategyAddress The LST strategy address.
+     * @param stakeAmount The amount to stake.
+     */
     function setupOperator(
         ReadCoreLib.DeploymentData memory coreDeployment,
         address lstContractAddress,
@@ -92,6 +107,11 @@ library WavsRegisterOperatorLib {
         }
     }
 
+    /**
+     * @notice The register to AVS function.
+     * @param serviceManagerAddress The WAVS service manager address.
+     * @param signingKeyAddress The signing key address.
+     */
     function registerToAvs(address serviceManagerAddress, address signingKeyAddress) internal {
         WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
         ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
@@ -169,6 +189,10 @@ library WavsRegisterOperatorLib {
         }
     }
 
+    /**
+     * @notice The deregister from AVS function.
+     * @param serviceManagerAddress The WAVS service manager address.
+     */
     function deregisterFromAvs(
         address serviceManagerAddress
     ) internal {

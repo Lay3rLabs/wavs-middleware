@@ -27,6 +27,12 @@ import {IBLSApkRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IBLSAp
 import {BN254} from "@eigenlayer-middleware/src/libraries/BN254.sol";
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
 
+/**
+ * @title WavsRegisterOperatorLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for registering an operator to the WAVS service manager.
+ * @dev This library is used to register an operator to the WAVS service manager.
+ */
 library WavsRegisterOperatorLib {
     using stdJson for *;
     using Strings for *;
@@ -34,10 +40,20 @@ library WavsRegisterOperatorLib {
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    /// @notice The error for the failed to mint LST tokens.
     error WavsRegisterOperatorLib__FailedToMintLSTTokens();
+    /// @notice The error for the failed to approve LST tokens.
     error WavsRegisterOperatorLib__FailedToApproveLSTTokens();
+    /// @notice The error for the failed to get allocation configuration delay.
     error WavsRegisterOperatorLib__FailedToGetAllocationConfigurationDelay();
 
+    /**
+     * @notice The setup operator function.
+     * @param coreDeployment The core deployment data.
+     * @param lstContractAddress The LST contract address.
+     * @param lstStrategyAddress The LST strategy address.
+     * @param stakeAmount The stake amount.
+     */
     function setupOperator(
         ReadCoreLib.DeploymentData memory coreDeployment,
         address lstContractAddress,
@@ -123,6 +139,13 @@ library WavsRegisterOperatorLib {
         }
     }
 
+    /**
+     * @notice The register to AVS function.
+     * @param operatorKey The operator key.
+     * @param serviceManagerAddress The service manager address.
+     * @param allocationManagerAddress The allocation manager address.
+     * @param lstStrategyAddress The LST strategy address.
+     */
     function registerToAvs(
         uint256 operatorKey,
         address serviceManagerAddress,
@@ -137,7 +160,7 @@ library WavsRegisterOperatorLib {
         IAllocationManager allocationManager = IAllocationManager(allocationManagerAddress);
         OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
         if (!allocationManager.isMemberOfOperatorSet(operatorAddr, opSetQuery)) {
-            (bool success, bytes memory result) = address(allocationManager).call(
+            (bool success, bytes memory result) = address(allocationManager).staticcall(
                 abi.encodeWithSignature("ALLOCATION_CONFIGURATION_DELAY()")
             );
             if (!success) {

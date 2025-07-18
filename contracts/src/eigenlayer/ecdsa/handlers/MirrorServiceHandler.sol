@@ -6,6 +6,12 @@ import {IWavsServiceManager} from "../interfaces/IWavsServiceManager.sol";
 import {MirrorStakeRegistry} from "../MirrorStakeRegistry.sol";
 import {IMirrorUpdateTypes} from "../interfaces/IMirrorServiceHandler.sol";
 
+/**
+ * @title MirrorServiceHandler
+ * @author Lay3r Labs
+ * @notice Contract for handling the Mirror service
+ * @dev This contract implements the IWavsServiceHandler interface
+ */
 contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
     /// @notice Ensures all updates are deployed in order and no duplicates.
     uint64 public lastTriggerId;
@@ -16,6 +22,10 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
     /// @notice Service manager instance
     IWavsServiceManager public immutable SERVICE_MANAGER;
 
+    /**
+     * @notice Constructor
+     * @param _stakeRegistry The stake registry instance
+     */
     constructor(
         MirrorStakeRegistry _stakeRegistry
     ) {
@@ -24,14 +34,14 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
         lastTriggerId = 0;
     }
 
+    /// @inheritdoc IWavsServiceHandler
     function handleSignedEnvelope(
         Envelope calldata envelope,
         SignatureData calldata signatureData
     ) external {
         // Quick check this is valid trigger id before validating signatures
-        IMirrorUpdateTypes.UpdateWithId memory updateData =
-            abi.decode(envelope.payload, (IMirrorUpdateTypes.UpdateWithId));
-        if (updateData.triggerId <= lastTriggerId) {
+        UpdateWithId memory updateData = abi.decode(envelope.payload, (UpdateWithId));
+        if (!(updateData.triggerId > lastTriggerId)) {
             revert InvalidTriggerId(lastTriggerId);
         }
 
@@ -46,10 +56,15 @@ contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
         );
     }
 
+    /// @inheritdoc IWavsServiceHandler
     function getServiceManager() external view returns (address) {
         return address(SERVICE_MANAGER);
     }
 
+    /**
+     * @notice Returns the address of the stake registry
+     * @return The address of the stake registry
+     */
     function getStakeRegistry() external view returns (address) {
         return address(STAKE_REGISTRY);
     }

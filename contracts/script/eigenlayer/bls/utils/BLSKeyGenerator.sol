@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.27;
 
-// import {Vm} from "forge-std/Vm.sol";
 import {BN254} from "@eigenlayer-middleware/src/libraries/BN254.sol";
 import {ISlashingRegistryCoordinator} from
     "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
@@ -9,12 +8,22 @@ import {IBLSApkRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IBLSAp
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {BN256G2} from "@eigenlayer-middleware/test/utils/BN256G2.sol";
 
+/**
+ * @title BLSKeyGenerator
+ * @author Lay3rLabs
+ * @notice This library contains functions for generating BLS keys.
+ * @dev This library is used to generate BLS keys.
+ */
 library BLSKeyGenerator {
     using BN254 for *;
     using Strings for *;
 
-    // Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+    /**
+     * @notice The generate pubkey registration message hash function.
+     * @param operator The operator address.
+     * @param slashingRegistryCoordinator The slashing registry coordinator address.
+     * @return pubkeyRegistrationMessageHash The pubkey registration message hash.
+     */
     function generatePubkeyRegistrationMessageHash(
         address operator,
         address slashingRegistryCoordinator
@@ -23,6 +32,12 @@ library BLSKeyGenerator {
             .pubkeyRegistrationMessageHash(operator);
     }
 
+    /**
+     * @notice The generate BLS params function.
+     * @param pubkeyRegistrationMessageHash The pubkey registration message hash.
+     * @param privateKey The private key.
+     * @return params The BLS params.
+     */
     function generateBLSParams(
         BN254.G1Point memory pubkeyRegistrationMessageHash,
         uint256 privateKey

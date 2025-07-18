@@ -7,8 +7,12 @@ import {stdJson} from "forge-std/StdJson.sol";
 
 import {Pausable} from "@eigenlayer/contracts/permissions/Pausable.sol";
 
-// Required: set private key, mnemonic, or hardware key for contract owner to forge script
-// Optional: AVS_DEPLOY_FILE (defaults to /root/.nodes/avs_deploy.json)
+/**
+ * @title UnpauseWavsRegistration
+ * @author Lay3rLabs
+ * @notice This script unpauses the WAVS registration.
+ * @dev This script is used to unpause the WAVS registration.
+ */
 contract UnpauseWavsRegistration is Script {
     using stdJson for *;
 
@@ -16,10 +20,12 @@ contract UnpauseWavsRegistration is Script {
 
     Pausable private slashingRegistryCoordinator;
 
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         slashingRegistryCoordinator = Pausable(vm.envAddress(ENV_REGISTRY_ADDRESS));
     }
 
+    /// @notice The run function for the script.
     function run() external {
         console.log(
             "Slashing Registry Coordinator address: %s", address(slashingRegistryCoordinator)

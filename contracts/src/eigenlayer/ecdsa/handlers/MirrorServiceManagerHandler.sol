@@ -5,6 +5,12 @@ import {IWavsServiceHandler} from "../interfaces/IWavsServiceHandler.sol";
 import {WavsServiceManager} from "../WavsServiceManager.sol";
 import {IManagerUpdateTypes} from "../interfaces/IMirrorServiceManagerHandler.sol";
 
+/**
+ * @title MirrorServiceManagerHandler
+ * @author Lay3r Labs
+ * @notice Contract for handling the Mirror service manager
+ * @dev This contract implements the IManagerUpdateTypes and IWavsServiceHandler interfaces
+ */
 contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler {
     /// @notice Ensures all updates are deployed in order and no duplicates.
     uint64 public lastTriggerId;
@@ -12,6 +18,10 @@ contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler
     /// @notice Service manager instance
     WavsServiceManager public immutable SERVICE_MANAGER;
 
+    /**
+     * @notice Constructor
+     * @param _serviceManager The service manager instance
+     */
     constructor(
         WavsServiceManager _serviceManager
     ) {
@@ -19,14 +29,14 @@ contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler
         lastTriggerId = 0;
     }
 
+    /// @inheritdoc IWavsServiceHandler
     function handleSignedEnvelope(
         Envelope calldata envelope,
         SignatureData calldata signatureData
     ) external {
         // Quick check this is valid trigger id before validating signatures
-        IManagerUpdateTypes.UpdateWithId memory updateData =
-            abi.decode(envelope.payload, (IManagerUpdateTypes.UpdateWithId));
-        if (updateData.triggerId <= lastTriggerId) {
+        UpdateWithId memory updateData = abi.decode(envelope.payload, (UpdateWithId));
+        if (!(updateData.triggerId > lastTriggerId)) {
             revert InvalidTriggerId(lastTriggerId);
         }
 
@@ -38,6 +48,7 @@ contract MirrorServiceManagerHandler is IManagerUpdateTypes, IWavsServiceHandler
         SERVICE_MANAGER.setQuorumThreshold(updateData.numerator, updateData.denominator);
     }
 
+    /// @inheritdoc IWavsServiceHandler
     function getServiceManager() external view returns (address) {
         return address(SERVICE_MANAGER);
     }

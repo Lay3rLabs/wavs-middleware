@@ -11,12 +11,22 @@ import {UpgradeableProxyLib} from "script/eigenlayer/ecdsa/utils/UpgradeableProx
 
 uint256 constant OPERATOR_WEIGHT = 10_000;
 
+/**
+ * @title WavsMiddlewareDeploymentLibTest
+ * @author Lay3rLabs
+ * @notice This contract contains tests for the WavsMiddlewareDeploymentLib contract.
+ * @dev This contract is used to test the WavsMiddlewareDeploymentLib contract.
+ */
 contract WavsMiddlewareDeploymentLibTest is Test {
     using UpgradeableProxyLib for address;
 
+    /// @notice The setUp function.
     function setUp() public {}
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_parseStrategies function.
     function test_parseStrategies() public {
+        /* solhint-enable func-name-mixedcase */
         IECDSAStakeRegistryTypes.Quorum memory quorum =
             WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", 17_000);
         console2.log(quorum.strategies.length);
@@ -24,7 +34,7 @@ contract WavsMiddlewareDeploymentLibTest is Test {
         console2.log(quorum.strategies[0].multiplier);
         assertEq(quorum.strategies.length, 12);
         uint96 totalMultiplier = 0;
-        for (uint256 i; i < quorum.strategies.length; i++) {
+        for (uint256 i; i < quorum.strategies.length; ++i) {
             totalMultiplier += quorum.strategies[i].multiplier;
         }
         assertEq(totalMultiplier, 10_000);

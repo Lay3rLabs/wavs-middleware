@@ -9,20 +9,36 @@ import {IECDSAStakeRegistryTypes} from
 import {WavsMirrorDeploymentLib} from "./utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
+/**
+ * @title WavsMirrorDeployer
+ * @author Lay3rLabs
+ * @notice This script deploys the WavsMirror contracts.
+ * @dev This script is used to deploy the WavsMirror contracts.
+ */
 contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
     using UpgradeableProxyLib for address;
 
+    /// @notice The proxy admin address.
     address public proxyAdmin;
+    /// @notice The deployment data.
     WavsMirrorDeploymentLib.DeploymentData public deployment;
+    /// @notice The initial configuration.
     WavsMirrorDeploymentLib.InitialConfiguration public configuration;
 
+    /// @notice The error for the stake registry address cannot be zero.
     error WavsMirrorDeployer__StakeRegistryAddressCannotBeZero();
+    /// @notice The error for the WAVS service manager address cannot be zero.
     error WavsMirrorDeployer__WavsServiceManagerAddressCannotBeZero();
+    /// @notice The error for the mirror service handler address cannot be zero.
     error WavsMirrorDeployer__MirrorServiceHandlerAddressCannotBeZero();
+    /// @notice The error for the mirror service manager handler address cannot be zero.
     error WavsMirrorDeployer__MirrorServiceManagerHandlerAddressCannotBeZero();
+    /// @notice The error for the proxy admin address cannot be zero.
     error WavsMirrorDeployer__ProxyAdminAddressCannotBeZero();
+    /// @notice The error for the no operators.
     error WavsMirrorDeployer__NoOperators();
 
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         // Pass in the configuration as a file, load it
         string memory configFile = "./deployments/wavs-mirror-config.json";
@@ -32,6 +48,7 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
         }
     }
 
+    /// @notice The run function for the script.
     function run() external {
         vm.startBroadcast();
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
@@ -54,6 +71,7 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
         WavsMirrorDeploymentLib.writeDeploymentJson(deployment);
     }
 
+    /// @notice The verify deployment function.
     function verifyDeployment() internal view {
         if (deployment.stakeRegistry == address(0)) {
             revert WavsMirrorDeployer__StakeRegistryAddressCannotBeZero();

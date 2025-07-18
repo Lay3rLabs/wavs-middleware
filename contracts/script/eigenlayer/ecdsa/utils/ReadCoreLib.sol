@@ -5,10 +5,26 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
+/**
+ * @title ReadCoreLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for reading the core deployment data.
+ * @dev This library is used to read the core deployment data.
+ */
 library ReadCoreLib {
     using stdJson for *;
     using Strings for *;
 
+    /**
+     * @notice The deployment data struct.
+     * @param delegationManager The delegation manager address.
+     * @param avsDirectory The AVS directory address.
+     * @param strategyManager The strategy manager address.
+     * @param eigenPodManager The eigen pod manager address.
+     * @param strategyFactory The strategy factory address.
+     * @param rewardsCoordinator The rewards coordinator address.
+     * @param allocationManager The allocation manager address.
+     */
     struct DeploymentData {
         address delegationManager;
         address avsDirectory;
@@ -21,8 +37,15 @@ library ReadCoreLib {
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    /// @notice The error for the rewards coordinator not found.
     error ReadCoreLib__RewardsCoordinatorNotFound();
 
+    /**
+     * @notice The read deployment JSON function.
+     * @param deploymentPath The deployment path.
+     * @param chainId The chain ID.
+     * @return data The deployment data.
+     */
     function readDeploymentJson(
         string memory deploymentPath,
         uint256 chainId
@@ -36,6 +59,12 @@ library ReadCoreLib {
         return data;
     }
 
+    /**
+     * @notice The read first address set function.
+     * @param json The JSON string.
+     * @param data The deployment data.
+     * @return data The deployment data.
+     */
     function readFirstAddressSet(
         string memory json,
         DeploymentData memory data
@@ -47,6 +76,12 @@ library ReadCoreLib {
         return data;
     }
 
+    /**
+     * @notice The read second address set function.
+     * @param json The JSON string.
+     * @param data The deployment data.
+     * @return data The deployment data.
+     */
     function readSecondAddressSet(
         string memory json,
         DeploymentData memory data

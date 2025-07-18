@@ -21,23 +21,40 @@ import {MirrorServiceManagerHandler} from
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 
+/**
+ * @title WavsMirrorDeploymentLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for deploying the WavsMirror contracts.
+ * @dev This library is used to deploy the WavsMirror contracts.
+ */
 library WavsMirrorDeploymentLib {
     using stdJson for *;
     using Strings for *;
     using UpgradeableProxyLib for address;
 
+    /**
+     * @notice The initial configuration struct.
+     * @param operators The operators.
+     * @param signingKeyAddresses The signing key addresses.
+     * @param weights The weights.
+     * @param thresholdWeight The threshold weight.
+     */
     struct InitialConfiguration {
-        // original operators
         address[] operators;
         address[] signingKeyAddresses;
         uint256[] weights;
-        // stake registry threshold
         uint256 thresholdWeight;
-        // service manager threshold
         uint256 quorumNumerator;
         uint256 quorumDenominator;
     }
 
+    /**
+     * @notice The deployment data struct.
+     * @param wavsServiceManager The WAVS service manager address.
+     * @param stakeRegistry The stake registry address.
+     * @param mirrorServiceHandler The mirror service handler address.
+     * @param mirrorServiceManagerHandler The mirror service manager handler address.
+     */
     struct DeploymentData {
         address wavsServiceManager;
         address stakeRegistry;
@@ -47,12 +64,22 @@ library WavsMirrorDeploymentLib {
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    /// @notice The error for the config file not found.
     error WavsMirrorDeploymentLib__ConfigFileNotFound();
+    /// @notice The error for the deployment file not found.
     error WavsMirrorDeploymentLib__DeploymentFileNotFound();
+    /// @notice The error for the operators and signing keys length mismatch.
     error WavsMirrorDeploymentLib__OperatorsAndSigningKeysLengthMismatch();
+    /// @notice The error for the operators and weights length mismatch.
     error WavsMirrorDeploymentLib__OperatorsAndWeightsLengthMismatch();
+    /// @notice The error for the service handlers already deployed.
     error WavsMirrorDeploymentLib__ServiceHandlersAlreadyDeployed();
 
+    /**
+     * @notice The deploy contracts function.
+     * @param proxyAdmin The proxy admin address.
+     * @return result The deployment data.
+     */
     function deployContracts(
         address proxyAdmin
     ) internal returns (DeploymentData memory) {
@@ -114,6 +141,11 @@ library WavsMirrorDeploymentLib {
         return result;
     }
 
+    /**
+     * @notice The set initial configuration function.
+     * @param deployment The deployment data.
+     * @param configuration The initial configuration.
+     */
     function setInitialConfiguration(
         DeploymentData memory deployment,
         InitialConfiguration memory configuration
@@ -136,8 +168,11 @@ library WavsMirrorDeploymentLib {
         );
     }
 
-    // deploy service handlers to run mirroring and transfer ownership
-    // must be called by the owner of the service manager
+    /**
+     * @notice The deploy service handlers function.
+     * @param deployment The deployment data.
+     * @return result The deployment data.
+     */
     function deployServiceHandlers(
         DeploymentData memory deployment
     ) internal returns (DeploymentData memory) {
@@ -164,6 +199,11 @@ library WavsMirrorDeploymentLib {
         return result;
     }
 
+    /**
+     * @notice The load configuration function.
+     * @param filePath The file path.
+     * @return cfg The initial configuration.
+     */
     function loadConfiguration(
         string memory filePath
     ) internal returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
@@ -192,6 +232,11 @@ library WavsMirrorDeploymentLib {
         return cfg;
     }
 
+    /**
+     * @notice The write configuration function.
+     * @param filePath The file path.
+     * @param config The configuration.
+     */
     function writeConfiguration(
         string memory filePath,
         WavsMirrorDeploymentLib.InitialConfiguration memory config
@@ -211,8 +256,11 @@ library WavsMirrorDeploymentLib {
         VM.writeFile(filePath, jsonOutput);
     }
 
-    // This should be run on the source chain (with ECDSAStakeRegistry)
-    // All other functions should run on mirror chain (with MirrorStakeRegistry)
+    /**
+     * @notice The load configuration from chain function.
+     * @param serviceManagerAddress The service manager address.
+     * @return cfg The initial configuration.
+     */
     function loadConfigurationFromChain(
         address serviceManagerAddress
     ) internal view returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
@@ -235,7 +283,7 @@ library WavsMirrorDeploymentLib {
         // get operator info
         cfg.signingKeyAddresses = new address[](cfg.operators.length);
         cfg.weights = new uint256[](cfg.operators.length);
-        for (uint256 i = 0; i < cfg.operators.length; i++) {
+        for (uint256 i = 0; i < cfg.operators.length; ++i) {
             cfg.signingKeyAddresses[i] = stakeRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
             cfg.weights[i] = stakeRegistry.getOperatorWeight(cfg.operators[i]);
         }
@@ -243,12 +291,23 @@ library WavsMirrorDeploymentLib {
         return cfg;
     }
 
+    /**
+     * @notice The read deployment JSON function.
+     * @param chainId The chain ID.
+     * @return data The deployment data.
+     */
     function readDeploymentJson(
         uint256 chainId
     ) internal returns (DeploymentData memory) {
         return readDeploymentJson("deployments/wavs-mirror/", chainId);
     }
 
+    /**
+     * @notice The read deployment JSON function.
+     * @param directoryPath The directory path.
+     * @param chainId The chain ID.
+     * @return data The deployment data.
+     */
     function readDeploymentJson(
         string memory directoryPath,
         uint256 chainId
@@ -271,6 +330,10 @@ library WavsMirrorDeploymentLib {
         return data;
     }
 
+    /**
+     * @notice The write deployment JSON function.
+     * @param data The deployment data.
+     */
     function writeDeploymentJson(
         DeploymentData memory data
     ) internal {
@@ -286,6 +349,12 @@ library WavsMirrorDeploymentLib {
         console2.log("Deployment artifacts written to: deployments/wavs-ecdsa/mirror_deploy.json");
     }
 
+    /**
+     * @notice The generate deployment JSON function.
+     * @param data The deployment data.
+     * @param proxyAdmin The proxy admin address.
+     * @return deploymentData The deployment JSON.
+     */
     function _generateDeploymentJson(
         DeploymentData memory data,
         address proxyAdmin
@@ -306,6 +375,12 @@ library WavsMirrorDeploymentLib {
         );
     }
 
+    /**
+     * @notice The generate contracts JSON function.
+     * @param data The deployment data.
+     * @param proxyAdmin The proxy admin address.
+     * @return contractsJson The contracts JSON.
+     */
     function _generateContractsJson(
         DeploymentData memory data,
         address proxyAdmin

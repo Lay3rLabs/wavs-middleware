@@ -14,6 +14,7 @@ import {CheckpointsUpgradeable} from
 
 /**
  * @title Mirror Stake Registry
+ * @author Lay3r Labs
  * @notice A mock implementation of ECDSAStakeRegistry that doesn't have public methods to update stake or register operators
  * @dev This contract overrides external registration methods to revert and provides an owner-only method to set lookups
  */
@@ -22,88 +23,84 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
 
     /// @notice Error thrown when attempting to register an operator through the public method
     error RegistrationNotSupported();
-
     /// @notice Error thrown when attempting to deregister an operator through the public method
     error DeregistrationNotSupported();
-
     /// @notice Error thrown when attempting to update an operator's signing key through the public method
     error SigningKeyUpdateNotSupported();
-
     /// @notice Error thrown when attempting to update operators through the public method
     error OperatorUpdateNotSupported();
-
     /// @notice Error thrown when attempting to update operators for quorum through the public method
     error QuorumOperatorUpdateNotSupported();
-
     /// @notice Error thrown when array lengths don't match in batch operations
     error InvalidArrayLengths();
 
-    /// @dev Constructor to create MirrorStakeRegistry.
-    constructor() ECDSAStakeRegistry(IDelegationManager(address(0))) {
-        // Empty constructor
-    }
+    /// @notice The constructor for the MirrorStakeRegistry.
+    constructor() ECDSAStakeRegistry(IDelegationManager(address(0))) {}
 
-    /// @notice Initializes the contract with the given parameters.
-    /// @param _serviceManager The address of the service manager.
-    /// @param thresholdWeight The threshold weight in basis points.
-    /// @param quorum The quorum struct containing the details of the quorum thresholds.
+    /**
+     * @notice Initializes the contract with the given parameters.
+     * @param _serviceManager The address of the service manager.
+     * @param thresholdWeight The threshold weight in basis points.
+     * @param quorum The quorum struct containing the details of the quorum thresholds.
+     */
     function initialize(
         address _serviceManager,
         uint256 thresholdWeight,
-        IECDSAStakeRegistryTypes.Quorum memory quorum
+        IECDSAStakeRegistryTypes.Quorum calldata quorum
     ) external override initializer {
         // We can't override initialize since it's not virtual in the parent contract
         // But we can still call the internal initialization function
         __ECDSAStakeRegistry_init(_serviceManager, thresholdWeight, quorum);
     }
 
-    /// @notice Override the registerOperatorWithSignature method to revert
-    /// @dev This operation is not supported in the mock implementation
+    /// @inheritdoc ECDSAStakeRegistry
     function registerOperatorWithSignature(
-        ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry memory,
-        address
+        ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry calldata, /* operatorSignature */
+        address /* signingKey */
     ) external pure override {
         revert RegistrationNotSupported();
     }
 
-    /// @notice Override the deregisterOperator method to revert
-    /// @dev This operation is not supported in the mock implementation
+    /// @inheritdoc ECDSAStakeRegistry
     function deregisterOperator() external pure override {
         revert DeregistrationNotSupported();
     }
 
-    /// @notice Override the updateOperatorSigningKey method to revert
-    /// @dev This operation is not supported in the mock implementation
+    /// @inheritdoc ECDSAStakeRegistry
     function updateOperatorSigningKey(
-        address
+        address /* newSigningKey */
     ) external pure override {
         revert SigningKeyUpdateNotSupported();
     }
 
-    /// @notice Override the updateOperators method to revert
-    /// @dev This operation is not supported in the mock implementation
+    /// @inheritdoc ECDSAStakeRegistry
     function updateOperators(
-        address[] memory
+        address[] calldata /* operators */
     ) external pure override {
         revert OperatorUpdateNotSupported();
     }
 
-    /// @notice Override the updateOperatorsForQuorum method to revert
-    /// @dev This operation is not supported in the mock implementation
-    function updateOperatorsForQuorum(address[][] memory, bytes memory) external pure override {
-        revert QuorumOperatorUpdateNotSupported();
-    }
-
-    /// @dev This operation is not supported in the mock implementation
-    function updateQuorumConfig(
-        IECDSAStakeRegistryTypes.Quorum memory,
-        address[] memory
+    /// @inheritdoc ECDSAStakeRegistry
+    function updateOperatorsForQuorum(
+        address[][] calldata, /* operators */
+        bytes calldata /* data */
     ) external pure override {
         revert QuorumOperatorUpdateNotSupported();
     }
 
-    /// @dev This operation is not supported in the mock implementation
-    function updateMinimumWeight(uint256, address[] memory) external pure override {
+    /// @inheritdoc ECDSAStakeRegistry
+    function updateQuorumConfig(
+        IECDSAStakeRegistryTypes.Quorum calldata, /* quorum */
+        address[] calldata /* operators */
+    ) external pure override {
+        revert QuorumOperatorUpdateNotSupported();
+    }
+
+    /// @inheritdoc ECDSAStakeRegistry
+    function updateMinimumWeight(
+        uint256, /* minimumWeight */
+        address[] calldata /* operators */
+    ) external pure override {
         revert OperatorUpdateNotSupported();
     }
 
@@ -147,17 +144,11 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
         }
 
         uint256 length = operators.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; ++i) {
             _setOperatorDetails(operators[i], signingKeyAddresses[i], weights[i]);
         }
     }
 
-    /**
-     * @dev Internal function to set operator details
-     * @param operator The operator address
-     * @param signingKeyAddress The signing key to associate with the operator
-     * @param weight The weight to assign to the operator
-     */
     /**
      * @notice Returns the service manager address
      * @return The address of the service manager
@@ -166,6 +157,13 @@ contract MirrorStakeRegistry is ECDSAStakeRegistry {
         return _serviceManager;
     }
 
+    /**
+     * @notice Internal function to set operator details
+     * @dev Internal function to set operator details
+     * @param operator The operator address
+     * @param signingKeyAddress The signing key to associate with the operator
+     * @param weight The weight to assign to the operator
+     */
     function _setOperatorDetails(
         address operator,
         address signingKeyAddress,

@@ -16,6 +16,12 @@ import {
 } from "src/eigenlayer/ecdsa/handlers/MirrorServiceHandler.sol";
 import {IWavsServiceHandler} from "src/eigenlayer/ecdsa/interfaces/IWavsServiceHandler.sol";
 
+/**
+ * @title MirrorServiceHandlerTest
+ * @author Lay3rLabs
+ * @notice This contract contains tests for the MirrorServiceHandler contract.
+ * @dev This contract is used to test the MirrorServiceHandler contract.
+ */
 contract MirrorServiceHandlerTest is Test {
     using UpgradeableProxyLib for address;
 
@@ -40,6 +46,7 @@ contract MirrorServiceHandlerTest is Test {
     error MirrorServiceHandlerTest__ArraysLengthMismatch();
     error MirrorServiceHandlerTest__SignatureRecoveryFailed();
 
+    /// @notice The setUp function.
     function setUp() public {
         // Set up deployer address
         deployer = address(0x123);
@@ -64,7 +71,7 @@ contract MirrorServiceHandlerTest is Test {
         signingKeyAddresses = new address[](5);
         weights = new uint256[](5);
 
-        for (uint256 i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 5; ++i) {
             privateKeys[i] = i + 1;
             operators[i] = vm.addr(privateKeys[i]);
             signingKeyAddresses[i] = vm.addr(privateKeys[i]);
@@ -89,7 +96,10 @@ contract MirrorServiceHandlerTest is Test {
         vm.roll(10);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_initial_state function.
     function test_initial_state() public view {
+        /* solhint-enable func-name-mixedcase */
         // Verify deployment addresses are set correctly
         assertNotEq(address(serviceHandler), address(0), "ServiceHandler address cannot be zero");
 
@@ -117,7 +127,10 @@ contract MirrorServiceHandlerTest is Test {
         );
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_invalid_payload function.
     function test_invalid_payload() public {
+        /* solhint-enable func-name-mixedcase */
         // Create an envelope with invalid payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
@@ -133,8 +146,10 @@ contract MirrorServiceHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    // Update trigger ID and ensure proper
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_invalid_trigger_id function.
     function test_invalid_trigger_id() public {
+        /* solhint-enable func-name-mixedcase */
         // Keep the same operators
         address[] memory newOperators = operators;
         address[] memory newSigningKeyAddresses = signingKeyAddresses;
@@ -189,7 +204,10 @@ contract MirrorServiceHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_insufficient_quorum function.
     function test_insufficient_quorum() public {
+        /* solhint-enable func-name-mixedcase */
         // Create a valid UpdateWithId payload with triggerId = 1
         address[] memory newOperators = new address[](1);
         address[] memory newSigningKeyAddresses = new address[](1);
@@ -234,7 +252,10 @@ contract MirrorServiceHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_successful_update_weight function.
     function test_successful_update_weight() public {
+        /* solhint-enable func-name-mixedcase */
         // let's change the weights and a public key
         // now op1 and op2 have 2/3 and can pass a future round
         address[] memory newOperators = new address[](2);
@@ -242,7 +263,7 @@ contract MirrorServiceHandlerTest is Test {
         uint256[] memory newWeights = new uint256[](2);
 
         // after this, we have 30k, 30k, 10k, 10k, 10k
-        for (uint256 i = 0; i < 2; i++) {
+        for (uint256 i = 0; i < 2; ++i) {
             newOperators[i] = operators[i];
             newSigningKeyAddresses[i] = signingKeyAddresses[i];
             newWeights[i] = OPERATOR_WEIGHT * 3;
@@ -280,7 +301,7 @@ contract MirrorServiceHandlerTest is Test {
         vm.roll(stepOne + 1);
 
         // Check the weights were updated at the block of the first update
-        for (uint256 i = 0; i < 2; i++) {
+        for (uint256 i = 0; i < 2; ++i) {
             uint256 weight =
                 stakeRegistry.getOperatorWeightAtBlock(newOperators[i], uint32(stepOne));
             assertEq(weight, newWeights[i], "Operator weight not updated");
@@ -294,7 +315,7 @@ contract MirrorServiceHandlerTest is Test {
         newWeights = new uint256[](3);
 
         // Set up the next update - setting weights to 0 for the last 3 operators
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; ++i) {
             newOperators[i] = operators[i + 2];
             newSigningKeyAddresses[i] = signingKeyAddresses[i + 2];
             newWeights[i] = 0;
@@ -336,14 +357,20 @@ contract MirrorServiceHandlerTest is Test {
         assertEq(newTotalWeight, 60_000, "Total weight not updated");
 
         // Check that the operator weights were properly updated (0s for the other operators)
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; ++i) {
             uint256 weight =
                 stakeRegistry.getOperatorWeightAtBlock(newOperators[i], uint32(stepTwo));
             assertEq(weight, 0, "Operator weight not set to 0");
         }
     }
 
-    // Helper function to create signature data with a specific number of operators and real signatures
+    /**
+     * @notice The createSignatureData function.
+     * @param envelope The envelope.
+     * @param numOperators The number of operators.
+     * @param referenceBlockOffset The reference block offset.
+     * @return The signature data.
+     */
     function createSignatureData(
         IWavsServiceHandler.Envelope memory envelope,
         uint256 numOperators,
@@ -357,7 +384,7 @@ contract MirrorServiceHandlerTest is Test {
         address[] memory signers = new address[](numOperators);
         bytes[] memory signatures = new bytes[](numOperators);
 
-        for (uint256 i = 0; i < numOperators; i++) {
+        for (uint256 i = 0; i < numOperators; ++i) {
             // Generate signer address from private key
             signers[i] = vm.addr(privateKeys[i]);
 
@@ -375,7 +402,7 @@ contract MirrorServiceHandlerTest is Test {
         // Note: referenceBlock must be a valid block that exists and is in the past
         // Make sure we're at least at block 1 before subtracting offset
         uint32 currentBlock = uint32(block.number);
-        if (currentBlock <= referenceBlockOffset) {
+        if (!(currentBlock > referenceBlockOffset)) {
             revert MirrorServiceHandlerTest__BlockNumberTooLowForOffset();
         }
 
@@ -387,7 +414,7 @@ contract MirrorServiceHandlerTest is Test {
     }
 
     /**
-     * @notice Helper function to sort signers and their corresponding signatures in ascending order by signer address
+     * @notice The sortSignersAndSignatures function.
      * @dev ECDSAStakeRegistry requires signers to be sorted in ascending order
      * @param signers Array of signer addresses
      * @param signatures Array of signatures that correspond to signers at the same index
@@ -398,8 +425,8 @@ contract MirrorServiceHandlerTest is Test {
     ) internal pure {
         // Simple bubble sort since we're working with small arrays
         uint256 length = signers.length;
-        for (uint256 i = 0; i < length - 1; i++) {
-            for (uint256 j = 0; j < length - i - 1; j++) {
+        for (uint256 i = 0; i < length - 1; ++i) {
+            for (uint256 j = 0; j < length - i - 1; ++j) {
                 if (signers[j] > signers[j + 1]) {
                     // Swap signers
                     address tempAddr = signers[j];
@@ -416,7 +443,7 @@ contract MirrorServiceHandlerTest is Test {
     }
 
     /**
-     * @notice Helper function to generate an ECDSA signature using a private key
+     * @notice The generateSignature function.
      * @param privateKey The private key to sign with
      * @param digest The message hash to sign
      * @return The signature in bytes format ready for validation
@@ -430,7 +457,7 @@ contract MirrorServiceHandlerTest is Test {
     }
 
     /**
-     * @notice Helper function to verify that signatures can be recovered to the expected signers
+     * @notice The verifySignatures function.
      * @param digest Message hash that was signed
      * @param signers Array of signer addresses (should be sorted)
      * @param signatures Array of signatures corresponding to signers
@@ -444,7 +471,7 @@ contract MirrorServiceHandlerTest is Test {
             revert MirrorServiceHandlerTest__ArraysLengthMismatch();
         }
 
-        for (uint256 i = 0; i < signers.length; i++) {
+        for (uint256 i = 0; i < signers.length; ++i) {
             address recovered = ECDSA.recover(digest, signatures[i]);
             if (recovered != signers[i]) {
                 revert MirrorServiceHandlerTest__SignatureRecoveryFailed();
