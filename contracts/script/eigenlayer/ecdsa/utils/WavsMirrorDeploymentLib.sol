@@ -15,9 +15,9 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {MirrorStakeRegistry} from "src/eigenlayer/ecdsa/MirrorStakeRegistry.sol";
-import {MirrorServiceHandler} from "src/eigenlayer/ecdsa/handlers/MirrorServiceHandler.sol";
-import {MirrorServiceManagerHandler} from
-    "src/eigenlayer/ecdsa/handlers/MirrorServiceManagerHandler.sol";
+import {MirrorOperatorSyncHandler} from
+    "src/eigenlayer/ecdsa/handlers/MirrorOperatorSyncHandler.sol";
+import {MirrorQuorumSyncHandler} from "src/eigenlayer/ecdsa/handlers/MirrorQuorumSyncHandler.sol";
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 
@@ -52,14 +52,14 @@ library WavsMirrorDeploymentLib {
      * @notice The deployment data struct.
      * @param wavsServiceManager The WAVS service manager address.
      * @param stakeRegistry The stake registry address.
-     * @param mirrorServiceHandler The mirror service handler address.
-     * @param mirrorServiceManagerHandler The mirror service manager handler address.
+     * @param operatorSyncHandler The operator sync handler address.
+     * @param quorumSyncHandler The quorum sync handler address.
      */
     struct DeploymentData {
         address wavsServiceManager;
         address stakeRegistry;
-        address mirrorServiceHandler;
-        address mirrorServiceManagerHandler;
+        address operatorSyncHandler;
+        address quorumSyncHandler;
     }
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
@@ -177,24 +177,23 @@ library WavsMirrorDeploymentLib {
         DeploymentData memory deployment
     ) internal returns (DeploymentData memory) {
         if (
-            deployment.mirrorServiceHandler != address(0)
-                || deployment.mirrorServiceManagerHandler != address(0)
+            deployment.operatorSyncHandler != address(0)
+                || deployment.quorumSyncHandler != address(0)
         ) {
             revert WavsMirrorDeploymentLib__ServiceHandlersAlreadyDeployed();
         }
 
         DeploymentData memory result = deployment;
 
-        // deploy the stake registry handler
+        // deploy the operator sync handler
         MirrorStakeRegistry stakeRegistry = MirrorStakeRegistry(result.stakeRegistry);
-        result.mirrorServiceHandler = address(new MirrorServiceHandler(stakeRegistry));
-        stakeRegistry.transferOwnership(result.mirrorServiceHandler);
+        result.operatorSyncHandler = address(new MirrorOperatorSyncHandler(stakeRegistry));
+        stakeRegistry.transferOwnership(result.operatorSyncHandler);
 
-        // deploy the service manager handler
+        // deploy the quorum sync handler
         WavsServiceManager serviceManager = WavsServiceManager(result.wavsServiceManager);
-        result.mirrorServiceManagerHandler =
-            address(new MirrorServiceManagerHandler(serviceManager));
-        serviceManager.transferOwnership(result.mirrorServiceManagerHandler);
+        result.quorumSyncHandler = address(new MirrorQuorumSyncHandler(serviceManager));
+        serviceManager.transferOwnership(result.quorumSyncHandler);
 
         return result;
     }
@@ -323,9 +322,8 @@ library WavsMirrorDeploymentLib {
         DeploymentData memory data;
         data.wavsServiceManager = json.readAddress(".contracts.wavsServiceManager");
         data.stakeRegistry = json.readAddress(".contracts.stakeRegistry");
-        data.mirrorServiceHandler = json.readAddress(".contracts.mirrorServiceHandler");
-        data.mirrorServiceManagerHandler =
-            json.readAddress(".contracts.mirrorServiceManagerHandler");
+        data.operatorSyncHandler = json.readAddress(".contracts.operatorSyncHandler");
+        data.quorumSyncHandler = json.readAddress(".contracts.quorumSyncHandler");
 
         return data;
     }
@@ -396,10 +394,10 @@ library WavsMirrorDeploymentLib {
             data.stakeRegistry.toHexString(),
             "\",\"stakeRegistryImpl\":\"",
             data.stakeRegistry.getImplementation().toHexString(),
-            "\",\"MirrorServiceHandler\":\"",
-            data.mirrorServiceHandler.toHexString(),
-            "\",\"MirrorServiceManagerHandler\":\"",
-            data.mirrorServiceManagerHandler.toHexString(),
+            "\",\"operatorSyncHandler\":\"",
+            data.operatorSyncHandler.toHexString(),
+            "\",\"quorumSyncHandler\":\"",
+            data.quorumSyncHandler.toHexString(),
             "\"}"
         );
     }

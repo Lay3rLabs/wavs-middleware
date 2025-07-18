@@ -18,6 +18,8 @@ import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsAVSRegistrar} from "src/eigenlayer/ecdsa/WavsAVSRegistrar.sol";
+import {WavsOperatorUpdateHandler} from
+    "src/eigenlayer/ecdsa/handlers/WavsOperatorUpdateHandler.sol";
 
 /**
  * @title WavsMiddlewareDeploymentLib
@@ -36,12 +38,14 @@ library WavsMiddlewareDeploymentLib {
      * @param stakeRegistry The stake registry address.
      * @param strategy The strategy address.
      * @param avsRegistrar The AVS registrar address.
+     * @param operatorUpdateHandler The operator update handler address.
      */
     struct DeploymentData {
         address wavsServiceManager;
         address stakeRegistry;
         address strategy;
         address avsRegistrar;
+        address operatorUpdateHandler;
     }
 
     /**
@@ -64,6 +68,8 @@ library WavsMiddlewareDeploymentLib {
     error WavsMiddlewareDeploymentLib__StrategiesAndMultipliersLengthMismatch();
     /// @notice The error for the total multiplier not 10000.
     error WavsMiddlewareDeploymentLib__TotalMultiplierNot10000();
+    /// @notice The error for the service handlers already deployed.
+    error WavsMiddlewareDeploymentLib__ServiceHandlersAlreadyDeployed();
 
     /**
      * @notice The deploy contracts function.
@@ -119,6 +125,15 @@ library WavsMiddlewareDeploymentLib {
         // Dummy AVSRegistrar deployment for now
         address avsRegistrar = address(new WavsAVSRegistrar());
         result.avsRegistrar = avsRegistrar;
+
+        // deploy the operator update handler
+        address operatorUpdateHandler = address(
+            new WavsOperatorUpdateHandler(
+                WavsServiceManager(result.wavsServiceManager),
+                ECDSAStakeRegistry(result.stakeRegistry)
+            )
+        );
+        result.operatorUpdateHandler = operatorUpdateHandler;
 
         return result;
     }
@@ -248,6 +263,7 @@ library WavsMiddlewareDeploymentLib {
         data.stakeRegistry = json.readAddress(".contracts.stakeRegistry");
         data.strategy = json.readAddress(".contracts.strategy");
         data.avsRegistrar = json.readAddress(".contracts.avsRegistrar");
+        data.operatorUpdateHandler = json.readAddress(".contracts.operatorUpdateHandler");
 
         return data;
     }
@@ -307,7 +323,8 @@ library WavsMiddlewareDeploymentLib {
         DeploymentData memory data,
         address proxyAdmin
     ) private view returns (string memory) {
-        return string.concat(
+        // split up into two parts to avoid Yul exception too deep in stack error during build
+        string memory first = string.concat(
             "{\"proxyAdmin\":\"",
             proxyAdmin.toHexString(),
             "\",\"WavsServiceManager\":\"",
@@ -317,11 +334,17 @@ library WavsMiddlewareDeploymentLib {
             "\",\"stakeRegistry\":\"",
             data.stakeRegistry.toHexString(),
             "\",\"stakeRegistryImpl\":\"",
-            data.stakeRegistry.getImplementation().toHexString(),
+            data.stakeRegistry.getImplementation().toHexString()
+        );
+
+        return string.concat(
+            first,
             "\",\"strategy\":\"",
             data.strategy.toHexString(),
             "\",\"avsRegistrar\":\"",
             data.avsRegistrar.toHexString(),
+            "\",\"operatorUpdateHandler\":\"",
+            data.operatorUpdateHandler.toHexString(),
             "\"}"
         );
     }

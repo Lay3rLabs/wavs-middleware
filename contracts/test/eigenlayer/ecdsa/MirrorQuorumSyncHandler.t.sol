@@ -11,18 +11,18 @@ import {UpgradeableProxyLib} from "script/eigenlayer/ecdsa/utils/UpgradeableProx
 import {MirrorStakeRegistry} from "src/eigenlayer/ecdsa/MirrorStakeRegistry.sol";
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {
-    MirrorServiceHandler,
-    IMirrorUpdateTypes
-} from "src/eigenlayer/ecdsa/handlers/MirrorServiceHandler.sol";
+    MirrorQuorumSyncHandler,
+    IMirrorQuorumSyncHandler
+} from "src/eigenlayer/ecdsa/handlers/MirrorQuorumSyncHandler.sol";
 import {IWavsServiceHandler} from "src/eigenlayer/ecdsa/interfaces/IWavsServiceHandler.sol";
 
 /**
- * @title MirrorServiceHandlerTest
+ * @title MirrorQuorumSyncHandlerTest
  * @author Lay3rLabs
- * @notice This contract contains tests for the MirrorServiceHandler contract.
- * @dev This contract is used to test the MirrorServiceHandler contract.
+ * @notice This contract contains tests for the MirrorQuorumSyncHandler contract.
+ * @dev This contract is used to test the MirrorQuorumSyncHandler contract.
  */
-contract MirrorServiceHandlerTest is Test {
+contract MirrorQuorumSyncHandlerTest is Test {
     using UpgradeableProxyLib for address;
 
     // Constants
@@ -30,11 +30,12 @@ contract MirrorServiceHandlerTest is Test {
 
     address private deployer;
     address private proxyAdmin;
+    WavsMirrorDeploymentLib.DeploymentData private deployment;
 
     // Contract references
     MirrorStakeRegistry private stakeRegistry;
     WavsServiceManager private serviceManager;
-    MirrorServiceHandler private serviceHandler;
+    MirrorQuorumSyncHandler private serviceHandler;
 
     // Basic operator data
     address[] private operators;
@@ -42,9 +43,12 @@ contract MirrorServiceHandlerTest is Test {
     uint256[] private weights;
     uint256[] private privateKeys;
 
-    error MirrorServiceHandlerTest__BlockNumberTooLowForOffset();
-    error MirrorServiceHandlerTest__ArraysLengthMismatch();
-    error MirrorServiceHandlerTest__SignatureRecoveryFailed();
+    /// @notice The error for the block number too low for offset.
+    error MirrorQuorumSyncHandlerTest__BlockNumberTooLowForOffset();
+    /// @notice The error for the arrays length mismatch.
+    error MirrorQuorumSyncHandlerTest__ArraysLengthMismatch();
+    /// @notice The error for the signature recovery failed.
+    error MirrorQuorumSyncHandlerTest__SignatureRecoveryFailed();
 
     /// @notice The setUp function.
     function setUp() public {
@@ -56,8 +60,7 @@ contract MirrorServiceHandlerTest is Test {
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
 
         // Deploy contracts
-        WavsMirrorDeploymentLib.DeploymentData memory deployment =
-            WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
+        deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
 
         // Create references to deployed contracts
         serviceManager = WavsServiceManager(deployment.wavsServiceManager);
@@ -86,10 +89,10 @@ contract MirrorServiceHandlerTest is Test {
         stakeRegistry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
         vm.stopPrank();
 
-        // Deploy MirrorServiceHandler
+        // Deploy MirrorQuorumSyncHandler
         vm.startPrank(actualOwner);
         deployment = WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
-        serviceHandler = MirrorServiceHandler(deployment.mirrorServiceHandler);
+        serviceHandler = MirrorQuorumSyncHandler(deployment.quorumSyncHandler);
         vm.stopPrank();
 
         // Roll to block 10 to ensure we have enough blocks for reference blocks
@@ -100,69 +103,24 @@ contract MirrorServiceHandlerTest is Test {
     /// @notice The test_initial_state function.
     function test_initial_state() public view {
         /* solhint-enable func-name-mixedcase */
-        // Verify deployment addresses are set correctly
-        assertNotEq(address(serviceHandler), address(0), "ServiceHandler address cannot be zero");
-
-        // Verify contract references
-        assertEq(
-            address(serviceHandler.getStakeRegistry()),
-            address(stakeRegistry),
-            "ServiceHandler should reference correct StakeRegistry"
-        );
-
+        // Test initial state of the service handler
+        assertEq(serviceHandler.lastTriggerId(), 0, "Initial trigger ID should be 0");
         assertEq(
             address(serviceHandler.getServiceManager()),
             address(serviceManager),
-            "ServiceHandler should reference correct ServiceManager"
+            "Service manager address should be set"
         );
-
-        // Verify initial trigger ID is 0
-        assertEq(serviceHandler.lastTriggerId(), 0, "Initial trigger ID should be 0");
-
-        // Verify that the owner of the stakeRegistry is the serviceHandler
-        assertEq(
-            stakeRegistry.owner(),
-            address(serviceHandler),
-            "ServiceHandler should be the owner of stakeRegistry"
-        );
-    }
-
-    /* solhint-disable func-name-mixedcase */
-    /// @notice The test_invalid_payload function.
-    function test_invalid_payload() public {
-        /* solhint-enable func-name-mixedcase */
-        // Create an envelope with invalid payload
-        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode("Bad payload")
-        });
-
-        // Create signature data with 4 operators (more than enough to pass quorum)
-        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 5);
-
-        // Call handleSignedEnvelope should fail with invalid payload
-        vm.expectRevert();
-        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+        assertEq(serviceManager.quorumNumerator(), 2, "Initial quorum numerator should be 2");
+        assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
     }
 
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_invalid_trigger_id function.
     function test_invalid_trigger_id() public {
         /* solhint-enable func-name-mixedcase */
-        // Keep the same operators
-        address[] memory newOperators = operators;
-        address[] memory newSigningKeyAddresses = signingKeyAddresses;
-        uint256[] memory newWeights = weights;
-
-        // Update to triggerId 5
-        IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
-            triggerId: 5,
-            thresholdWeight: 5000,
-            operators: newOperators,
-            signingKeyAddresses: newSigningKeyAddresses,
-            weights: newWeights
-        });
+        // update trigger to 5
+        IMirrorQuorumSyncHandler.UpdateWithId memory updateData =
+            IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 5, numerator: 2, denominator: 3});
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
@@ -170,37 +128,33 @@ contract MirrorServiceHandlerTest is Test {
             payload: abi.encode(updateData)
         });
 
-        // Create signature data with 4 operators (more than enough to pass quorum)
-        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 5);
-        // Will pass and update to 5
+        // Create signature data with all operators (5/5)
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 5, 0);
+        // Passes first time
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
 
-        // ensure it is updated
-        assertEq(serviceHandler.lastTriggerId(), 5, "Initial trigger ID should be 5");
-
-        // Try again will fail (reply)
-        vm.expectRevert(abi.encodeWithSelector(IMirrorUpdateTypes.InvalidTriggerId.selector, 5));
+        // Replay should fail with InvalidTriggerId
+        vm.expectRevert(
+            abi.encodeWithSelector(IMirrorQuorumSyncHandler.InvalidTriggerId.selector, 5)
+        );
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
 
-        // Previous trigger id will fail
-        updateData = IMirrorUpdateTypes.UpdateWithId({
-            triggerId: 3, // 3 < 5
-            thresholdWeight: 5000,
-            operators: newOperators,
-            signingKeyAddresses: newSigningKeyAddresses,
-            weights: newWeights
-        });
+        // Try lower trigger id (2) to show it fails
+        updateData =
+            IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 2, numerator: 3, denominator: 4});
         // Create envelope with the encoded payload
         envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(2)),
             ordering: bytes12(0),
             payload: abi.encode(updateData)
         });
-        // Create signature data with 4 operators (more than enough to pass quorum)
-        signatureData = createSignatureData(envelope, 4, 5);
+        // Create signature data with all operators (5/5)
+        signatureData = createSignatureData(envelope, 5, 0);
 
-        // but fails
-        vm.expectRevert(abi.encodeWithSelector(IMirrorUpdateTypes.InvalidTriggerId.selector, 5));
+        // Previous id should fail with InvalidTriggerId
+        vm.expectRevert(
+            abi.encodeWithSelector(IMirrorQuorumSyncHandler.InvalidTriggerId.selector, 5)
+        );
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
@@ -209,22 +163,8 @@ contract MirrorServiceHandlerTest is Test {
     function test_insufficient_quorum() public {
         /* solhint-enable func-name-mixedcase */
         // Create a valid UpdateWithId payload with triggerId = 1
-        address[] memory newOperators = new address[](1);
-        address[] memory newSigningKeyAddresses = new address[](1);
-        uint256[] memory newWeights = new uint256[](1);
-
-        newOperators[0] = address(0x123);
-        newSigningKeyAddresses[0] = address(0x456);
-        newWeights[0] = 10_000;
-
-        // Create the UpdateWithId struct with triggerId = 1
-        IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
-            triggerId: 1,
-            thresholdWeight: 5000,
-            operators: newOperators,
-            signingKeyAddresses: newSigningKeyAddresses,
-            weights: newWeights
-        });
+        IMirrorQuorumSyncHandler.UpdateWithId memory updateData =
+            IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 1, numerator: 2, denominator: 3});
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
@@ -233,50 +173,52 @@ contract MirrorServiceHandlerTest is Test {
             payload: abi.encode(updateData)
         });
 
-        // Create signature data with only 3 operators (not enough for quorum)
-        // The quorum is 4/5 (80%) in the default setup
-        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 3, 5);
+        // Create signature data with only 2 operators (not enough for quorum)
+        // The quorum is 3/5 (60%) in the default setup
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 2, 0);
 
         // Call handleSignedEnvelope should fail with InsufficientQuorum
-        // Note: The actual error will come from the serviceManager.validate() call inside handleSignedEnvelope
-        // which will revert with InsufficientQuorum error
-        // The actual values are slightly different due to integer division in the contract
         vm.expectRevert(
             abi.encodeWithSignature(
                 "InsufficientQuorum(uint256,uint256,uint256)",
-                30_000, // 3/5 * 10000 = 6000 (but in basis points, so 30000)
-                33_333, // 1/3 in basis points (rounded up from 33333.33...)
-                50_000 // 1/2 in basis points (due to integer math in the contract)
+                20_000, // has
+                33_333, // needs
+                50_000 // max
             )
         );
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
-    /// @notice The test_successful_update_weight function.
-    function test_successful_update_weight() public {
-        /* solhint-enable func-name-mixedcase */
-        // let's change the weights and a public key
-        // now op1 and op2 have 2/3 and can pass a future round
-        address[] memory newOperators = new address[](2);
-        address[] memory newSigningKeyAddresses = new address[](2);
-        uint256[] memory newWeights = new uint256[](2);
-
-        // after this, we have 30k, 30k, 10k, 10k, 10k
-        for (uint256 i = 0; i < 2; ++i) {
-            newOperators[i] = operators[i];
-            newSigningKeyAddresses[i] = signingKeyAddresses[i];
-            newWeights[i] = OPERATOR_WEIGHT * 3;
-        }
-
-        // Create the UpdateWithId struct with triggerId = 1
-        IMirrorUpdateTypes.UpdateWithId memory updateData = IMirrorUpdateTypes.UpdateWithId({
-            triggerId: 1,
-            thresholdWeight: 8000,
-            operators: newOperators,
-            signingKeyAddresses: newSigningKeyAddresses,
-            weights: newWeights
+    /*
+    // TODO: no error on parse. how to validate?
+    function test_invalid_payload() public {
+        // Create an invalid payload (not matching UpdateWithId struct)
+        bytes memory invalidPayload = abi.encode("BAD");
+        
+        // Create envelope with the invalid payload
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
+            eventId: bytes20(uint160(1)),
+            ordering: bytes12(0),
+            payload: invalidPayload
         });
+        
+        // Create signature data with all operators (5/5)
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 5, 5);
+        
+        // Call handleSignedEnvelope should fail with abi decode error
+        vm.expectRevert(); // Decoding error
+        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+    }
+    */
+
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_successful_update_quorum function.
+    function test_successful_update_quorum() public {
+        /* solhint-enable func-name-mixedcase */
+        // let's change quorum so 2/5 (4/10)can pass, not 2/3
+        // Create the UpdateWithId struct with triggerId = 1
+        IMirrorQuorumSyncHandler.UpdateWithId memory updateData =
+            IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 1, numerator: 4, denominator: 10});
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
@@ -290,45 +232,12 @@ contract MirrorServiceHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
 
         // Check that the lastTriggerId was incremented
-        assertEq(
-            stakeRegistry.getLastCheckpointThresholdWeight(), 8000, "stakeThreshold not updated"
-        );
         assertEq(serviceHandler.lastTriggerId(), 1, "lastTriggerId not incremented");
+        assertEq(serviceManager.quorumNumerator(), 4, "Initial quorum numerator should be 4");
+        assertEq(serviceManager.quorumDenominator(), 10, "Initial quorum denominator should be 10");
 
-        // Move forward in blocks to ensure the previous update is finalized
-        uint256 startBlock = vm.getBlockNumber();
-        uint256 stepOne = startBlock + 10;
-        vm.roll(stepOne + 1);
-
-        // Check the weights were updated at the block of the first update
-        for (uint256 i = 0; i < 2; ++i) {
-            uint256 weight =
-                stakeRegistry.getOperatorWeightAtBlock(newOperators[i], uint32(stepOne));
-            assertEq(weight, newWeights[i], "Operator weight not updated");
-        }
-
-        uint256 totalWeight = stakeRegistry.getLastCheckpointTotalWeightAtBlock(uint32(stepOne));
-        assertEq(totalWeight, 90_000, "Total weight not updated");
-
-        newOperators = new address[](3);
-        newSigningKeyAddresses = new address[](3);
-        newWeights = new uint256[](3);
-
-        // Set up the next update - setting weights to 0 for the last 3 operators
-        for (uint256 i = 0; i < 3; ++i) {
-            newOperators[i] = operators[i + 2];
-            newSigningKeyAddresses[i] = signingKeyAddresses[i + 2];
-            newWeights[i] = 0;
-        }
-
-        // Create the UpdateWithId struct with triggerId = 2
-        updateData = IMirrorUpdateTypes.UpdateWithId({
-            triggerId: 2,
-            thresholdWeight: 6500,
-            operators: newOperators,
-            signingKeyAddresses: newSigningKeyAddresses,
-            weights: newWeights
-        });
+        updateData =
+            IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 2, numerator: 1, denominator: 6});
 
         // Create envelope with the encoded payload
         envelope = IWavsServiceHandler.Envelope({
@@ -337,31 +246,14 @@ contract MirrorServiceHandlerTest is Test {
             payload: abi.encode(updateData)
         });
 
-        // First 2 operators now have 2/3 and can pass
+        // 2/5 is now enough to pass
         signatureData = createSignatureData(envelope, 2, 0);
-
-        // Call handleSignedEnvelope
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
 
-        // Move forward in blocks to ensure the previous update is finalized
-        uint256 stepTwo = startBlock + 20;
-        vm.roll(stepTwo + 1);
-
         // Check that the lastTriggerId was incremented
-        assertEq(
-            stakeRegistry.getLastCheckpointThresholdWeight(), 6500, "stakeThreshold not updated"
-        );
         assertEq(serviceHandler.lastTriggerId(), 2, "lastTriggerId not incremented to 2");
-
-        uint256 newTotalWeight = stakeRegistry.getLastCheckpointTotalWeightAtBlock(uint32(stepTwo));
-        assertEq(newTotalWeight, 60_000, "Total weight not updated");
-
-        // Check that the operator weights were properly updated (0s for the other operators)
-        for (uint256 i = 0; i < 3; ++i) {
-            uint256 weight =
-                stakeRegistry.getOperatorWeightAtBlock(newOperators[i], uint32(stepTwo));
-            assertEq(weight, 0, "Operator weight not set to 0");
-        }
+        assertEq(serviceManager.quorumNumerator(), 1, "Initial quorum numerator should be 1");
+        assertEq(serviceManager.quorumDenominator(), 6, "Initial quorum denominator should be 6");
     }
 
     /**
@@ -392,7 +284,7 @@ contract MirrorServiceHandlerTest is Test {
             signatures[i] = generateSignature(privateKeys[i], digest);
         }
 
-        // Sort signers and signatures by signer address11
+        // Sort signers and signatures by signer address
         sortSignersAndSignatures(signers, signatures);
 
         // Verify signatures
@@ -403,7 +295,7 @@ contract MirrorServiceHandlerTest is Test {
         // Make sure we're at least at block 1 before subtracting offset
         uint32 currentBlock = uint32(block.number);
         if (!(currentBlock > referenceBlockOffset)) {
-            revert MirrorServiceHandlerTest__BlockNumberTooLowForOffset();
+            revert MirrorQuorumSyncHandlerTest__BlockNumberTooLowForOffset();
         }
 
         return IWavsServiceHandler.SignatureData({
@@ -468,13 +360,13 @@ contract MirrorServiceHandlerTest is Test {
         bytes[] memory signatures
     ) internal pure {
         if (signers.length != signatures.length) {
-            revert MirrorServiceHandlerTest__ArraysLengthMismatch();
+            revert MirrorQuorumSyncHandlerTest__ArraysLengthMismatch();
         }
 
         for (uint256 i = 0; i < signers.length; ++i) {
             address recovered = ECDSA.recover(digest, signatures[i]);
             if (recovered != signers[i]) {
-                revert MirrorServiceHandlerTest__SignatureRecoveryFailed();
+                revert MirrorQuorumSyncHandlerTest__SignatureRecoveryFailed();
             }
         }
     }

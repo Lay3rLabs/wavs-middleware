@@ -4,15 +4,15 @@ pragma solidity ^0.8.27;
 import {IWavsServiceHandler} from "../interfaces/IWavsServiceHandler.sol";
 import {IWavsServiceManager} from "../interfaces/IWavsServiceManager.sol";
 import {MirrorStakeRegistry} from "../MirrorStakeRegistry.sol";
-import {IMirrorUpdateTypes} from "../interfaces/IMirrorServiceHandler.sol";
+import {IMirrorOperatorSyncHandler} from "../interfaces/IMirrorOperatorSyncHandler.sol";
 
 /**
- * @title MirrorServiceHandler
+ * @title MirrorOperatorSyncHandler
  * @author Lay3r Labs
- * @notice Contract for handling the Mirror service
- * @dev This contract implements the IWavsServiceHandler interface
+ * @notice Contract for syncing operator details from the source chain to the mirror chain
+ * @dev This contract implements the IMirrorOperatorSyncHandler and IWavsServiceHandler interfaces
  */
-contract MirrorServiceHandler is IMirrorUpdateTypes, IWavsServiceHandler {
+contract MirrorOperatorSyncHandler is IMirrorOperatorSyncHandler, IWavsServiceHandler {
     /// @notice Ensures all updates are deployed in order and no duplicates.
     uint64 public lastTriggerId;
 

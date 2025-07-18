@@ -3,6 +3,8 @@ pragma solidity ^0.8.27;
 
 import {IERC1271Upgradeable} from
     "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+import {IECDSAStakeRegistryErrors} from
+    "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 /**
  * @title MockStakeRegistry
@@ -10,7 +12,7 @@ import {IERC1271Upgradeable} from
  * @notice This contract is a mock stake registry for testing the WavsServiceManager contract.
  * @dev This contract is used to test the WavsServiceManager contract.
  */
-contract MockStakeRegistry {
+contract MockStakeRegistry is IECDSAStakeRegistryErrors {
     /// @notice The operator to signing key mapping.
     mapping(address => address) public operatorToSigning;
     /// @notice The signing key to operator mapping.
@@ -19,6 +21,8 @@ contract MockStakeRegistry {
     mapping(address => uint256) public operatorWeights;
     /// @notice The total weight.
     uint256 public totalWeight;
+    /// @notice The total operators.
+    uint256 public totalOperators;
 
     /**
      * @notice The setOperatorWeight function.
@@ -52,6 +56,44 @@ contract MockStakeRegistry {
         uint256 _totalWeight
     ) external {
         totalWeight = _totalWeight;
+    }
+
+    /**
+     * @notice The setTotalOperators function.
+     * @param _totalOperators The total operators.
+     */
+    function setTotalOperators(
+        uint256 _totalOperators
+    ) external {
+        totalOperators = _totalOperators;
+    }
+
+    /**
+     * @notice The updateOperatorsForQuorum function.
+     * @param operatorsPerQuorum The operators per quorum.
+     * @dev This function doubles the weights of even operators and halves the weights of odd operators, for testing.
+     */
+    function updateOperatorsForQuorum(
+        address[][] memory operatorsPerQuorum,
+        bytes memory
+    ) external virtual {
+        address[] memory operators = operatorsPerQuorum[0];
+        if (operators.length != totalOperators) {
+            revert MustUpdateAllOperators();
+        }
+        int256 delta;
+        for (uint256 i; i < operators.length; i++) {
+            uint256 oldWeight = operatorWeights[operators[i]];
+            uint256 newWeight;
+            if (i % 2 == 0) {
+                newWeight = oldWeight * 2;
+            } else {
+                newWeight = oldWeight / 2;
+            }
+            delta += int256(newWeight) - int256(oldWeight);
+            operatorWeights[operators[i]] = newWeight;
+        }
+        totalWeight = uint256(int256(totalWeight) + delta);
     }
 
     /**

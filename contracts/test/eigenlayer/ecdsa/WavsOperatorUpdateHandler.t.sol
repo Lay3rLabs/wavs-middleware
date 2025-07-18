@@ -6,93 +6,111 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {ECDSAUpgradeable} from
     "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
-import {WavsMirrorDeploymentLib} from "script/eigenlayer/ecdsa/utils/WavsMirrorDeploymentLib.sol";
-import {UpgradeableProxyLib} from "script/eigenlayer/ecdsa/utils/UpgradeableProxyLib.sol";
-import {MirrorStakeRegistry} from "src/eigenlayer/ecdsa/MirrorStakeRegistry.sol";
+import {TransparentUpgradeableProxy} from
+    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {
-    MirrorServiceManagerHandler,
-    IManagerUpdateTypes
-} from "src/eigenlayer/ecdsa/handlers/MirrorServiceManagerHandler.sol";
+    WavsOperatorUpdateHandler,
+    IWavsOperatorUpdateHandler
+} from "src/eigenlayer/ecdsa/handlers/WavsOperatorUpdateHandler.sol";
 import {IWavsServiceHandler} from "src/eigenlayer/ecdsa/interfaces/IWavsServiceHandler.sol";
+import {MockStakeRegistry} from "test/eigenlayer/ecdsa/mocks/MockStakeRegistry.sol";
 
 /**
- * @title MirrorServiceManagerHandlerTest
+ * @title WavsOperatorUpdateHandlerTest
  * @author Lay3rLabs
- * @notice This contract contains tests for the MirrorServiceManagerHandler contract.
- * @dev This contract is used to test the MirrorServiceManagerHandler contract.
+ * @notice This contract contains tests for the WavsOperatorUpdateHandler contract.
+ * @dev This contract is used to test the WavsOperatorUpdateHandler contract.
  */
-contract MirrorServiceManagerHandlerTest is Test {
-    using UpgradeableProxyLib for address;
-
+contract WavsOperatorUpdateHandlerTest is Test {
     // Constants
     uint256 private constant OPERATOR_WEIGHT = 10_000;
 
     address private deployer;
-    address private proxyAdmin;
-    WavsMirrorDeploymentLib.DeploymentData private deployment;
+    address private proxyOwner;
 
     // Contract references
-    MirrorStakeRegistry private stakeRegistry;
+    MockStakeRegistry private stakeRegistry;
     WavsServiceManager private serviceManager;
-    MirrorServiceManagerHandler private serviceHandler;
+    WavsOperatorUpdateHandler private serviceHandler;
 
     // Basic operator data
     address[] private operators;
-    address[] private signingKeyAddresses;
     uint256[] private weights;
     uint256[] private privateKeys;
 
     /// @notice The error for the block number too low for offset.
-    error MirrorServiceManagerHandlerTest__BlockNumberTooLowForOffset();
+    error WavsOperatorUpdateHandlerTest__BlockNumberTooLowForOffset();
     /// @notice The error for the arrays length mismatch.
-    error MirrorServiceManagerHandlerTest__ArraysLengthMismatch();
+    error WavsOperatorUpdateHandlerTest__ArraysLengthMismatch();
     /// @notice The error for the signature recovery failed.
-    error MirrorServiceManagerHandlerTest__SignatureRecoveryFailed();
+    error WavsOperatorUpdateHandlerTest__SignatureRecoveryFailed();
 
     /// @notice The setUp function.
     function setUp() public {
-        // Set up deployer address
+        // Set up deployer addresses
         deployer = address(0x123);
+        proxyOwner = address(0x456);
+
         vm.startPrank(deployer);
+        stakeRegistry = new MockStakeRegistry();
 
-        // Deploy proxy admin
-        proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
+        // Deploy the implementation contract
+        WavsServiceManager implementation = new WavsServiceManager(
+            address(this), // avsDirectory
+            address(stakeRegistry),
+            address(0x101),
+            address(0x102),
+            address(0x103)
+        );
+        vm.stopPrank();
 
-        // Deploy contracts
-        deployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
+        vm.startPrank(proxyOwner);
 
-        // Create references to deployed contracts
-        serviceManager = WavsServiceManager(deployment.wavsServiceManager);
-        stakeRegistry = MirrorStakeRegistry(deployment.stakeRegistry);
+        // Encode the initialize function call
+        bytes memory data = abi.encodeWithSelector(
+            WavsServiceManager.initialize.selector,
+            deployer, // initialOwner
+            deployer // rewardsInitiator
+        );
+        // Deploy the proxy and initialize it
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(implementation),
+            proxyOwner, // admin
+            data // initializer data
+        );
+        // Cast the proxy to the service manager interface
+        serviceManager = WavsServiceManager(address(proxy));
 
         vm.stopPrank();
+
+        vm.startPrank(deployer);
+
+        serviceHandler = new WavsOperatorUpdateHandler(
+            serviceManager, ECDSAStakeRegistry(address(stakeRegistry))
+        );
 
         // Create test info for 5 operators
         privateKeys = new uint256[](5);
         operators = new address[](5);
-        signingKeyAddresses = new address[](5);
         weights = new uint256[](5);
 
         for (uint256 i = 0; i < 5; ++i) {
             privateKeys[i] = i + 1;
             operators[i] = vm.addr(privateKeys[i]);
-            signingKeyAddresses[i] = vm.addr(privateKeys[i]);
             weights[i] = OPERATOR_WEIGHT;
         }
 
-        // Find out the actual owner of the contracts
-        address actualOwner = serviceManager.owner();
+        // Set up test operator weights
+        stakeRegistry.setOperatorWeight(operators[0], weights[0]);
+        stakeRegistry.setOperatorWeight(operators[1], weights[1]);
+        stakeRegistry.setOperatorWeight(operators[2], weights[2]);
+        stakeRegistry.setOperatorWeight(operators[3], weights[3]);
+        stakeRegistry.setOperatorWeight(operators[4], weights[4]);
+        stakeRegistry.setTotalWeight(weights[0] + weights[1] + weights[2] + weights[3] + weights[4]);
+        stakeRegistry.setTotalOperators(5);
 
-        // Set up test operator weights as the actual owner
-        vm.startPrank(actualOwner);
-        stakeRegistry.batchSetOperatorDetails(operators, signingKeyAddresses, weights);
-        vm.stopPrank();
-
-        // Deploy MirrorServiceManagerHandler
-        vm.startPrank(actualOwner);
-        deployment = WavsMirrorDeploymentLib.deployServiceHandlers(deployment);
-        serviceHandler = MirrorServiceManagerHandler(deployment.mirrorServiceManagerHandler);
         vm.stopPrank();
 
         // Roll to block 10 to ensure we have enough blocks for reference blocks
@@ -104,52 +122,34 @@ contract MirrorServiceManagerHandlerTest is Test {
     function test_initial_state() public view {
         /* solhint-enable func-name-mixedcase */
         // Test initial state of the service handler
-        assertEq(serviceHandler.lastTriggerId(), 0, "Initial trigger ID should be 0");
         assertEq(
             address(serviceHandler.getServiceManager()),
             address(serviceManager),
             "Service manager address should be set"
         );
-        assertEq(serviceManager.quorumNumerator(), 2, "Initial quorum numerator should be 2");
-        assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
+        assertEq(
+            address(serviceHandler.getStakeRegistry()),
+            address(stakeRegistry),
+            "Stake registry address should be set"
+        );
     }
 
     /* solhint-disable func-name-mixedcase */
-    /// @notice The test_invalid_trigger_id function.
-    function test_invalid_trigger_id() public {
+    /// @notice The test_invalid_payload function.
+    function test_invalid_payload() public {
         /* solhint-enable func-name-mixedcase */
-        // update trigger to 5
-        IManagerUpdateTypes.UpdateWithId memory updateData =
-            IManagerUpdateTypes.UpdateWithId({triggerId: 5, numerator: 2, denominator: 3});
-        // Create envelope with the encoded payload
+        // Create an envelope with invalid payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
             ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            payload: abi.encode("Bad payload")
         });
 
-        // Create signature data with all operators (5/5)
-        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 5, 0);
-        // Passes first time
-        serviceHandler.handleSignedEnvelope(envelope, signatureData);
+        // Create signature data with 4 operators (more than enough to pass quorum)
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 5);
 
-        // Replay should fail with InvalidTriggerId
-        vm.expectRevert(abi.encodeWithSelector(IManagerUpdateTypes.InvalidTriggerId.selector, 5));
-        serviceHandler.handleSignedEnvelope(envelope, signatureData);
-
-        // Try lower trigger id (2) to show it fails
-        updateData = IManagerUpdateTypes.UpdateWithId({triggerId: 2, numerator: 3, denominator: 4});
-        // Create envelope with the encoded payload
-        envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(2)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
-        });
-        // Create signature data with all operators (5/5)
-        signatureData = createSignatureData(envelope, 5, 0);
-
-        // Previous id should fail with InvalidTriggerId
-        vm.expectRevert(abi.encodeWithSelector(IManagerUpdateTypes.InvalidTriggerId.selector, 5));
+        // Call handleSignedEnvelope should fail with invalid payload
+        vm.expectRevert();
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
@@ -158,8 +158,11 @@ contract MirrorServiceManagerHandlerTest is Test {
     function test_insufficient_quorum() public {
         /* solhint-enable func-name-mixedcase */
         // Create a valid UpdateWithId payload with triggerId = 1
-        IManagerUpdateTypes.UpdateWithId memory updateData =
-            IManagerUpdateTypes.UpdateWithId({triggerId: 1, numerator: 2, denominator: 3});
+        IWavsOperatorUpdateHandler.OperatorUpdatePayload memory updateData =
+        IWavsOperatorUpdateHandler.OperatorUpdatePayload({
+            operatorsPerQuorum: new address[][](0),
+            quorumNumbers: new bytes(0)
+        });
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
@@ -184,36 +187,16 @@ contract MirrorServiceManagerHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /*
-    // TODO: no error on parse. how to validate?
-    function test_invalid_payload() public {
-        // Create an invalid payload (not matching UpdateWithId struct)
-        bytes memory invalidPayload = abi.encode("BAD");
-        
-        // Create envelope with the invalid payload
-        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: invalidPayload
-        });
-        
-        // Create signature data with all operators (5/5)
-        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 5, 5);
-        
-        // Call handleSignedEnvelope should fail with abi decode error
-        vm.expectRevert(); // Decoding error
-        serviceHandler.handleSignedEnvelope(envelope, signatureData);
-    }
-    */
-
     /* solhint-disable func-name-mixedcase */
-    /// @notice The test_successful_update_quorum function.
-    function test_successful_update_quorum() public {
+    /// @notice The test_failed_update_operators function.
+    function test_failed_update_operators() public {
         /* solhint-enable func-name-mixedcase */
-        // let's change quorum so 2/5 (4/10)can pass, not 2/3
-        // Create the UpdateWithId struct with triggerId = 1
-        IManagerUpdateTypes.UpdateWithId memory updateData =
-            IManagerUpdateTypes.UpdateWithId({triggerId: 1, numerator: 4, denominator: 10});
+        // Create the update data with some operators
+        IWavsOperatorUpdateHandler.OperatorUpdatePayload memory updateData =
+        IWavsOperatorUpdateHandler.OperatorUpdatePayload({
+            operatorsPerQuorum: new address[][](1),
+            quorumNumbers: new bytes(0)
+        });
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
@@ -224,30 +207,50 @@ contract MirrorServiceManagerHandlerTest is Test {
 
         // 4/5 can pass this with > 2/3
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 0);
+
+        // Call handleSignedEnvelope should fail with MustUpdateAllOperators
+        vm.expectRevert(abi.encodeWithSignature("MustUpdateAllOperators()"));
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
+    }
 
-        // Check that the lastTriggerId was incremented
-        assertEq(serviceHandler.lastTriggerId(), 1, "lastTriggerId not incremented");
-        assertEq(serviceManager.quorumNumerator(), 4, "Initial quorum numerator should be 4");
-        assertEq(serviceManager.quorumDenominator(), 10, "Initial quorum denominator should be 10");
-
-        updateData = IManagerUpdateTypes.UpdateWithId({triggerId: 2, numerator: 1, denominator: 6});
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_successful_update_operators function.
+    function test_successful_update_operators() public {
+        /* solhint-enable func-name-mixedcase */
+        // Create the update data
+        address[][] memory operatorsPerQuorum = new address[][](1);
+        operatorsPerQuorum[0] = operators;
+        IWavsOperatorUpdateHandler.OperatorUpdatePayload memory updateData =
+        IWavsOperatorUpdateHandler.OperatorUpdatePayload({
+            operatorsPerQuorum: operatorsPerQuorum,
+            quorumNumbers: new bytes(0)
+        });
 
         // Create envelope with the encoded payload
-        envelope = IWavsServiceHandler.Envelope({
+        IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
             ordering: bytes12(0),
             payload: abi.encode(updateData)
         });
 
-        // 2/5 is now enough to pass
-        signatureData = createSignatureData(envelope, 2, 0);
+        // 4/5 can pass this with > 2/3
+        IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 4, 0);
+
+        // total weight starts at all the weights
+        uint256 initialTotalWeight = weights[0] + weights[1] + weights[2] + weights[3] + weights[4];
+        assertEq(
+            stakeRegistry.totalWeight(),
+            initialTotalWeight,
+            "Total weight should initialize to the sum of the initial weights"
+        );
+
+        // update the operators
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
 
-        // Check that the lastTriggerId was incremented
-        assertEq(serviceHandler.lastTriggerId(), 2, "lastTriggerId not incremented to 2");
-        assertEq(serviceManager.quorumNumerator(), 1, "Initial quorum numerator should be 1");
-        assertEq(serviceManager.quorumDenominator(), 6, "Initial quorum denominator should be 6");
+        // mock stake registry doubles even weights and halves odd weights
+        uint256 newTotalWeight =
+            weights[0] * 2 + weights[1] / 2 + weights[2] * 2 + weights[3] / 2 + weights[4] * 2;
+        assertEq(stakeRegistry.totalWeight(), newTotalWeight, "Total weight should be updated");
     }
 
     /**
@@ -289,7 +292,7 @@ contract MirrorServiceManagerHandlerTest is Test {
         // Make sure we're at least at block 1 before subtracting offset
         uint32 currentBlock = uint32(block.number);
         if (!(currentBlock > referenceBlockOffset)) {
-            revert MirrorServiceManagerHandlerTest__BlockNumberTooLowForOffset();
+            revert WavsOperatorUpdateHandlerTest__BlockNumberTooLowForOffset();
         }
 
         return IWavsServiceHandler.SignatureData({
@@ -354,13 +357,13 @@ contract MirrorServiceManagerHandlerTest is Test {
         bytes[] memory signatures
     ) internal pure {
         if (signers.length != signatures.length) {
-            revert MirrorServiceManagerHandlerTest__ArraysLengthMismatch();
+            revert WavsOperatorUpdateHandlerTest__ArraysLengthMismatch();
         }
 
         for (uint256 i = 0; i < signers.length; ++i) {
             address recovered = ECDSA.recover(digest, signatures[i]);
             if (recovered != signers[i]) {
-                revert MirrorServiceManagerHandlerTest__SignatureRecoveryFailed();
+                revert WavsOperatorUpdateHandlerTest__SignatureRecoveryFailed();
             }
         }
     }
