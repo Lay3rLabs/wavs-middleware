@@ -41,11 +41,27 @@ import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
 
+/**
+ * @title WavsMiddlewareDeploymentLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for deploying the WAVS middleware contracts.
+ * @dev This library is used to deploy the WAVS middleware contracts.
+ */
 library WavsMiddlewareDeploymentLib {
     // using stdJson for *;
     using Strings for *;
     using UpgradeableProxyLib for address;
 
+    /**
+     * @notice The deployment data struct.
+     * @param wavsServiceManager The WAVS service manager address.
+     * @param stakeRegistry The stake registry address.
+     * @param registryCoordinator The registry coordinator address.
+     * @param blsApkRegistry The BLS APK registry address.
+     * @param indexRegistry The index registry address.
+     * @param socketRegistry The socket registry address.
+     * @param pauserRegistry The pauser registry address.
+     */
     struct DeploymentData {
         address wavsServiceManager;
         address stakeRegistry;
@@ -56,6 +72,11 @@ library WavsMiddlewareDeploymentLib {
         address pauserRegistry;
     }
 
+    /**
+     * @notice The strategy config struct.
+     * @param strategy The strategy address.
+     * @param multiplier The multiplier.
+     */
     struct StrategyConfig {
         address strategy;
         uint96 multiplier;
@@ -63,12 +84,23 @@ library WavsMiddlewareDeploymentLib {
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    /// @notice The error for the strategies file not found.
     error WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
+    /// @notice The error for the deployment file not found.
     error WavsMiddlewareDeploymentLib__DeploymentFileNotFound();
+    /// @notice The error for the strategies and multipliers length mismatch.
     error WavsMiddlewareDeploymentLib__StrategiesAndMultipliersLengthMismatch();
+    /// @notice The error for the total multiplier not 10000.
     error WavsMiddlewareDeploymentLib__TotalMultiplierNot10000();
+    /// @notice The error for the AVS directory mismatch.
     error WavsMiddlewareDeploymentLib__AVSDirectoryMismatch();
 
+    /**
+     * @notice The deploy contracts function.
+     * @param proxyAdmin The proxy admin address.
+     * @param core The core deployment data.
+     * @return deployment The deployment data.
+     */
     function deployContracts(
         address proxyAdmin,
         ReadCoreLib.DeploymentData memory core
@@ -155,6 +187,16 @@ library WavsMiddlewareDeploymentLib {
         });
     }
 
+    /**
+     * @notice The configure contracts function.
+     * @param deployment The deployment data.
+     * @param strategyParams The strategy params.
+     * @param metadataUri The metadata URI.
+     * @param allocationManagerAddress The allocation manager address.
+     * @param permissionControllerAddress The permission controller address.
+     * @param minimumWeight The minimum weight.
+     * @param lookAheadPeriod The look ahead period.
+     */
     function configureContracts(
         DeploymentData memory deployment,
         IStakeRegistryTypes.StrategyParams[] memory strategyParams,
@@ -198,6 +240,11 @@ library WavsMiddlewareDeploymentLib {
         );
     }
 
+    /**
+     * @notice The read strategy params config function.
+     * @param fileName The file name.
+     * @return strategyParams The strategy params.
+     */
     function readStrategyParamsConfig(
         string memory fileName
     ) internal returns (IStakeRegistryTypes.StrategyParams[] memory) {
@@ -218,7 +265,7 @@ library WavsMiddlewareDeploymentLib {
         uint256 totalMultiplier = 0;
         IStakeRegistryTypes.StrategyParams[] memory strategyParams =
             new IStakeRegistryTypes.StrategyParams[](size);
-        for (uint256 i; i < size; i++) {
+        for (uint256 i; i < size; ++i) {
             totalMultiplier += multipliers[i];
             strategyParams[i] = IStakeRegistryTypes.StrategyParams({
                 strategy: IStrategy(strategies[i]),
@@ -254,6 +301,10 @@ library WavsMiddlewareDeploymentLib {
     //     return data;
     // }
 
+    /**
+     * @notice The write deployment JSON function.
+     * @param data The deployment data.
+     */
     function writeDeploymentJson(
         DeploymentData memory data
     ) internal {
@@ -269,6 +320,12 @@ library WavsMiddlewareDeploymentLib {
         console2.log("Deployment artifacts written to: deployments/wavs-bls/avs_deploy.json");
     }
 
+    /**
+     * @notice The generate deployment JSON function.
+     * @param data The deployment data.
+     * @param proxyAdmin The proxy admin address.
+     * @return deploymentData The deployment JSON.
+     */
     function _generateDeploymentJson(
         DeploymentData memory data,
         address proxyAdmin
@@ -289,6 +346,12 @@ library WavsMiddlewareDeploymentLib {
         );
     }
 
+    /**
+     * @notice The generate contracts JSON function.
+     * @param data The deployment data.
+     * @param proxyAdmin The proxy admin address.
+     * @return contractsJson The contracts JSON.
+     */
     function _generateContractsJson(
         DeploymentData memory data,
         address proxyAdmin

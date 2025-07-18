@@ -10,17 +10,30 @@ import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 
+/**
+ * @title WavsDelegateToOperator
+ * @author Lay3rLabs
+ * @notice This script delegates to an operator.
+ * @dev This script is used to delegate to an operator.
+ */
 contract WavsDelegateToOperator is Script {
-    // Environment variables
+    /// @notice The environment variable for the operator address.
     string public constant ENV_OPERATOR = "OPERATOR_ADDRESS";
+    /// @notice The environment variable for the WAVS service manager address.
     string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
 
+    /// @notice The environment variable for the LST contract address.
     string public constant ENV_LST_CONTRACT = "LST_CONTRACT_ADDRESS";
+    /// @notice The environment variable for the LST strategy address.
     string public constant ENV_LST_STRATEGY = "LST_STRATEGY_ADDRESS";
+    /// @notice The environment variable for the amount to delegate.
     string public constant ENV_AMOUNT = "WAVS_DELEGATE_AMOUNT";
 
+    /// @notice The environment variable for the delegation approver private key.
     string public constant ENV_DELEGATION_APPROVER_PRIVATE_KEY = "DELEGATION_APPROVER_PRIVATE_KEY";
+    /// @notice The environment variable for the delegation approver salt.
     string public constant ENV_DELEGATION_APPROVER_SALT = "DELEGATION_APPROVER_SALT";
+    /// @notice The environment variable for the delegation duration.
     string public constant ENV_DELEGATION_DURATION = "DELEGATION_DURATION";
 
     // Configuration
@@ -35,12 +48,17 @@ contract WavsDelegateToOperator is Script {
     address private lstStrategyAddress;
     uint256 private stakeAmount;
 
+    /// @notice The WAVS service manager contract instance.
     WavsServiceManager public wavsServiceManager;
 
+    /// @notice The error for the invalid approver private key.
     error WavsDelegateToOperator__InvalidApproverPrivateKey();
+    /// @notice The error for the failed to mint LST tokens.
     error WavsDelegateToOperator__FailedToMintLSTTokens();
+    /// @notice The error for the failed to approve LST tokens.
     error WavsDelegateToOperator__FailedToApproveLSTTokens();
 
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         wavsServiceManager = WavsServiceManager(vm.envAddress(ENV_SERVICE_MANAGER));
         delegationManager = DelegationManager(wavsServiceManager.getDelegationManager());
@@ -61,6 +79,7 @@ contract WavsDelegateToOperator is Script {
         }
     }
 
+    /// @notice The run function for the script.
     function run() external {
         vm.startBroadcast();
 
@@ -86,6 +105,15 @@ contract WavsDelegateToOperator is Script {
         vm.stopBroadcast();
     }
 
+    /**
+     * @notice The create delegation approval signature function.
+     * @param _staker The staker address.
+     * @param _operator The operator address.
+     * @param _approverPrivateKey The approver private key.
+     * @param _salt The salt.
+     * @param _duration The duration.
+     * @return The delegation approval signature.
+     */
     function _createDelegationApprovalSignature(
         address _staker,
         address _operator,
@@ -105,6 +133,7 @@ contract WavsDelegateToOperator is Script {
         return ISignatureUtilsMixinTypes.SignatureWithExpiry({signature: signature, expiry: expiry});
     }
 
+    /// @notice The setup delegator function.
     function _setUpDelegator() internal {
         // This is the address for private key forge is running the script as.
         // Calculated from the --private-key argument

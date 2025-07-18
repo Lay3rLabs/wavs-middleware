@@ -16,28 +16,46 @@ import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
+/**
+ * @title WavsMiddlewareDeployer
+ * @author Lay3rLabs
+ * @notice This script deploys the WAVS middleware contracts.
+ * @dev This script is used to deploy the WAVS middleware contracts.
+ */
 contract WavsMiddlewareDeployer is Script {
     using UpgradeableProxyLib for address;
 
-    // Environment variables for configureContracts
+    /// @notice The environment variable for the metadata URI.
     string public constant ENV_METADATA_URI = "METADATA_URI";
 
-    // Deployment configuration
+    /// @notice The metadata URI.
     string private _metadataUri;
 
+    /// @notice The proxy admin address.
     address public proxyAdmin;
+    /// @notice The core deployment data.
     ReadCoreLib.DeploymentData public coreDeployment;
+    /// @notice The WAVS middleware deployment data.
     WavsMiddlewareDeploymentLib.DeploymentData public wavsMiddlewareDeployment;
+    /// @notice The strategy parameters.
     IStakeRegistryTypes.StrategyParams[] public strategyParams;
 
+    /// @notice The error for the WAVS service manager mismatch.
     error WavsMiddlewareDeployer__WavsServiceManagerMismatch();
+    /// @notice The error for the stake registry mismatch.
     error WavsMiddlewareDeployer__StakeRegistryMismatch();
+    /// @notice The error for the registry coordinator mismatch.
     error WavsMiddlewareDeployer__RegistryCoordinatorMismatch();
+    /// @notice The error for the BLS APK registry mismatch.
     error WavsMiddlewareDeployer__BLSApkRegistryMismatch();
+    /// @notice The error for the index registry mismatch.
     error WavsMiddlewareDeployer__IndexRegistryMismatch();
+    /// @notice The error for the socket registry mismatch.
     error WavsMiddlewareDeployer__SocketRegistryMismatch();
+    /// @notice The error for the pauser registry mismatch.
     error WavsMiddlewareDeployer__PauserRegistryMismatch();
 
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         coreDeployment =
             ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
@@ -49,6 +67,7 @@ contract WavsMiddlewareDeployer is Script {
         strategyParams = WavsMiddlewareDeploymentLib.readStrategyParamsConfig(fileName);
     }
 
+    /// @notice The run function for the script.
     function run() external {
         vm.startBroadcast();
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
@@ -76,6 +95,7 @@ contract WavsMiddlewareDeployer is Script {
         WavsMiddlewareDeploymentLib.writeDeploymentJson(wavsMiddlewareDeployment);
     }
 
+    /// @notice The verify deployment function.
     function _verifyDeployment() internal view {
         WavsServiceManager wavsServiceManager =
             WavsServiceManager(wavsMiddlewareDeployment.wavsServiceManager);

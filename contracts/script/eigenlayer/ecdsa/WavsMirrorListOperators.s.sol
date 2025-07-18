@@ -10,17 +10,31 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 
-/// @title WavsMirrorListOperators
-/// @notice Script to list operators and their weights from both source and mirror chains
-/// @dev This script reads operator information from the source chain and their corresponding weights from the mirror chain
+/**
+ * @title WavsMirrorListOperators
+ * @author Lay3rLabs
+ * @notice Script to list operators and their weights from both source and mirror chains
+ * @dev This script reads operator information from the source chain and their corresponding weights from the mirror chain
+ */
 contract WavsMirrorListOperators is Script {
-    // Environment variable names
+    /// @notice The environment variable for the source service manager address.
     string public constant ENV_SOURCE_SERVICE_MANAGER = "SOURCE_SERVICE_MANAGER_ADDRESS";
+    /// @notice The environment variable for the mirror service manager address.
     string public constant ENV_MIRROR_SERVICE_MANAGER = "MIRROR_SERVICE_MANAGER_ADDRESS";
+    /// @notice The environment variable for the source RPC URL.
     string public constant SOURCE_RPC_URL = "SOURCE_RPC_URL";
+    /// @notice The environment variable for the mirror RPC URL.
     string public constant MIRROR_RPC_URL = "MIRROR_RPC_URL";
 
-    /// @notice Structure to hold operator information
+    /**
+     * @notice Structure to hold operator information
+     * @param stakeRegistry The stake registry address.
+     * @param totalWeight The total weight.
+     * @param thresholdWeight The threshold weight.
+     * @param operators The operators.
+     * @param signingKeyAddresses The signing key addresses.
+     * @param weights The weights.
+     */
     struct OperatorInfo {
         address stakeRegistry;
         uint256 totalWeight;
@@ -30,17 +44,17 @@ contract WavsMirrorListOperators is Script {
         uint256[] weights;
     }
 
-    // Configuration variables
     address private sourceServiceManagerAddr;
     address private mirrorServiceManagerAddr;
     string private sourceRpcUrl;
     string private mirrorRpcUrl;
 
+    /// @notice The error for the invalid source service manager address.
     error WavsMirrorListOperators__InvalidSourceServiceManagerAddress();
+    /// @notice The error for the invalid mirror service manager address.
     error WavsMirrorListOperators__InvalidMirrorServiceManagerAddress();
 
-    /// @notice Set up the script by reading environment variables
-    /// @dev This function is called before run() and validates all required environment variables
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         // Read and validate service manager addresses
         sourceServiceManagerAddr = vm.envAddress(ENV_SOURCE_SERVICE_MANAGER);
@@ -59,8 +73,7 @@ contract WavsMirrorListOperators is Script {
         }
     }
 
-    /// @notice Main function to run the script
-    /// @dev This function orchestrates the process of fetching and displaying operator information
+    /// @notice The run function for the script.
     function run() external {
         // Get operator information
         OperatorInfo memory opInfo =
@@ -72,10 +85,12 @@ contract WavsMirrorListOperators is Script {
         displayResults(opInfo, quorumNumerator, quorumDenominator);
     }
 
-    /// @notice Internal function to fetch operator information from both chains
-    /// @param sourceServiceManagerAddress The address of the source chain service manager
-    /// @param mirrorServiceManagerAddress The address of the mirror chain service manager
-    /// @return OperatorInfo struct containing all operator-related information
+    /**
+     * @notice Internal function to fetch operator information from both chains
+     * @param sourceServiceManagerAddress The address of the source chain service manager
+     * @param mirrorServiceManagerAddress The address of the mirror chain service manager
+     * @return OperatorInfo struct containing all operator-related information
+     */
     function listOperators(
         address sourceServiceManagerAddress,
         address mirrorServiceManagerAddress
@@ -103,7 +118,7 @@ contract WavsMirrorListOperators is Script {
         uint256[] memory weights = new uint256[](operators.length);
         address[] memory signingKeyAddresses = new address[](operators.length);
 
-        for (uint256 i = 0; i < operators.length; i++) {
+        for (uint256 i = 0; i < operators.length; ++i) {
             weights[i] = mirrorStakeRegistry.getOperatorWeight(operators[i]);
             signingKeyAddresses[i] = mirrorStakeRegistry.getLatestOperatorSigningKey(operators[i]);
         }
@@ -129,8 +144,12 @@ contract WavsMirrorListOperators is Script {
         });
     }
 
-    /// @notice Internal function to display the results in a formatted way
-    /// @param opInfo The operator information to display
+    /**
+     * @notice Internal function to display the results in a formatted way
+     * @param opInfo The operator information to display
+     * @param quorumNumerator The quorum numerator
+     * @param quorumDenominator The quorum denominator
+     */
     function displayResults(
         OperatorInfo memory opInfo,
         uint256 quorumNumerator,
@@ -151,7 +170,7 @@ contract WavsMirrorListOperators is Script {
 
         console.log(" "); // Blank line for separation
         console.log("=== Registered Operators ===");
-        for (uint256 i = 0; i < opInfo.operators.length; i++) {
+        for (uint256 i = 0; i < opInfo.operators.length; ++i) {
             string memory op = string.concat(
                 "Operator ",
                 Strings.toString(i + 1),
@@ -173,6 +192,10 @@ contract WavsMirrorListOperators is Script {
         console.log(quorum);
     }
 
+    /**
+     * @notice Internal function to write the operator list to a JSON file
+     * @param opInfo The operator information to write
+     */
     function writeOperatorListJson(
         OperatorInfo memory opInfo
     ) internal {
@@ -200,7 +223,7 @@ contract WavsMirrorListOperators is Script {
             "\"operators\":["
         );
 
-        for (uint256 i = 0; i < opInfo.operators.length; i++) {
+        for (uint256 i = 0; i < opInfo.operators.length; ++i) {
             if (i > 0) {
                 json = string.concat(json, ",");
             }

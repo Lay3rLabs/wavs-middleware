@@ -5,7 +5,7 @@
   "author": "Lay3rLabs Team",
   "license": "MIT",
   "dependencies": {
-    "solhint": "^5.1.0"
+    "solhint": "^6.0.0"
   },
   "scripts": {
     "lint": "solhint 'contracts/src/**/*.sol' 'contracts/test/**/*.sol' 'contracts/script/**/*.sol'",

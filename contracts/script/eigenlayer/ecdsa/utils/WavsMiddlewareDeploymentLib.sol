@@ -19,11 +19,24 @@ import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsAVSRegistrar} from "src/eigenlayer/ecdsa/WavsAVSRegistrar.sol";
 
+/**
+ * @title WavsMiddlewareDeploymentLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for deploying the WavsMiddleware contracts.
+ * @dev This library is used to deploy the WavsMiddleware contracts.
+ */
 library WavsMiddlewareDeploymentLib {
     using stdJson for *;
     using Strings for *;
     using UpgradeableProxyLib for address;
 
+    /**
+     * @notice The deployment data struct.
+     * @param wavsServiceManager The WAVS service manager address.
+     * @param stakeRegistry The stake registry address.
+     * @param strategy The strategy address.
+     * @param avsRegistrar The AVS registrar address.
+     */
     struct DeploymentData {
         address wavsServiceManager;
         address stakeRegistry;
@@ -31,6 +44,11 @@ library WavsMiddlewareDeploymentLib {
         address avsRegistrar;
     }
 
+    /**
+     * @notice The strategy config struct.
+     * @param strategy The strategy address.
+     * @param multiplier The multiplier.
+     */
     struct StrategyConfig {
         address strategy;
         uint96 multiplier;
@@ -38,11 +56,22 @@ library WavsMiddlewareDeploymentLib {
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    /// @notice The error for the strategies file not found.
     error WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
+    /// @notice The error for the deployment file not found.
     error WavsMiddlewareDeploymentLib__DeploymentFileNotFound();
+    /// @notice The error for the strategies and multipliers length mismatch.
     error WavsMiddlewareDeploymentLib__StrategiesAndMultipliersLengthMismatch();
+    /// @notice The error for the total multiplier not 10000.
     error WavsMiddlewareDeploymentLib__TotalMultiplierNot10000();
 
+    /**
+     * @notice The deploy contracts function.
+     * @param proxyAdmin The proxy admin address.
+     * @param core The core deployment data.
+     * @param quorum The quorum.
+     * @return result The deployment data.
+     */
     function deployContracts(
         address proxyAdmin,
         ReadCoreLib.DeploymentData memory core,
@@ -94,6 +123,12 @@ library WavsMiddlewareDeploymentLib {
         return result;
     }
 
+    /**
+     * @notice The configure contracts function.
+     * @param deployment The deployment data.
+     * @param metadataUri The metadata URI.
+     * @param minimumWeight The minimum weight.
+     */
     function configureContracts(
         DeploymentData memory deployment,
         string memory metadataUri,
@@ -124,6 +159,11 @@ library WavsMiddlewareDeploymentLib {
         wavsServiceManager.createOperatorSets(opSetParamsArray);
     }
 
+    /**
+     * @notice The read quorum config function.
+     * @param fileName The file name.
+     * @return quorum The quorum.
+     */
     function readQuorumConfig(
         string memory fileName
     ) internal returns (IECDSAStakeRegistryTypes.Quorum memory) {
@@ -145,7 +185,7 @@ library WavsMiddlewareDeploymentLib {
         IECDSAStakeRegistryTypes.Quorum memory quorum = IECDSAStakeRegistryTypes.Quorum({
             strategies: new IECDSAStakeRegistryTypes.StrategyParams[](size)
         });
-        for (uint256 i; i < size; i++) {
+        for (uint256 i = 0; i < size; ++i) {
             totalMultiplier += multipliers[i];
             quorum.strategies[i] = IECDSAStakeRegistryTypes.StrategyParams({
                 strategy: IStrategy(strategies[i]),
@@ -159,6 +199,12 @@ library WavsMiddlewareDeploymentLib {
         return quorum;
     }
 
+    /**
+     * @notice The read quorum config function.
+     * @param directoryPath The directory path.
+     * @param chainId The chain ID.
+     * @return quorum The quorum.
+     */
     function readQuorumConfig(
         string memory directoryPath,
         uint256 chainId
@@ -167,12 +213,23 @@ library WavsMiddlewareDeploymentLib {
         return readQuorumConfig(fileName);
     }
 
+    /**
+     * @notice The read deployment JSON function.
+     * @param chainId The chain ID.
+     * @return data The deployment data.
+     */
     function readDeploymentJson(
         uint256 chainId
     ) internal returns (DeploymentData memory) {
         return readDeploymentJson("deployments/wavs-middleware/", chainId);
     }
 
+    /**
+     * @notice The read deployment JSON function.
+     * @param directoryPath The directory path.
+     * @param chainId The chain ID.
+     * @return data The deployment data.
+     */
     function readDeploymentJson(
         string memory directoryPath,
         uint256 chainId
@@ -195,6 +252,10 @@ library WavsMiddlewareDeploymentLib {
         return data;
     }
 
+    /**
+     * @notice The write deployment JSON function.
+     * @param data The deployment data.
+     */
     function writeDeploymentJson(
         DeploymentData memory data
     ) internal {
@@ -210,6 +271,12 @@ library WavsMiddlewareDeploymentLib {
         console2.log("Deployment artifacts written to: deployments/wavs-ecdsa/avs_deploy.json");
     }
 
+    /**
+     * @notice The generate deployment JSON function.
+     * @param data The deployment data.
+     * @param proxyAdmin The proxy admin address.
+     * @return deploymentData The deployment JSON.
+     */
     function _generateDeploymentJson(
         DeploymentData memory data,
         address proxyAdmin
@@ -230,6 +297,12 @@ library WavsMiddlewareDeploymentLib {
         );
     }
 
+    /**
+     * @notice The generate contracts JSON function.
+     * @param data The deployment data.
+     * @param proxyAdmin The proxy admin address.
+     * @return contractsJson The contracts JSON.
+     */
     function _generateContractsJson(
         DeploymentData memory data,
         address proxyAdmin

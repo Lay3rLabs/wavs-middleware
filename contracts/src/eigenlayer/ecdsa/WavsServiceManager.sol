@@ -23,16 +23,29 @@ import {IWavsServiceManager} from "./interfaces/IWavsServiceManager.sol";
 import {IWavsServiceHandler} from "./interfaces/IWavsServiceHandler.sol";
 
 /**
- * @title Primary entrypoint for procuring services from LayerMiddleware.
- * @author Eigen Labs, Inc.
+ * @title WavsServiceManager
+ * @author Lay3r Labs
+ * @notice Primary entrypoint for procuring services from LayerMiddleware.
+ * @dev This contract implements the IWavsServiceManager interface
  */
 contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     using ECDSAUpgradeable for bytes32;
 
+    /// @notice The service URI
     string public serviceURI;
+    /// @notice The quorum numerator
     uint256 public quorumNumerator;
+    /// @notice The quorum denominator
     uint256 public quorumDenominator;
 
+    /**
+     * @notice Constructor
+     * @param _avsDirectory The address of the AVS directory
+     * @param _stakeRegistry The address of the stake registry
+     * @param _rewardsCoordinator The address of the rewards coordinator
+     * @param _delegationManager The address of the delegation manager
+     * @param _allocationManager The address of the allocation manager
+     */
     constructor(
         address _avsDirectory,
         address _stakeRegistry,
@@ -49,6 +62,11 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         )
     {}
 
+    /**
+     * @notice Initializes the service manager
+     * @param _initialOwner The initial owner of the service manager
+     * @param _rewardsInitiator The rewards initiator of the service manager
+     */
     function initialize(address _initialOwner, address _rewardsInitiator) public initializer {
         __ServiceManagerBase_init(_initialOwner, _rewardsInitiator);
         quorumNumerator = 2;
@@ -62,34 +80,49 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
     /// There is a discrepency between `ServiceManagerBase.sol` and and `ECDSAServiceManagerBase.sol`
     /// and between `StakeRegistry.sol` and `ECDSAStakeRegistry.sol`
 
-    /// @notice Creates new operator sets with the given parameters
+    /**
+     * @notice Creates new operator sets with the given parameters
+     * @param params The parameters for the new operator sets
+     */
     function createOperatorSets(
-        IAllocationManager.CreateSetParams[] memory params
+        IAllocationManager.CreateSetParams[] calldata params
     ) external onlyOwner {
         IAllocationManager(allocationManager).createOperatorSets(address(this), params);
     }
 
-    /// @notice Adds strategies to an existing operator set
+    /**
+     * @notice Adds strategies to an existing operator set
+     * @param operatorSetId The ID of the operator set
+     * @param strategies The strategies to add
+     */
     function addStrategyToOperatorSet(
         uint32 operatorSetId,
-        IStrategy[] memory strategies
+        IStrategy[] calldata strategies
     ) external onlyOwner {
         IAllocationManager(allocationManager).addStrategiesToOperatorSet(
             address(this), operatorSetId, strategies
         );
     }
 
-    /// @notice Removes strategies from an existing operator set
+    /**
+     * @notice Removes strategies from an existing operator set
+     * @param operatorSetId The ID of the operator set
+     * @param strategies The strategies to remove
+     */
     function removeStrategiesFromOperatorSet(
         uint32 operatorSetId,
-        IStrategy[] memory strategies
+        IStrategy[] calldata strategies
     ) external onlyOwner {
         IAllocationManager(allocationManager).removeStrategiesFromOperatorSet(
             address(this), operatorSetId, strategies
         );
     }
 
-    /// @notice Deregisters an operator from operator sets
+    /**
+     * @notice Deregisters an operator from operator sets
+     * @param operator The operator to deregister
+     * @param operatorSetIds The IDs of the operator sets to deregister from
+     */
     function deregisterOperatorFromOperatorSets(
         address operator,
         uint32[] calldata operatorSetIds
@@ -97,52 +130,64 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         // Implementation logic here
     }
 
-    /// @notice Registers an operator to operator sets
+    /**
+     * @notice Registers an operator to operator sets
+     * @param operator The operator to register
+     * @param operatorSetIds The IDs of the operator sets to register to
+     * @param operatorSignature The signature of the operator
+     */
     function registerOperatorToOperatorSets(
         address operator,
         uint32[] calldata operatorSetIds,
-        ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry memory operatorSignature
+        ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry calldata operatorSignature
     ) external {
         // Implementation logic here
     }
 
-    /// @notice Creates AVS rewards submission
+    /// @inheritdoc ECDSAServiceManagerBase
     function createAVSRewardsSubmission(
-        IRewardsCoordinator.RewardsSubmission[] calldata rewardsSubmissions
+        IRewardsCoordinator.RewardsSubmission[] calldata /* rewardsSubmissions */
     ) external override {
         // Implementation logic here
     }
 
-    /// @notice Slashes an operator
+    /**
+     * @notice Slashes an operator
+     * @param params The parameters for the slashing
+     */
     function slashOperator(
-        IAllocationManagerTypes.SlashingParams memory params
+        IAllocationManagerTypes.SlashingParams calldata params
     ) external {
         // Implementation logic here
     }
 
     /// @inheritdoc IServiceManager
     function addPendingAdmin(
-        address admin
+        address /* admin */
     ) external onlyOwner {
         // _permissionController.addPendingAdmin({account: address(this), admin: admin});
     }
 
     /// @inheritdoc IServiceManager
     function removePendingAdmin(
-        address pendingAdmin
+        address /* pendingAdmin */
     ) external onlyOwner {
         // _permissionController.removePendingAdmin({account: address(this), admin: pendingAdmin});
     }
 
     /// @inheritdoc IServiceManager
     function removeAdmin(
-        address admin
+        address /* admin */
     ) external onlyOwner {
         // _permissionController.removeAdmin({account: address(this), admin: admin});
     }
 
     /// @inheritdoc IServiceManager
-    function setAppointee(address appointee, address target, bytes4 selector) external onlyOwner {
+    function setAppointee(
+        address, /* appointee */
+        address, /* target */
+        bytes4 /* selector */
+    ) external onlyOwner {
         // _permissionController.setAppointee({
         //     account: address(this),
         //     appointee: appointee,
@@ -153,9 +198,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
 
     /// @inheritdoc IServiceManager
     function removeAppointee(
-        address appointee,
-        address target,
-        bytes4 selector
+        address, /* appointee */
+        address, /* target */
+        bytes4 /* selector */
     ) external onlyOwner {
         // _permissionController.removeAppointee({
         //     account: address(this),
@@ -165,8 +210,9 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         // });
     }
 
+    /// @inheritdoc ECDSAServiceManagerBase
     function updateAVSMetadataURI(
-        string memory _metadataURI
+        string calldata _metadataURI
     ) external override onlyOwner {
         // Use AllocationManager instead of AVSDirectory
         IAllocationManager(allocationManager).updateAVSMetadataURI(address(this), _metadataURI);
@@ -185,14 +231,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         return serviceURI;
     }
 
-    /**
-     * @notice Validates an envelope with its associated signatures
-     * @param envelope The envelope containing the data to validate
-     * @param signatureData The signature data including operators, signatures, and reference block
-     * @dev Performs two validations:
-     *      1. Signature validity through ECDSAStakeRegistry
-     *      2. Quorum check to ensure sufficient stake weight signed (2/3 threshold)
-     */
+    /// @inheritdoc IWavsServiceManager
     function validate(
         IWavsServiceHandler.Envelope calldata envelope,
         IWavsServiceHandler.SignatureData calldata signatureData
@@ -204,7 +243,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         ) {
             revert IWavsServiceManager.InvalidSignatureLength();
         }
-        if (signatureData.referenceBlock >= block.number) {
+        if (!(signatureData.referenceBlock < block.number)) {
             revert IWavsServiceManager.InvalidSignatureBlock();
         }
 
@@ -231,7 +270,7 @@ contract WavsServiceManager is ECDSAServiceManagerBase, IWavsServiceManager {
         // Calculate the total weight of the operators that signed
         IECDSAStakeRegistry registry = IECDSAStakeRegistry(stakeRegistry);
         uint256 signedWeight = 0;
-        for (uint256 i = 0; i < signatureData.signers.length; i++) {
+        for (uint256 i = 0; i < signatureData.signers.length; ++i) {
             address operator = registry.getOperatorForSigningKeyAtBlock(
                 signatureData.signers[i], signatureData.referenceBlock
             );

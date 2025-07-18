@@ -17,27 +17,42 @@ import {IWavsServiceHandler} from "src/eigenlayer/ecdsa/interfaces/IWavsServiceH
 
 uint256 constant OPERATOR_WEIGHT = 10_000;
 
+/**
+ * @title WavsMirrorDeploymentLibTest
+ * @author Lay3rLabs
+ * @notice This contract contains tests for the WavsMirrorDeploymentLib contract.
+ * @dev This contract is used to test the WavsMirrorDeploymentLib contract.
+ */
 contract WavsMirrorDeploymentLibTest is Test {
     using UpgradeableProxyLib for address;
 
+    /// @notice The deployer address.
     address public deployer;
+    /// @notice The proxy admin address.
     address public proxyAdmin;
+    /// @notice The deployment data.
     WavsMirrorDeploymentLib.DeploymentData public deployment;
 
-    // basic operator data
+    /// @notice The operators.
     address[] public operators;
+    /// @notice The signing key addresses.
     address[] public signingKeyAddresses;
+    /// @notice The weights.
     uint256[] public weights;
+    /// @notice The private keys.
     uint256[] public privateKeys;
 
     // References to deployed contracts
+    /// @notice The stake registry.
     MirrorStakeRegistry public stakeRegistry;
+    /// @notice The service manager.
     WavsServiceManager public serviceManager;
 
     error WavsMirrorDeploymentLibTest__BlockNumberTooLowForOffset();
     error WavsMirrorDeploymentLibTest__ArraysLengthMismatch();
     error WavsMirrorDeploymentLibTest__SignatureRecoveryFailed();
 
+    /// @notice The setUp function.
     function setUp() public {
         // Set up deployer address
         deployer = address(0x123);
@@ -59,7 +74,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         operators = new address[](5);
         signingKeyAddresses = new address[](5);
         weights = new uint256[](5);
-        for (uint256 i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 5; ++i) {
             privateKeys[i] = i + 1;
             operators[i] = vm.addr(privateKeys[i]); // Operators same as signing keys for now
             signingKeyAddresses[i] = vm.addr(privateKeys[i]); // Signing keys derived from private keys
@@ -79,7 +94,10 @@ contract WavsMirrorDeploymentLibTest is Test {
         vm.roll(10);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_initial_state function.
     function test_initial_state() public view {
+        /* solhint-enable func-name-mixedcase */
         // Verify deployment addresses are set correctly
         assertNotEq(deployment.stakeRegistry, address(0), "StakeRegistry address cannot be zero");
         assertNotEq(
@@ -126,7 +144,10 @@ contract WavsMirrorDeploymentLibTest is Test {
         );
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_validateQuorumSigned_success function.
     function test_validateQuorumSigned_success() public view {
+        /* solhint-enable func-name-mixedcase */
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
@@ -141,7 +162,10 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_validateQuorumSigned_insufficient function.
     function test_validateQuorumSigned_insufficient() public {
+        /* solhint-enable func-name-mixedcase */
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(2)),
@@ -161,7 +185,10 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_validateQuorumSigned_exact function.
     function test_validateQuorumSigned_exact() public {
+        /* solhint-enable func-name-mixedcase */
         // Change quorum to 3 of 5
         address actualOwner = serviceManager.owner();
         vm.startPrank(actualOwner);
@@ -182,7 +209,10 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_validateQuorumSigned_explicitSigningKeys function.
     function test_validateQuorumSigned_explicitSigningKeys() public {
+        /* solhint-enable func-name-mixedcase */
         // Get the actual owner of the contracts
         address actualOwner = serviceManager.owner();
 
@@ -223,7 +253,10 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_setQuorumThreshold function.
     function test_setQuorumThreshold() public {
+        /* solhint-enable func-name-mixedcase */
         // Change quorum to 3 of 5
         address actualOwner = serviceManager.owner();
         vm.startPrank(actualOwner);
@@ -256,14 +289,20 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_setQuorumThreshold_only_owner function.
     function test_setQuorumThreshold_only_owner() public {
+        /* solhint-enable func-name-mixedcase */
         // Non-owner should not be able to set quorum threshold
         vm.prank(address(0x999));
         vm.expectRevert("Ownable: caller is not the owner");
         serviceManager.setQuorumThreshold(1, 2);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_setQuorumThreshold_invalid_params function.
     function test_setQuorumThreshold_invalid_params() public {
+        /* solhint-enable func-name-mixedcase */
         // Get the actual owner of the contracts
         address actualOwner = serviceManager.owner();
 
@@ -291,7 +330,10 @@ contract WavsMirrorDeploymentLibTest is Test {
         vm.stopPrank();
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_validate_invalid_signature_length function.
     function test_validate_invalid_signature_length() public {
+        /* solhint-enable func-name-mixedcase */
         // Empty operators array
         address[] memory emptySigners = new address[](0);
         bytes[] memory emptySignatures = new bytes[](0);
@@ -307,7 +349,13 @@ contract WavsMirrorDeploymentLibTest is Test {
         );
     }
 
-    // Helper function to create signature data with a specific number of operators and real signatures
+    /**
+     * @notice The createSignatureData function.
+     * @param envelope The envelope.
+     * @param numOperators The number of operators.
+     * @param referenceBlockOffset The reference block offset.
+     * @return The signature data.
+     */
     function createSignatureData(
         IWavsServiceHandler.Envelope memory envelope,
         uint256 numOperators,
@@ -321,7 +369,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         address[] memory signers = new address[](numOperators);
         bytes[] memory signatures = new bytes[](numOperators);
 
-        for (uint256 i = 0; i < numOperators; i++) {
+        for (uint256 i = 0; i < numOperators; ++i) {
             // Generate signer address from private key
             signers[i] = vm.addr(privateKeys[i]);
 
@@ -344,7 +392,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         // Note: referenceBlock must be a valid block that exists and is in the past
         // Make sure we're at least at block 1 before subtracting offset
         uint32 currentBlock = uint32(block.number);
-        if (currentBlock <= referenceBlockOffset) {
+        if (!(currentBlock > referenceBlockOffset)) {
             revert WavsMirrorDeploymentLibTest__BlockNumberTooLowForOffset();
         }
 
@@ -367,8 +415,8 @@ contract WavsMirrorDeploymentLibTest is Test {
     ) internal pure {
         // Simple bubble sort since we're working with small arrays
         uint256 length = signers.length;
-        for (uint256 i = 0; i < length - 1; i++) {
-            for (uint256 j = 0; j < length - i - 1; j++) {
+        for (uint256 i = 0; i < length - 1; ++i) {
+            for (uint256 j = 0; j < length - i - 1; ++j) {
                 if (signers[j] > signers[j + 1]) {
                     // Swap signers
                     address tempAddr = signers[j];
@@ -384,7 +432,10 @@ contract WavsMirrorDeploymentLibTest is Test {
         }
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_writeAndLoadConfiguration_roundtrip function.
     function test_writeAndLoadConfiguration_roundtrip() public {
+        /* solhint-enable func-name-mixedcase */
         // 1. Define a sample InitialConfiguration
         WavsMirrorDeploymentLib.InitialConfiguration memory originalConfig;
         originalConfig.operators = operators; // Use operators from setUp
@@ -413,7 +464,7 @@ contract WavsMirrorDeploymentLibTest is Test {
             originalConfig.operators.length,
             "Operators length mismatch"
         );
-        for (uint256 i = 0; i < originalConfig.operators.length; i++) {
+        for (uint256 i = 0; i < originalConfig.operators.length; ++i) {
             assertEq(loadedConfig.operators[i], originalConfig.operators[i], "Operator mismatch");
         }
 
@@ -422,7 +473,7 @@ contract WavsMirrorDeploymentLibTest is Test {
             originalConfig.signingKeyAddresses.length,
             "Signing keys length mismatch"
         );
-        for (uint256 i = 0; i < originalConfig.signingKeyAddresses.length; i++) {
+        for (uint256 i = 0; i < originalConfig.signingKeyAddresses.length; ++i) {
             assertEq(
                 loadedConfig.signingKeyAddresses[i],
                 originalConfig.signingKeyAddresses[i],
@@ -433,7 +484,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         assertEq(
             loadedConfig.weights.length, originalConfig.weights.length, "Weights length mismatch"
         );
-        for (uint256 i = 0; i < originalConfig.weights.length; i++) {
+        for (uint256 i = 0; i < originalConfig.weights.length; ++i) {
             assertEq(loadedConfig.weights[i], originalConfig.weights[i], "Weight mismatch");
         }
 
@@ -489,7 +540,7 @@ contract WavsMirrorDeploymentLibTest is Test {
             revert WavsMirrorDeploymentLibTest__ArraysLengthMismatch();
         }
 
-        for (uint256 i = 0; i < signers.length; i++) {
+        for (uint256 i = 0; i < signers.length; ++i) {
             address recovered = ECDSA.recover(digest, signatures[i]);
             if (recovered != signers[i]) {
                 revert WavsMirrorDeploymentLibTest__SignatureRecoveryFailed();

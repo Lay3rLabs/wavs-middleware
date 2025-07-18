@@ -12,11 +12,31 @@ import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationMa
 
 import {IWavsServiceManager} from "./interfaces/IWavsServiceManager.sol";
 
+/**
+ * @title WavsServiceManager
+ * @author Lay3r Labs
+ * @notice Contract for managing the Wavs service
+ * @dev This contract extends ServiceManagerBase and implements the IWavsServiceManager interface
+ */
 contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
+    /// @notice The URI of the service
     string public serviceURI;
+
+    /// @notice The numerator of the quorum threshold
     uint256 public quorumNumerator;
+
+    /// @notice The denominator of the quorum threshold
     uint256 public quorumDenominator;
 
+    /**
+     * @notice Constructor
+     * @param __avsDirectory The address of the AVS directory
+     * @param __rewardsCoordinator The address of the rewards coordinator
+     * @param __registryCoordinator The address of the registry coordinator
+     * @param __stakeRegistry The address of the stake registry
+     * @param __permissionController The address of the permission controller
+     * @param __allocationManager The address of the allocation manager
+     */
     constructor(
         address __avsDirectory,
         address __rewardsCoordinator,
@@ -35,6 +55,11 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
         )
     {}
 
+    /**
+     * @notice Initializes the contract
+     * @param initialOwner The initial owner of the contract
+     * @param rewardsInitiator The address of the rewards initiator
+     */
     function initialize(address initialOwner, address rewardsInitiator) external initializer {
         __ServiceManagerBase_init(initialOwner, rewardsInitiator);
 
@@ -42,13 +67,17 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
         quorumDenominator = 3;
     }
 
-    /// @notice Slashes an operator
+    /**
+     * @notice Slashes an operator
+     * @param params The parameters for the slashing
+     */
     function slashOperator(
-        IAllocationManager.SlashingParams memory params
+        IAllocationManager.SlashingParams calldata params
     ) external {
         // Implementation logic here
     }
 
+    /// @inheritdoc IWavsServiceManager
     function setServiceURI(
         string calldata _serviceURI
     ) external onlyOwner {
@@ -56,10 +85,12 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
         emit ServiceURIUpdated(_serviceURI);
     }
 
+    /// @inheritdoc IWavsServiceManager
     function getServiceURI() external view returns (string memory) {
         return serviceURI;
     }
 
+    /// @inheritdoc IWavsServiceManager
     function setQuorumThreshold(uint256 numerator, uint256 denominator) external onlyOwner {
         if (numerator == 0) {
             revert InvalidQuorumParameters();
@@ -77,26 +108,24 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
         emit QuorumThresholdUpdated(numerator, denominator);
     }
 
-    /**
-     * @notice Updates the metadata URI for the AVS
-     * @param _metadataURI is the metadata URI for the AVS
-     * @dev only callable by the owner
-     */
+    /// @inheritdoc ServiceManagerBase
     function updateAVSMetadataURI(
         string memory _metadataURI
     ) public override onlyOwner {
-        _avsDirectory.updateAVSMetadataURI(_metadataURI);
         _allocationManager.updateAVSMetadataURI(address(this), _metadataURI);
     }
 
+    /// @inheritdoc IWavsServiceManager
     function getRegistryCoordinator() external view returns (address) {
         return address(_registryCoordinator);
     }
 
+    /// @inheritdoc IWavsServiceManager
     function getAllocationManager() external view returns (address) {
         return address(_allocationManager);
     }
 
+    /// @inheritdoc IWavsServiceManager
     function getStakeRegistry() external view returns (address) {
         return address(_stakeRegistry);
     }

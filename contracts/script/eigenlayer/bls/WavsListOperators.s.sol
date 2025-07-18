@@ -10,7 +10,22 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
 
+/**
+ * @title WavsListOperators
+ * @author Lay3rLabs
+ * @notice This script lists the operators for the WAVS service manager.
+ * @dev This script is used to list the operators for the WAVS service manager.
+ */
 contract WavsListOperators is Script {
+    /**
+     * @notice The operator info struct.
+     * @param stakeRegistry The stake registry address.
+     * @param totalWeight The total weight of the operators.
+     * @param minimumStake The minimum stake of the operators.
+     * @param operators The operators.
+     * @param weights The weights of the operators.
+     * @param strategies The strategies of the operators.
+     */
     struct OperatorInfo {
         address stakeRegistry;
         uint96 totalWeight;
@@ -20,17 +35,19 @@ contract WavsListOperators is Script {
         IStakeRegistry.StrategyParams[] strategies;
     }
 
+    /// @notice The environment variable for the WAVS service manager address.
     string public constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
 
-    // configuration
     WavsServiceManager private serviceManager;
     uint256 private _quorumNumerator;
     uint256 private _quorumDenominator;
 
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         serviceManager = WavsServiceManager(vm.envAddress(ENV_SERVICE_MANAGER));
     }
 
+    /// @notice The run function for the script.
     function run() external {
         vm.startBroadcast();
         OperatorInfo memory opInfo = _listOperators(serviceManager.getStakeRegistry());
@@ -43,7 +60,7 @@ contract WavsListOperators is Script {
         console.log("Service Manager Address:", address(serviceManager));
         console.log("Stake Registry Address:", serviceManager.getStakeRegistry());
         console.log("Strategies:");
-        for (uint256 i = 0; i < opInfo.strategies.length; i++) {
+        for (uint256 i = 0; i < opInfo.strategies.length; ++i) {
             console.log(
                 string.concat(
                     "Strategy ",
@@ -66,7 +83,7 @@ contract WavsListOperators is Script {
 
         console.log(" "); // Blank line for separation
         console.log("=== Registered Operators ===");
-        for (uint256 i = 0; i < opInfo.operators.length; i++) {
+        for (uint256 i = 0; i < opInfo.operators.length; ++i) {
             string memory op = string.concat(
                 "Operator ",
                 Strings.toString(i + 1),
@@ -83,6 +100,11 @@ contract WavsListOperators is Script {
         console.log(string.concat("Quorum Denominator: ", Strings.toString(_quorumDenominator)));
     }
 
+    /**
+     * @notice The list operators function.
+     * @param _stakeRegistry The stake registry address.
+     * @return opInfo The operator info.
+     */
     function _listOperators(
         address _stakeRegistry
     ) private view returns (OperatorInfo memory) {
@@ -96,14 +118,14 @@ contract WavsListOperators is Script {
         address[] memory operators = allocationManager.getMembers(opSetQuery);
 
         uint96[] memory weights = new uint96[](operators.length);
-        for (uint256 i = 0; i < operators.length; i++) {
+        for (uint256 i = 0; i < operators.length; ++i) {
             weights[i] = stakeRegistry.weightOfOperatorForQuorum(0, operators[i]);
         }
 
         uint256 strategyParamsLength = stakeRegistry.strategyParamsLength(0);
         IStakeRegistry.StrategyParams[] memory strategies =
             new IStakeRegistry.StrategyParams[](strategyParamsLength);
-        for (uint256 i = 0; i < strategyParamsLength; i++) {
+        for (uint256 i = 0; i < strategyParamsLength; ++i) {
             strategies[i] = stakeRegistry.strategyParamsByIndex(uint8(0), i);
         }
 
@@ -117,6 +139,10 @@ contract WavsListOperators is Script {
         });
     }
 
+    /**
+     * @notice The write operator list JSON function.
+     * @param opInfo The operator info.
+     */
     function _writeOperatorListJson(
         OperatorInfo memory opInfo
     ) internal {
@@ -134,7 +160,7 @@ contract WavsListOperators is Script {
         json = string.concat(json, Strings.toString(opInfo.minimumStake));
         json = string.concat(json, "\",\"strategies\":[");
 
-        for (uint256 i = 0; i < opInfo.strategies.length; i++) {
+        for (uint256 i = 0; i < opInfo.strategies.length; ++i) {
             if (i > 0) {
                 json = string.concat(json, ",");
             }
@@ -149,7 +175,7 @@ contract WavsListOperators is Script {
 
         json = string.concat(json, "],\"operators\":[");
 
-        for (uint256 i = 0; i < opInfo.operators.length; i++) {
+        for (uint256 i = 0; i < opInfo.operators.length; ++i) {
             if (i > 0) {
                 json = string.concat(json, ",");
             }

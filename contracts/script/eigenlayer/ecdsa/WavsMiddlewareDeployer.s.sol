@@ -9,31 +9,46 @@ import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeploymentLib.s
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
+/**
+ * @title WavsMiddlewareDeployer
+ * @author Lay3rLabs
+ * @notice This script deploys the WavsMiddleware contracts.
+ * @dev This script is used to deploy the WavsMiddleware contracts.
+ */
 contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     // using ReadCoreLib for *;
     using UpgradeableProxyLib for address;
 
-    // Environment variables for deployContracts
+    /// @notice The environment variable for the LST strategy address.
     string public constant ENV_LST_STRATEGY = "LST_STRATEGY_ADDRESS";
-    // Environment variables for configureContracts
+    /// @notice The environment variable for the metadata URI.
     string public constant ENV_METADATA_URI = "METADATA_URI";
 
-    // Deployment configuration
     address private lstStrategyAddress;
     string private metadataUri;
 
+    /// @notice The proxy admin address.
     address public proxyAdmin;
+    /// @notice The deployment data.
     ReadCoreLib.DeploymentData public coreDeployment;
+    /// @notice The WAVS middleware deployment data.
     WavsMiddlewareDeploymentLib.DeploymentData public wavsMiddlewareDeployment;
     Quorum internal quorum;
 
+    /// @notice The error for the WAVS service manager address cannot be zero.
     error WavsMiddlewareDeployer__WavsServiceManagerAddressCannotBeZero();
+    /// @notice The error for the stake registry address cannot be zero.
     error WavsMiddlewareDeployer__StakeRegistryAddressCannotBeZero();
+    /// @notice The error for the strategy address cannot be zero.
     error WavsMiddlewareDeployer__StrategyAddressCannotBeZero();
+    /// @notice The error for the proxy admin address cannot be zero.
     error WavsMiddlewareDeployer__ProxyAdminAddressCannotBeZero();
+    /// @notice The error for the delegation manager address cannot be zero.
     error WavsMiddlewareDeployer__DelegationManagerAddressCannotBeZero();
+    /// @notice The error for the AVS directory address cannot be zero.
     error WavsMiddlewareDeployer__AVSDirectoryAddressCannotBeZero();
 
+    /// @notice The setup function for the script.
     function setUp() public virtual {
         coreDeployment =
             ReadCoreLib.readDeploymentJson("deployments/eigenlayer-core/", block.chainid);
@@ -49,6 +64,7 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
             WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", block.chainid);
     }
 
+    /// @notice The run function for the script.
     function run() external {
         vm.startBroadcast();
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
@@ -70,6 +86,7 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         WavsMiddlewareDeploymentLib.writeDeploymentJson(wavsMiddlewareDeployment);
     }
 
+    /// @notice The verify deployment function.
     function verifyDeployment() internal view {
         if (wavsMiddlewareDeployment.stakeRegistry == address(0)) {
             revert WavsMiddlewareDeployer__StakeRegistryAddressCannotBeZero();

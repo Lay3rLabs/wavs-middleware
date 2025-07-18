@@ -15,23 +15,38 @@ import {MirrorStakeRegistry} from "src/eigenlayer/ecdsa/MirrorStakeRegistry.sol"
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 
+/**
+ * @title WavsMockDeploymentLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for deploying the WavsMock contracts.
+ * @dev This library is used to deploy the WavsMock contracts.
+ */
 library WavsMockDeploymentLib {
     using stdJson for *;
     using Strings for *;
     using UpgradeableProxyLib for address;
 
+    /**
+     * @notice The initial configuration struct.
+     * @param operators The operators.
+     * @param signingKeyAddresses The signing key addresses.
+     * @param weights The weights.
+     * @param thresholdWeight The threshold weight.
+     */
     struct InitialConfiguration {
-        // original operators
         address[] operators;
         address[] signingKeyAddresses;
         uint256[] weights;
-        // stake registry threshold
         uint256 thresholdWeight;
-        // service manager threshold
         uint256 quorumNumerator;
         uint256 quorumDenominator;
     }
 
+    /**
+     * @notice The deployment data struct.
+     * @param wavsServiceManager The WAVS service manager address.
+     * @param stakeRegistry The stake registry address.
+     */
     struct DeploymentData {
         address wavsServiceManager;
         address stakeRegistry;
@@ -39,12 +54,22 @@ library WavsMockDeploymentLib {
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
+    /// @notice The error for the config file not found.
     error WavsMockDeploymentLib__ConfigFileNotFound();
+    /// @notice The error for the deployment file not found.
     error WavsMockDeploymentLib__DeploymentFileNotFound();
+    /// @notice The error for the operators and signing keys length mismatch.
     error WavsMockDeploymentLib__OperatorsAndSigningKeysLengthMismatch();
+    /// @notice The error for the operators and weights length mismatch.
     error WavsMockDeploymentLib__OperatorsAndWeightsLengthMismatch();
+    /// @notice The error for the service handlers already deployed.
     error WavsMockDeploymentLib__ServiceHandlersAlreadyDeployed();
 
+    /**
+     * @notice The deploy contracts function.
+     * @param proxyAdmin The proxy admin address.
+     * @return result The deployment data.
+     */
     function deployContracts(
         address proxyAdmin
     ) internal returns (DeploymentData memory) {
@@ -106,6 +131,11 @@ library WavsMockDeploymentLib {
         return result;
     }
 
+    /**
+     * @notice The set initial configuration function.
+     * @param deployment The deployment data.
+     * @param configuration The initial configuration.
+     */
     function setInitialConfiguration(
         DeploymentData memory deployment,
         InitialConfiguration memory configuration
@@ -128,6 +158,11 @@ library WavsMockDeploymentLib {
         );
     }
 
+    /**
+     * @notice The load configuration function.
+     * @param filePath The file path.
+     * @return The initial configuration.
+     */
     function loadConfiguration(
         string memory filePath
     ) internal returns (WavsMockDeploymentLib.InitialConfiguration memory) {
@@ -156,6 +191,10 @@ library WavsMockDeploymentLib {
         return cfg;
     }
 
+    /**
+     * @notice The write deployment JSON function.
+     * @param data The deployment data.
+     */
     function writeDeploymentJson(
         DeploymentData memory data
     ) internal {
@@ -171,6 +210,12 @@ library WavsMockDeploymentLib {
         console2.log("Deployment artifacts written to: deployments/wavs-ecdsa/mock_deploy.json");
     }
 
+    /**
+     * @notice The generate deployment JSON function.
+     * @param data The deployment data.
+     * @param proxyAdmin The proxy admin address.
+     * @return The deployment JSON.
+     */
     function _generateDeploymentJson(
         DeploymentData memory data,
         address proxyAdmin
@@ -191,6 +236,12 @@ library WavsMockDeploymentLib {
         );
     }
 
+    /**
+     * @notice The generate contracts JSON function.
+     * @param data The deployment data.
+     * @param proxyAdmin The proxy admin address.
+     * @return The contracts JSON.
+     */
     function _generateContractsJson(
         DeploymentData memory data,
         address proxyAdmin

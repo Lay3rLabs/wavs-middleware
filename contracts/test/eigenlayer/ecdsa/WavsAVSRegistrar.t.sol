@@ -5,31 +5,50 @@ import {Test} from "forge-std/Test.sol";
 
 import {WavsAVSRegistrar} from "src/eigenlayer/ecdsa/WavsAVSRegistrar.sol";
 
+/**
+ * @title WavsAVSRegistrarTest
+ * @author Lay3rLabs
+ * @notice This contract contains tests for the WavsAVSRegistrar contract.
+ * @dev This contract is used to test the WavsAVSRegistrar contract.
+ */
 contract WavsAVSRegistrarTest is Test {
+    /// @notice The registrar.
     WavsAVSRegistrar public registrar;
+    /// @notice The owner.
     address public owner = address(0x1);
+    /// @notice The non-owner.
     address public nonOwner = address(0x2);
 
+    /// @notice The setUp function.
     function setUp() public {
         vm.startPrank(owner);
         registrar = new WavsAVSRegistrar();
         vm.stopPrank();
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_initial_state function.
     function test_initial_state() public view {
+        /* solhint-enable func-name-mixedcase */
         // Test initial state
         assertEq(registrar.isPaused(), false, "Initial state should be unpaused");
         assertEq(registrar.owner(), owner, "Owner should be set correctly");
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_pause function.
     function test_pause() public {
+        /* solhint-enable func-name-mixedcase */
         // Test pause functionality
         vm.prank(owner);
         registrar.pause();
         assertTrue(registrar.isPaused(), "Contract should be paused");
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_unpause function.
     function test_unpause() public {
+        /* solhint-enable func-name-mixedcase */
         // First pause the contract
         vm.prank(owner);
         registrar.pause();
@@ -40,14 +59,20 @@ contract WavsAVSRegistrarTest is Test {
         assertFalse(registrar.isPaused(), "Contract should be unpaused");
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_only_owner_can_pause function.
     function test_only_owner_can_pause() public {
+        /* solhint-enable func-name-mixedcase */
         // Non-owner should not be able to pause
         vm.prank(nonOwner);
         vm.expectRevert("Ownable: caller is not the owner");
         registrar.pause();
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_only_owner_can_unpause function.
     function test_only_owner_can_unpause() public {
+        /* solhint-enable func-name-mixedcase */
         // First pause the contract
         vm.prank(owner);
         registrar.pause();
@@ -58,7 +83,10 @@ contract WavsAVSRegistrarTest is Test {
         registrar.unpause();
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_registerOperator_works function.
     function test_registerOperator_works() public {
+        /* solhint-enable func-name-mixedcase */
         address operator = address(0x123);
         address avs = address(0x456);
         uint32[] memory operatorSetIds = new uint32[](1);
@@ -77,7 +105,10 @@ contract WavsAVSRegistrarTest is Test {
         registrar.registerOperator(operator, avs, operatorSetIds, data);
     }
 
+    /* solhint-disable func-name-mixedcase */
+    /// @notice The test_deregisterOperator_works function.
     function test_deregisterOperator_works() public {
+        /* solhint-enable func-name-mixedcase */
         address operator = address(0x123);
         address avs = address(0x456);
         uint32[] memory operatorSetIds = new uint32[](1);
