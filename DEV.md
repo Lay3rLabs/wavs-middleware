@@ -16,22 +16,22 @@ forge build --root ./contracts
 
 build:
 
-```
+```bash
 docker build -t wavs-middleware .
 ```
 
 start holesky fork:
 
-```
+```bash
 RPC_URL=https://ethereum-holesky-rpc.publicnode.com
 anvil --fork-url $RPC_URL --host 0.0.0.0 --port 8545
 ```
 
 deploy:
 
-```
+```bash
 cd docker/
-FUNDED_KEY=
+FUNDED_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 METADATA_URI=https://wavs.xyz/metadata.json
 LST_STRATEGY_ADDRESS=0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3
 docker run --rm --network host -v ./.nodes:/root/.nodes \
@@ -43,14 +43,14 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 set service uri:
 
-```
+```bash
 docker run --rm --network host -v ./.nodes:/root/.nodes \
   wavs-middleware set_service_uri SERVICE_URI="https://ipfs.url/for-custom-service.json"
 ```
 
 register as operator:
 
-```
+```bash
 LST_CONTRACT_ADDRESS=0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034
 WAVS_DELEGATE_AMOUNT=1000000000000000
 
@@ -73,14 +73,14 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 list operators:
 
-```
+```bash
 docker run --rm --network host -v ./.nodes:/root/.nodes \
   wavs-middleware list_operators
 ```
 
 update quorum:
 
-```
+```bash
 QUORUM_NUMERATOR=3
 QUORUM_DENOMINATOR=5
 
@@ -92,21 +92,21 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 pause:
 
-```
+```bash
 docker run --rm --network host -v ./.nodes:/root/.nodes \
   wavs-middleware pause
 ```
 
 unpause
 
-```
+```bash
 docker run --rm --network host -v ./.nodes:/root/.nodes \
   wavs-middleware unpause
 ```
 
 delegate to operator
 
-```
+```bash
 STAKER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 STAKER_ADDRESS=$(cast wallet addr --private-key "$STAKER_KEY")
 echo "Staker address: $STAKER_ADDRESS"
@@ -122,27 +122,31 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 mirror chain start
 
-```
+```bash
 anvil --host 0.0.0.0 --port 8546
 ```
 
 mirror deploy
 
-```
+```bash
+WAVS_SERVICE_MANAGER_ADDRESS=`jq -r .addresses.WavsServiceManager .nodes/avs_deploy.json`
+
 docker run --rm --network host -v ./.nodes:/root/.nodes \
+  -e FUNDED_KEY=${FUNDED_KEY} \
+  -e WAVS_SERVICE_MANAGER_ADDRESS=${WAVS_SERVICE_MANAGER_ADDRESS} \
   wavs-middleware -m mirror deploy
 ```
 
 mirror list operators
 
-```
+```bash
 docker run --rm --network host -v ./.nodes:/root/.nodes \
   wavs-middleware -m mirror list_operators
 ```
 
 mock deploy
 
-```
+```bash
 LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
 
 MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
