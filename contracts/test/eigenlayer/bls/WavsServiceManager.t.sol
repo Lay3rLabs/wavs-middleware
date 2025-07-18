@@ -35,6 +35,7 @@ contract WavsServiceManagerTest is Test {
     address public permissionController = makeAddr("permissionController");
     /// @notice The allocation manager.
     address public allocationManager = makeAddr("allocationManager");
+    /// @notice The Wavs task manager.
     address public wavsTaskManager = makeAddr("wavsTaskManager");
 
     /// @notice The setUp function.

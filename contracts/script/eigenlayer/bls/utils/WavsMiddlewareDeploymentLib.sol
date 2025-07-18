@@ -44,6 +44,12 @@ import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
 import {WavsTaskManager} from "src/eigenlayer/bls/WavsTaskManager.sol";
 
+/**
+ * @title WavsMiddlewareDeploymentLib
+ * @author Lay3rLabs
+ * @notice This library contains functions for deploying the WAVS middleware contracts.
+ * @dev This library is used to deploy the WAVS middleware contracts.
+ */
 library WavsMiddlewareDeploymentLib {
     // using stdJson for *;
     using Strings for *;
@@ -88,6 +94,7 @@ library WavsMiddlewareDeploymentLib {
     error WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
     /// @notice The error for the deployment file not found.
     error WavsMiddlewareDeploymentLib__DeploymentFileNotFound();
+    /// @notice The error for the AVS directory mismatch.
     error WavsMiddlewareDeploymentLib__AVSDirectoryMismatch();
 
     /**
@@ -290,14 +297,14 @@ library WavsMiddlewareDeploymentLib {
         address[] memory strategies = abi.decode(VM.parseJson(json, ".strategies"), (address[]));
         uint256 strategyCount = strategies.length;
         uint96[] memory multipliers = new uint96[](strategyCount);
-        for (uint256 i; i < strategyCount; i++) {
+        for (uint256 i; i < strategyCount; ++i) {
             multipliers[i] = 1 ether;
         }
 
         // convert to quorum
         IStakeRegistryTypes.StrategyParams[] memory strategyParams =
             new IStakeRegistryTypes.StrategyParams[](strategyCount);
-        for (uint256 i; i < strategyCount; i++) {
+        for (uint256 i; i < strategyCount; ++i) {
             strategyParams[i] = IStakeRegistryTypes.StrategyParams({
                 strategy: IStrategy(strategies[i]),
                 multiplier: multipliers[i]
@@ -307,6 +314,10 @@ library WavsMiddlewareDeploymentLib {
         return strategyParams;
     }
 
+    /**
+     * @notice The write deployment JSON function.
+     * @param data The deployment data.
+     */
     function writeDeploymentJson(
         DeploymentData memory data
     ) internal {

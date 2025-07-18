@@ -13,8 +13,16 @@ import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationMa
 import {IWavsServiceManager} from "./interfaces/IWavsServiceManager.sol";
 import {IWavsTaskManager} from "./interfaces/IWavsTaskManager.sol";
 
+/**
+ * @title WavsServiceManager
+ * @author Lay3r Labs
+ * @notice Contract for managing the Wavs service
+ * @dev This contract extends ServiceManagerBase and implements the IWavsServiceManager interface
+ */
 contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
+    /// @notice The Wavs task manager
     IWavsTaskManager public immutable WAVS_TASK_MANAGER;
+    /// @notice The URI of the service
     string public serviceURI;
 
     /// @notice The numerator of the quorum threshold
@@ -23,11 +31,22 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
     /// @notice The denominator of the quorum threshold
     uint256 public quorumDenominator;
 
+    /// @notice Modifier to check if the caller is the Wavs task manager
     modifier onlyWavsTaskManager() {
         require(msg.sender == address(WAVS_TASK_MANAGER), WavsServiceManager__OnlyWavsTaskManager());
         _;
     }
 
+    /**
+     * @notice Constructor
+     * @param __avsDirectory The address of the AVS directory
+     * @param __rewardsCoordinator The address of the rewards coordinator
+     * @param __registryCoordinator The address of the registry coordinator
+     * @param __stakeRegistry The address of the stake registry
+     * @param __permissionController The address of the permission controller
+     * @param __allocationManager The address of the allocation manager
+     * @param __wavsTaskManager The address of the Wavs task manager
+     */
     constructor(
         address __avsDirectory,
         address __rewardsCoordinator,

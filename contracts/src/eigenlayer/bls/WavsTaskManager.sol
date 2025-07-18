@@ -21,6 +21,12 @@ import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import {IWavsTaskManager} from "./interfaces/IWavsTaskManager.sol";
 
+/**
+ * @title WavsTaskManager
+ * @author Lay3r Labs
+ * @notice Contract for managing the Wavs task manager
+ * @dev This contract extends Initializable, OwnableUpgradeable, Pausable, BLSSignatureChecker, OperatorStateRetriever, and IWavsTaskManager
+ */
 contract WavsTaskManager is
     Initializable,
     OwnableUpgradeable,
@@ -31,47 +37,56 @@ contract WavsTaskManager is
 {
     using BN254 for BN254.G1Point;
 
-    /* CONSTANT */
-    // The number of blocks from the task initialization within which the aggregator has to respond to
+    /// @notice The number of blocks from the task initialization within which the aggregator has to respond to
     uint32 public immutable TASK_RESPONSE_WINDOW_BLOCK;
+    /// @notice The number of blocks from the task response within which the challenger has to raise a challenge
     uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 100;
+    /// @notice The denominator of the threshold percentage
     uint256 internal constant _THRESHOLD_DENOMINATOR = 100;
+    /// @notice The amount of WADs to slash
     uint256 public constant WADS_TO_SLASH = 100_000_000_000_000_000; // 10%
 
-    /* STORAGE */
-    // The latest task index
+    /// @notice The latest task index
     uint32 public latestTaskNum;
 
-    // mapping of task indices to all tasks hashes
-    // when a task is created, task hash is stored here,
-    // and responses need to pass the actual task,
-    // which is hashed onchain and checked against this mapping
+    /// @notice Mapping of task indices to all tasks hashes
     mapping(uint32 => bytes32) public allTaskHashes;
 
-    // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
+    /// @notice Mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
     mapping(uint32 => bytes32) public allTaskResponses;
 
+    /// @notice Mapping of task indices to whether the task has been successfully challenged
     mapping(uint32 => bool) public taskSuccessfullyChallenged;
 
+    /// @notice The service manager
     address public serviceManager;
+    /// @notice The aggregator
     address public aggregator;
+    /// @notice The generator
     address public generator;
+    /// @notice The instant slasher
     address public instantSlasher;
+    /// @notice The allocation manager
     address public allocationManager;
 
-    /* MODIFIERS */
+    /// @notice Modifier to check if the caller is the aggregator
     modifier onlyAggregator() {
         require(msg.sender == aggregator, WavsTaskManager__OnlyAggregator());
         _;
     }
 
-    // onlyTaskGenerator is used to restrict createNewTask from only being called by a permissioned entity
-    // in a real world scenario, this would be removed by instead making createNewTask a payable function
+    /// @notice Modifier to check if the caller is the task generator
     modifier onlyTaskGenerator() {
         require(msg.sender == generator, WavsTaskManager__OnlyTaskGenerator());
         _;
     }
 
+    /**
+     * @notice Constructor
+     * @param _slashingRegistryCoordinator The slashing registry coordinator
+     * @param _pauserRegistry The pauser registry
+     * @param _taskResponseWindowBlock The task response window block
+     */
     constructor(
         ISlashingRegistryCoordinator _slashingRegistryCoordinator,
         IPauserRegistry _pauserRegistry,
@@ -80,6 +95,15 @@ contract WavsTaskManager is
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
     }
 
+    /**
+     * @notice Initializes the contract
+     * @param initialOwner The initial owner
+     * @param _aggregator The aggregator
+     * @param _generator The generator
+     * @param _allocationManager The allocation manager
+     * @param _slasher The instant slasher
+     * @param _serviceManager The service manager
+     */
     function initialize(
         address initialOwner,
         address _aggregator,
@@ -96,8 +120,7 @@ contract WavsTaskManager is
         serviceManager = _serviceManager;
     }
 
-    /* FUNCTIONS */
-    // NOTE: this function creates new task, assigns it a taskId
+    /// @inheritdoc IWavsTaskManager
     function createNewTask(
         uint256 numberToBeSquared,
         uint32 quorumThresholdPercentage,
@@ -113,14 +136,19 @@ contract WavsTaskManager is
         // store hash of task onchain, emit event, and increase taskNum
         allTaskHashes[latestTaskNum] = keccak256(abi.encode(newTask));
         emit NewTaskCreated(latestTaskNum, newTask);
-        latestTaskNum = latestTaskNum + 1;
+        ++latestTaskNum;
     }
 
-    // NOTE: this function responds to existing tasks.
+    /**
+     * @notice Responds to a task
+     * @param task The task
+     * @param taskResponse The task response
+     * @param nonSignerStakesAndSignature The non-signer stakes and signature
+     */
     function respondToTask(
         Task calldata task,
         TaskResponse calldata taskResponse,
-        NonSignerStakesAndSignature memory nonSignerStakesAndSignature
+        NonSignerStakesAndSignature calldata nonSignerStakesAndSignature
     ) external onlyAggregator {
         uint32 taskCreatedBlock = task.taskCreatedBlock;
         bytes calldata quorumNumbers = task.quorumNumbers;
@@ -137,7 +165,7 @@ contract WavsTaskManager is
             WavsTaskManager__AggregatorHasAlreadyRespondedToTask()
         );
         require(
-            uint32(block.number) <= taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK,
+            !(uint32(block.number) > taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK),
             WavsTaskManager__AggregatorHasRespondedToTaskTooLate()
         );
 
@@ -150,12 +178,14 @@ contract WavsTaskManager is
             checkSignatures(message, quorumNumbers, taskCreatedBlock, nonSignerStakesAndSignature);
 
         // check that signatories own at least a threshold percentage of each quourm
-        for (uint256 i = 0; i < quorumNumbers.length; i++) {
+        for (uint256 i = 0; i < quorumNumbers.length; ++i) {
             // we don't check that the quorumThresholdPercentages are not >100 because a greater value would trivially fail the check, implying
             // signed stake > total stake
             require(
-                quorumStakeTotals.signedStakeForQuorum[i] * _THRESHOLD_DENOMINATOR
-                    >= quorumStakeTotals.totalStakeForQuorum[i] * uint8(quorumThresholdPercentage),
+                !(
+                    quorumStakeTotals.signedStakeForQuorum[i] * _THRESHOLD_DENOMINATOR
+                        < quorumStakeTotals.totalStakeForQuorum[i] * uint8(quorumThresholdPercentage)
+                ),
                 WavsTaskManager__SignatoriesDoNotOwnAtLeastThresholdPercentageOfAQuorum()
             );
         }
@@ -170,15 +200,17 @@ contract WavsTaskManager is
         emit TaskResponded(taskResponse, taskResponseMetadata);
     }
 
+    /// @inheritdoc IWavsTaskManager
     function taskNumber() external view returns (uint32) {
         return latestTaskNum;
     }
 
+    /// @inheritdoc IWavsTaskManager
     function raiseAndResolveChallenge(
         Task calldata task,
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata,
-        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+        BN254.G1Point[] calldata pubkeysOfNonSigningOperators
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
         uint256 numberToBeSquared = task.numberToBeSquared;
@@ -193,13 +225,15 @@ contract WavsTaskManager is
             WavsTaskManager__TaskResponseDoesNotMatchOneRecordedInContract()
         );
         require(
-            taskSuccessfullyChallenged[referenceTaskIndex] == false,
+            !(taskSuccessfullyChallenged[referenceTaskIndex]),
             WavsTaskManager__ResponseToThisTaskHasBeenChallengedSuccessfully()
         );
 
         require(
-            uint32(block.number)
-                <= taskResponseMetadata.taskResponsedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
+            !(
+                uint32(block.number)
+                    > taskResponseMetadata.taskResponsedBlock + TASK_CHALLENGE_WINDOW_BLOCK
+            ),
             WavsTaskManager__ChallengePeriodForThisTaskHasAlreadyExpired()
         );
 
@@ -207,7 +241,7 @@ contract WavsTaskManager is
         uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
         bool isResponseCorrect = (actualSquaredOutput == taskResponse.numberSquared);
         // // if response was correct, no slashing happens so we return
-        if (isResponseCorrect == true) {
+        if (isResponseCorrect) {
             emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
             return;
         }
@@ -215,7 +249,7 @@ contract WavsTaskManager is
         // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
         bytes32[] memory hashesOfPubkeysOfNonSigningOperators =
             new bytes32[](pubkeysOfNonSigningOperators.length);
-        for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
+        for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; ++i) {
             hashesOfPubkeysOfNonSigningOperators[i] = pubkeysOfNonSigningOperators[i].hashG1Point();
         }
 
@@ -234,7 +268,7 @@ contract WavsTaskManager is
         // get the address of operators who didn't sign
         address[] memory addressOfNonSigningOperators =
             new address[](pubkeysOfNonSigningOperators.length);
-        for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
+        for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; ++i) {
             addressOfNonSigningOperators[i] = BLSApkRegistry(address(blsApkRegistry))
                 .pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
         }
@@ -246,16 +280,16 @@ contract WavsTaskManager is
             task.taskCreatedBlock
         );
         // first for loop iterate over quorums
-        for (uint256 i = 0; i < allOperatorInfo.length; i++) {
+        for (uint256 i = 0; i < allOperatorInfo.length; ++i) {
             // second for loop iterate over operators active in the quorum when the task was initialized
-            for (uint256 j = 0; j < allOperatorInfo[i].length; j++) {
+            for (uint256 j = 0; j < allOperatorInfo[i].length; ++j) {
                 // get the operator address
                 bytes32 operatorID = allOperatorInfo[i][j].operatorId;
                 address operatorAddress = blsApkRegistry.getOperatorFromPubkeyHash(operatorID);
 
                 // check whether the operator was a signer for the task
                 bool wasSigningOperator = true;
-                for (uint256 k = 0; k < addressOfNonSigningOperators.length; k++) {
+                for (uint256 k = 0; k < addressOfNonSigningOperators.length; ++k) {
                     if (operatorAddress == addressOfNonSigningOperators[k]) {
                         // if the operator was a non-signer, then we set the flag to false
                         wasSigningOperator = false;
@@ -263,13 +297,13 @@ contract WavsTaskManager is
                     }
                 }
 
-                if (wasSigningOperator == true) {
+                if (wasSigningOperator) {
                     OperatorSet memory operatorset =
                         OperatorSet({avs: serviceManager, id: uint8(task.quorumNumbers[i])});
                     IStrategy[] memory istrategy = IAllocationManager(allocationManager)
                         .getStrategiesInOperatorSet(operatorset);
                     uint256[] memory wadsToSlash = new uint256[](istrategy.length);
-                    for (uint256 z = 0; z < wadsToSlash.length; z++) {
+                    for (uint256 z = 0; z < wadsToSlash.length; ++z) {
                         wadsToSlash[z] = WADS_TO_SLASH;
                     }
                     IAllocationManagerTypes.SlashingParams memory slashingparams =
@@ -291,6 +325,7 @@ contract WavsTaskManager is
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }
 
+    /// @inheritdoc IWavsTaskManager
     function getTaskResponseWindowBlock() external view returns (uint32) {
         return TASK_RESPONSE_WINDOW_BLOCK;
     }
