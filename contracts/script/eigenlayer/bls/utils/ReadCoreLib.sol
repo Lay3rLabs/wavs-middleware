@@ -69,21 +69,6 @@ library ReadCoreLib {
             VM.readFile(string.concat(deploymentPath, uint256(chainId).toString(), ".json"));
 
         DeploymentData memory data;
-        data = readAddressSet(json, data);
-        validateDeployment(data);
-        return data;
-    }
-
-    /**
-     * @notice The read address set function.
-     * @param json The JSON string.
-     * @param data The deployment data.
-     * @return data The deployment data.
-     */
-    function readAddressSet(
-        string memory json,
-        DeploymentData memory data
-    ) private pure returns (DeploymentData memory) {
         data.strategyFactory = json.readAddress(".addresses.strategyFactory");
         data.strategyManager = json.readAddress(".addresses.strategyManager");
         data.eigenPodManager = json.readAddress(".addresses.eigenPodManager");
@@ -92,7 +77,7 @@ library ReadCoreLib {
         data.rewardsCoordinator = json.readAddress(".addresses.rewardsCoordinator");
         data.allocationManager = json.readAddress(".addresses.allocationManager");
         data.permissionController = json.readAddress(".addresses.permissionController");
-
+        validateDeployment(data);
         return data;
     }
 

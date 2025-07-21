@@ -1,23 +1,24 @@
 {
-  "lastUpdate": { "timestamp": "1733242248", "block_number": "0" },
+  "lastUpdate": { "timestamp": "1752504238", "block_number": "0" },
   "addresses": {
-    "proxyAdmin": "0xB043055dd967A382577c2f5261fA6428f2905c15",
+    "proxyAdmin": "0xDB023566064246399b4AE851197a97729C93A6cf",
     "delegation": "0xA44151489861Fe9e3055d95adC98FbD462B948e7",
-    "delegationManagerImpl": "0x83f8F8f0BB125F7870F6bfCf76853f874C330D76",
+    "delegationManagerImpl": "0x39F23a044Ea7DB60b5392b964F2f9261B93b0CF4",
     "avsDirectory": "0x055733000064333CaDDbC92763c58BF0192fFeBf",
-    "avsDirectoryImpl": "0xEF5BA995Bc7722fd1e163edF8Dc09375de3d3e3a",
+    "avsDirectoryImpl": "0x331e3Bd9cf69562f6F9ade72BD3D9f271f1B2506",
     "strategyManager": "0xdfB5f6CE42aAA7830E94ECFCcAd411beF4d4D5b6",
-    "strategyManagerImpl": "0x59f766A603C53f3AC8Be43bBe158c1519b193a18",
+    "strategyManagerImpl": "0x4870B0BbDD8360E49A15987B16590Ef917c21a04",
     "eigenPodManager": "0x30770d7E3e71112d7A6b7259542D1f680a70e315",
-    "eigenPodManagerImpl": "0x91A6525a4a843F5a5B633905300c33F79413CCc5",
+    "eigenPodManagerImpl": "0xf889B045cdE04c9CB22FF0Ead6C66a72f3cb23AA",
     "strategyFactory": "0x9c01252B580efD11a05C00Aa42Dd3ac1Ec52DF6d",
-    "strategyFactoryImpl": "0x5E699de7bFc4DD2A5E72EB5a2Ca99651EfdD51CB",
+    "strategyFactoryImpl": "0x84aaD0F753b84Cd68F36Ff207DDfA0f2865b1a7d",
     "strategyBeacon": "0xd3c6C6BA4E40dB9288c6a2077e5635344F8aFA4F",
+    "strategyBeaconImpl": "0x62cda01F3FbaB32FEe9E08094D9766D77566B86d",
     "allocationManager": "0x78469728304326CBc65f8f95FA756B0B73164462",
+    "allocationManagerImpl": "0x45A1bb44e2d8d2475185d0bcE480ce2e55c4A591",
     "rewardsCoordinator": "0xAcc1fb458a1317E886dB376Fc8141540537E68fE",
-    "rewardsCoordinatorImpl": "0xA3c31d2FBAD3d924baA64f8789E03E9FA7d70d69",
+    "rewardsCoordinatorImpl": "0x40873dddA165258E1c5aE487f4842dac3946Ad41",
     "permissionController": "0x598cb226B591155F767dA17AfE7A2241a68C5C10",
-    "permissionControllerImpl": "0x7Ab0EBD25d5fFE7527600CA5b2858c1A3FABa2B9"
-  },
-  "metaDataURI": "https://raw.githubusercontent.com/ethgas-developer/ethgas-developer.github.io/main/vision-avs-2.json"
+    "permissionControllerImpl": "0xE4045dC0F17B39FAE4e69b6Df30Ad7cCc8e7D0Dd"
+  }
 }

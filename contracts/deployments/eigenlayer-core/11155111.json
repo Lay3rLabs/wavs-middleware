@@ -1,0 +1,24 @@
+{
+  "lastUpdate": { "timestamp": "1752504238", "block_number": "0" },
+  "addresses": {
+    "proxyAdmin": "0x56E88cb4f0136fC27D95499dE4BE2acf47946Fa1",
+    "delegation": "0xD4A7E1Bd8015057293f0D0A557088c286942e84b",
+    "delegationManagerImpl": "0xa9821F0620D347648f375c597761C7FD16C1b823",
+    "avsDirectory": "0xa789c91ECDdae96865913130B786140Ee17aF545",
+    "avsDirectoryImpl": "0xD88b96998325c3e74A74a0B0938BBFeA1395C188",
+    "strategyManager": "0x2E3D6c0744b10eb0A4e6F679F71554a39Ec47a5D",
+    "strategyManagerImpl": "0xf0A8735c26121e6C488ebac65c8fa3fe37cBFCB3",
+    "eigenPodManager": "0x56BfEb94879F4543E756d26103976c567256034a",
+    "eigenPodManagerImpl": "0x10848d61cE044bcAEE301a28A4C30Ad0a40e88Ae",
+    "strategyFactory": "0x066cF95c1bf0927124DFB8B02B401bc23A79730D",
+    "strategyFactoryImpl": "0xEE41826B7D5B89e7F5eED6a831b4eFD69FC9ca1A",
+    "strategyBeacon": "0x427e627Bc7E83cac0f84337d3Ad94230C32697D3",
+    "strategyBeaconImpl": "0x3BA4F6973D9ed2f0617C4b15d8CE06155fd6a43b",
+    "allocationManager": "0x42583067658071247ec8CE0A516A58f682002d07",
+    "allocationManagerImpl": "0xB87AeeA46BB3a3050D277272E33b011922537Db7",
+    "rewardsCoordinator": "0x5ae8152fb88c26ff9ca5C014c94fca3c68029349",
+    "rewardsCoordinatorImpl": "0xcC305562B01bec562D13A40ef8781e313AFE7940",
+    "permissionController": "0x44632dfBdCb6D3E21EF613B0ca8A6A0c618F5a37",
+    "permissionControllerImpl": "0x59B11b191B572888703E150E45F5015e0fFcf525"
+  }
+}
