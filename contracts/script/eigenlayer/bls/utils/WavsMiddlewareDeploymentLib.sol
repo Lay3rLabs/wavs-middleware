@@ -42,7 +42,6 @@ import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
-import {WavsTaskManager} from "src/eigenlayer/bls/WavsTaskManager.sol";
 
 /**
  * @title WavsMiddlewareDeploymentLib
@@ -67,7 +66,6 @@ library WavsMiddlewareDeploymentLib {
      */
     struct DeploymentData {
         address wavsServiceManager;
-        address wavsTaskManager;
         address stakeRegistry;
         address registryCoordinator;
         address blsApkRegistry;
@@ -109,7 +107,6 @@ library WavsMiddlewareDeploymentLib {
     ) internal returns (DeploymentData memory) {
         // First, deploy upgradeable proxy contracts that will point to the implementations.
         address wavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        address wavsTaskManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address registryCoordinator = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address blsApkRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
@@ -129,8 +126,7 @@ library WavsMiddlewareDeploymentLib {
                 registryCoordinator,
                 stakeRegistry,
                 core.permissionController,
-                core.allocationManager,
-                wavsTaskManager
+                core.allocationManager
             )
         );
         address stakeRegistryImpl = address(
@@ -167,7 +163,7 @@ library WavsMiddlewareDeploymentLib {
             new InstantSlasher(
                 IAllocationManager(core.allocationManager),
                 ISlashingRegistryCoordinator(registryCoordinator),
-                wavsTaskManager
+                wavsServiceManager
             )
         );
 
@@ -190,32 +186,8 @@ library WavsMiddlewareDeploymentLib {
         UpgradeableProxyLib.upgrade(socketRegistry, socketRegistryImpl);
         UpgradeableProxyLib.upgrade(slasher, slasherImpl);
 
-        address wavsTaskManagerImpl = address(
-            new WavsTaskManager(
-                ISlashingRegistryCoordinator(registryCoordinator),
-                IPauserRegistry(pauserRegistry),
-                30
-            )
-        );
-        UpgradeableProxyLib.upgradeAndCall(
-            wavsTaskManager,
-            wavsTaskManagerImpl,
-            abi.encodeCall(
-                WavsTaskManager.initialize,
-                (
-                    msg.sender,
-                    msg.sender,
-                    msg.sender,
-                    core.allocationManager,
-                    slasher,
-                    wavsServiceManager
-                )
-            )
-        );
-
         return DeploymentData({
             wavsServiceManager: wavsServiceManager,
-            wavsTaskManager: wavsTaskManager,
             stakeRegistry: stakeRegistry,
             registryCoordinator: registryCoordinator,
             blsApkRegistry: blsApkRegistry,
@@ -376,10 +348,6 @@ library WavsMiddlewareDeploymentLib {
             data.wavsServiceManager.toHexString(),
             "\",\"WavsServiceManagerImpl\":\"",
             data.wavsServiceManager.getImplementation().toHexString(),
-            "\",\"wavsTaskManager\":\"",
-            data.wavsTaskManager.toHexString(),
-            "\",\"wavsTaskManagerImpl\":\"",
-            data.wavsTaskManager.getImplementation().toHexString(),
             "\",\"stakeRegistry\":\"",
             data.stakeRegistry.toHexString(),
             "\",\"stakeRegistryImpl\":\"",

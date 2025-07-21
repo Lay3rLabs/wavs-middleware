@@ -32,7 +32,7 @@ jobs:
         uses: crytic/slither-action@v0.4.0
         with:
           target: contracts
-          fail-on: "high"
+          fail-on: "medium"
           slither-config: contracts/slither.config.json
 
       - name: "Add summary"
