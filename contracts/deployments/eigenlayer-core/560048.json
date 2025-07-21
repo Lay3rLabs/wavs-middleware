@@ -20,6 +20,5 @@
     "rewardsCoordinatorImpl": "0xe786FD0dE8a6001772386700318187Dc438a2832",
     "permissionController": "0xdcCF401fD121d8C542E96BC1d0078884422aFAD2",
     "permissionControllerImpl": "0x2D731E7993a100afd19454B98eEEC7b90366eA27"
-  },
-  "metaDataURI": "https://raw.githubusercontent.com/ethgas-developer/ethgas-developer.github.io/main/vision-avs-2.json"
+  }
 }
