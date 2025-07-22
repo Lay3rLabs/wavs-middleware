@@ -71,18 +71,19 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
     /**
      * @notice The updateOperatorsForQuorum function.
      * @param operatorsPerQuorum The operators per quorum.
+     * @param {_signature} The signature.
      * @dev This function doubles the weights of even operators and halves the weights of odd operators, for testing.
      */
-    function updateOperatorsForQuorum(
-        address[][] memory operatorsPerQuorum,
-        bytes memory
+    function updateOperatorsForQuorum( // solhint-disable-line use-natspec
+        address[][] calldata operatorsPerQuorum,
+        bytes calldata /* _signature */
     ) external virtual {
         address[] memory operators = operatorsPerQuorum[0];
         if (operators.length != totalOperators) {
             revert MustUpdateAllOperators();
         }
         int256 delta;
-        for (uint256 i; i < operators.length; i++) {
+        for (uint256 i; i < operators.length; ++i) {
             uint256 oldWeight = operatorWeights[operators[i]];
             uint256 newWeight;
             if (i % 2 == 0) {
