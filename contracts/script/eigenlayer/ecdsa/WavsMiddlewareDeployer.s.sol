@@ -47,6 +47,8 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
     error WavsMiddlewareDeployer__DelegationManagerAddressCannotBeZero();
     /// @notice The error for the AVS directory address cannot be zero.
     error WavsMiddlewareDeployer__AVSDirectoryAddressCannotBeZero();
+    /// @notice The error for the operator update handler address cannot be zero.
+    error WavsMiddlewareDeployer__OperatorUpdateHandlerAddressCannotBeZero();
 
     /// @notice The setup function for the script.
     function setUp() public virtual {
@@ -96,6 +98,9 @@ contract WavsMiddlewareDeployer is Script, IECDSAStakeRegistryTypes {
         }
         if (wavsMiddlewareDeployment.strategy == address(0)) {
             revert WavsMiddlewareDeployer__StrategyAddressCannotBeZero();
+        }
+        if (wavsMiddlewareDeployment.operatorUpdateHandler == address(0)) {
+            revert WavsMiddlewareDeployer__OperatorUpdateHandlerAddressCannotBeZero();
         }
         if (proxyAdmin == address(0)) {
             revert WavsMiddlewareDeployer__ProxyAdminAddressCannotBeZero();

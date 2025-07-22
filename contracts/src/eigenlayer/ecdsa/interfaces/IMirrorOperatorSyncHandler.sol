@@ -2,12 +2,12 @@
 pragma solidity ^0.8.27;
 
 /**
- * @title IMirrorUpdateTypes
+ * @title IMirrorOperatorSyncHandler
  * @author Lay3r Labs
- * @notice Interface for the Mirror update types
- * @dev This interface defines the update types for the Mirror service
+ * @notice Interface for the operator sync handler
+ * @dev This interface defines the types for the operator sync handler
  */
-interface IMirrorUpdateTypes {
+interface IMirrorOperatorSyncHandler {
     /// @notice The error for the invalid trigger ID.
     error InvalidTriggerId(uint64 expectedTriggerId);
 

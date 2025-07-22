@@ -2,12 +2,12 @@
 pragma solidity ^0.8.27;
 
 /**
- * @title IManagerUpdateTypes
+ * @title IMirrorQuorumSyncHandler
  * @author Lay3r Labs
- * @notice Interface for the manager update types
- * @dev This interface defines the update types for the manager
+ * @notice Interface for the quorum sync handler
+ * @dev This interface defines the types for the quorum sync handler
  */
-interface IManagerUpdateTypes {
+interface IMirrorQuorumSyncHandler {
     /// @notice The error for the invalid trigger ID.
     error InvalidTriggerId(uint64 expectedTriggerId);
 

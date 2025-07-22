@@ -29,10 +29,10 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
     error WavsMirrorDeployer__StakeRegistryAddressCannotBeZero();
     /// @notice The error for the WAVS service manager address cannot be zero.
     error WavsMirrorDeployer__WavsServiceManagerAddressCannotBeZero();
-    /// @notice The error for the mirror service handler address cannot be zero.
-    error WavsMirrorDeployer__MirrorServiceHandlerAddressCannotBeZero();
-    /// @notice The error for the mirror service manager handler address cannot be zero.
-    error WavsMirrorDeployer__MirrorServiceManagerHandlerAddressCannotBeZero();
+    /// @notice The error for the operator sync handler address cannot be zero.
+    error WavsMirrorDeployer__OperatorSyncHandlerAddressCannotBeZero();
+    /// @notice The error for the quorum sync handler address cannot be zero.
+    error WavsMirrorDeployer__QuorumSyncHandlerAddressCannotBeZero();
     /// @notice The error for the proxy admin address cannot be zero.
     error WavsMirrorDeployer__ProxyAdminAddressCannotBeZero();
     /// @notice The error for the no operators.
@@ -79,11 +79,11 @@ contract WavsMirrorDeployer is Script, IECDSAStakeRegistryTypes {
         if (deployment.wavsServiceManager == address(0)) {
             revert WavsMirrorDeployer__WavsServiceManagerAddressCannotBeZero();
         }
-        if (deployment.mirrorServiceHandler == address(0)) {
-            revert WavsMirrorDeployer__MirrorServiceHandlerAddressCannotBeZero();
+        if (deployment.operatorSyncHandler == address(0)) {
+            revert WavsMirrorDeployer__OperatorSyncHandlerAddressCannotBeZero();
         }
-        if (deployment.mirrorServiceManagerHandler == address(0)) {
-            revert WavsMirrorDeployer__MirrorServiceManagerHandlerAddressCannotBeZero();
+        if (deployment.quorumSyncHandler == address(0)) {
+            revert WavsMirrorDeployer__QuorumSyncHandlerAddressCannotBeZero();
         }
         if (proxyAdmin == address(0)) {
             revert WavsMirrorDeployer__ProxyAdminAddressCannotBeZero();
