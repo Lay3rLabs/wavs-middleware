@@ -35,11 +35,13 @@ jobs:
 
     - name: Install Docci Readme Runner
       run: |
-        VERSION=v0.9.0-alpha.2
+        VERSION=v0.9.0-beta.1
         wget -O docci.tar.gz "https://github.com/Reecepbcups/docci/releases/download/${VERSION}/docci_Linux_x86_64.tar.gz"
         tar -xzf docci.tar.gz
         sudo mv docci /usr/local/bin/docci
         sudo chmod +x /usr/local/bin/docci
         rm docci.tar.gz
 
-    - run: docci run DEV.md --cleanup-commands="killall anvil" --hide-background-logs
+
+    # - run: docci run DEV.md --cleanup-commands="killall anvil || true" --hide-background-logs
+    - run: docci run DEV_1.md --cleanup-commands="killall anvil || true" --hide-background-logs
