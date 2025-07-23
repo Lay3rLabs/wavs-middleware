@@ -355,7 +355,32 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 This deployment process is for local testing and development. It deploys a "mock" version of the WAVS middleware contracts by using the mock stage of the mirror deployment scripts. This allows for rapid testing without needing to interact with a live EigenLayer environment.
 
-### 1. Create a Configuration File
+### 1. Run a Local Blockchain
+
+```bash
+anvil --host 0.0.0.0 --port 8546
+```
+
+### 2. Deploy Empty Mock Contracts
+
+```bash
+MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
+MOCK_DEPLOYER_ADDRESS=$(cast wallet addr --private-key "$MOCK_DEPLOYER_KEY")
+echo "Mock deployer address: $MOCK_DEPLOYER_ADDRESS"
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   --env-file .env \
+   -e MOCK_DEPLOYER_KEY=${MOCK_DEPLOYER_KEY} \
+   wavs-middleware -m mock deploy
+```
+
+| Environment Variable | Required              | Default                 | Source       | Description                                   |
+| -------------------- | --------------------- | ----------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`         | for non-default value | `LOCAL`                 | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `MOCK_DEPLOYER_KEY`  | Yes                   | -                       | Command line | Private key for mock deployment               |
+| `MOCK_RPC_URL`       | for non-default value | `http://localhost:8546` | Command line | RPC URL for mock blockchain                   |
+
+### 3. Create a Configuration File
 
 Create a `mock-config.json` file on your local machine. This file defines the initial operators, their signing keys, weights, and the threshold for the stake registry.
 
@@ -382,35 +407,26 @@ Create a `mock-config.json` file on your local machine. This file defines the in
 }
 ```
 
-### 2. Run a Local Blockchain
-
-```bash
-anvil --host 0.0.0.0 --port 8546
-```
-
-### 3. Deploy the Mock Contracts
+### 4. Configure Mock Contracts
 
 ```bash
 # Set the path to your local config file
 LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
-
-# Generate a new private key for the staker (needs ETH for transactions)
-MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
-MOCK_DEPLOYER_ADDRESS=$(cast wallet addr --private-key "$MOCK_DEPLOYER_KEY")
-echo "Mock deployer address: $MOCK_DEPLOYER_ADDRESS"
+MOCK_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/mock.json)
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
    -v $LOCAL_CONFIG_PATH:/wavs/contracts/deployments/wavs-mock-config.json \
    --env-file .env \
-   -e MOCK_DEPLOYER_KEY=${MOCK_DEPLOYER_KEY} \
-   wavs-middleware -m mock deploy
+   wavs-middleware -m mock configure
 ```
 
-| Environment Variable | Required              | Default                 | Source       | Description                                   |
-| -------------------- | --------------------- | ----------------------- | ------------ | --------------------------------------------- |
-| `DEPLOY_ENV`         | for non-default value | `LOCAL`                 | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
-| `MOCK_DEPLOYER_KEY`  | Yes                   | -                       | Command line | Private key for mock deployment               |
-| `MOCK_RPC_URL`       | for non-default value | `http://localhost:8546` | Command line | RPC URL for mock blockchain                   |
+| Environment Variable           | Required              | Default                     | Source       | Description                                   |
+| ------------------------------ | --------------------- | --------------------------- | ------------ | --------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                     | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
+| `MOCK_DEPLOYER_KEY`            | Yes                   | -                           | Command line | Private key for mock deployment               |
+| `MOCK_RPC_URL`                 | for non-default value | `http://localhost:8546`     | Command line | RPC URL for mock blockchain                   |
+| `MOCK_DEPLOYER_KEY`            | if not mounted        | From `.nodes/mock-deployer` | Volume       | Deployer private key                          |
+| `MOCK_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/mock.json`     | Volume       | Service manager contract address              |
 
 ## Deploy Testnet
 
