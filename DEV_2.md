@@ -16,8 +16,8 @@ source docker/.env
 anvil --fork-url $FORK_RPC_URL --host 0.0.0.0 --port 8545
 ```
 
-
-```bash
+<!-- verifies the update_quorum was set properly in `list_operators` -->
+```bash docci-output-contains="Quorum Numerator: 3"
 cd docker/
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
