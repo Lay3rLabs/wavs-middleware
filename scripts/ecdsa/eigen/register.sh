@@ -41,4 +41,4 @@ echo "Operator address: $OP_ADDR"
 
 # Register operator
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/ecdsa/WavsRegisterOperator.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$OPERATOR_KEY" --broadcast || handle_error "Failed to register operator"
+forge script script/eigenlayer/ecdsa/WavsRegisterOperator.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$OPERATOR_KEY" --broadcast || handle_error "Failed to register operator"

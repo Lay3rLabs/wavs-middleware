@@ -35,6 +35,6 @@ echo "Deployer address: $deployer_address"
 ensure_balance "$deployer_address"
 
 echo "Updating AVS Service URI"
-cast send "$WAVS_SERVICE_MANAGER_ADDRESS" "setServiceURI(string)" "$SERVICE_URI" --private-key "$FUNDED_KEY" --rpc-url "$LOCAL_ETHEREUM_RPC_URL"
+cast send "$WAVS_SERVICE_MANAGER_ADDRESS" "setServiceURI(string)" "$SERVICE_URI" --private-key "$FUNDED_KEY" --rpc-url "$RPC_URL"
 
 echo "AVS Service URI updated successfully"

@@ -60,9 +60,9 @@ wait_for_ethereum() {
     echo "Waiting for Ethereum node to be ready..."
     while ! curl -s -X POST -H "Content-Type: application/json" \
                  --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}' \
-                 "$LOCAL_ETHEREUM_RPC_URL" > /dev/null 2>&1
+                 "$RPC_URL" > /dev/null 2>&1
     do
-        echo "Waiting for $LOCAL_ETHEREUM_RPC_URL"
+        echo "Waiting for $RPC_URL"
         sleep 1
     done
     echo "Ethereum node is ready!"
@@ -73,13 +73,11 @@ wait_for_ethereum() {
 setup_environment() { 
     # Set up environment based on DEPLOY_ENV
     if [ "$DEPLOY_ENV" = "LOCAL" ]; then
-        check_param "LOCAL_ETHEREUM_RPC_URL" "${LOCAL_ETHEREUM_RPC_URL:-http://localhost:8545}"
+        check_param "RPC_URL" "${RPC_URL:-http://localhost:8545}"
     else
-        check_param "TESTNET_RPC_URL" "${TESTNET_RPC_URL:-}"
-        LOCAL_ETHEREUM_RPC_URL="$TESTNET_RPC_URL"
+        check_param "RPC_URL" "${RPC_URL:-}"
     fi
-    export LOCAL_ETHEREUM_RPC_URL
-    echo "Using RPC URL: $LOCAL_ETHEREUM_RPC_URL"
+    echo "Using RPC URL: $RPC_URL"
 
     # Wait for Ethereum node to be ready
     wait_for_ethereum
@@ -89,7 +87,7 @@ setup_environment() {
 # Usage: ensure_balance "0x..." [rpc_url]
 ensure_balance() {
     local address="$1"
-    local rpc_url="${2:-$LOCAL_ETHEREUM_RPC_URL}"
+    local rpc_url="${2:-$RPC_URL}"
     local balance
     balance=$(cast balance "$address" --rpc-url "$rpc_url")
 
@@ -109,9 +107,9 @@ ensure_balance() {
 
 # Get chain ID from RPC endpoint
 # Usage: get_chain_id [rpc_url]
-# If rpc_url is not provided, uses LOCAL_ETHEREUM_RPC_URL
+# If rpc_url is not provided, uses RPC_URL
 get_chain_id() {
-    local rpc_url="${1:-$LOCAL_ETHEREUM_RPC_URL}"
+    local rpc_url="${1:-$RPC_URL}"
     cast chain-id --rpc-url "$rpc_url"
 }
 

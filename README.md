@@ -35,7 +35,8 @@ Prepare the env file:
 ```bash
 CHAIN=
 cp docker/env.example.$CHAIN docker/.env
-# edit the RPC_URL for a paid testnet rpc endpoint, add funded key, and TESTNET_RPC_URL
+# edit the RPC_URL, DEPLOY_ENV for a paid testnet rpc endpoint.
+# edit the FORK_RPC_URL for local deployment.
 ```
 
 ## Testnet Fork
@@ -67,14 +68,13 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    wavs-middleware deploy
 ```
 
-| Environment Variable     | Required              | Default                 | Source | Description                                   |
-| ------------------------ | --------------------- | ----------------------- | ------ | --------------------------------------------- |
-| `DEPLOY_ENV`             | for non-default value | `LOCAL`                 | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
-| `LOCAL_ETHEREUM_RPC_URL` | for non-default value | `http://localhost:8545` | `.env` | RPC URL for local development                 |
-| `TESTNET_RPC_URL`        | for testnet           | -                       | `.env` | RPC URL for testnet deployment                |
-| `FUNDED_KEY`             | Yes                   | -                       | `.env` | Private key with funds for deployment         |
-| `METADATA_URI`           | Yes                   | -                       | `.env` | URI for AVS metadata                          |
-| `LST_STRATEGY_ADDRESS`   | for ecdsa             | -                       | `.env` | Liquid staking token strategy address         |
+| Environment Variable   | Required              | Default                 | Source | Description                                   |
+| ---------------------- | --------------------- | ----------------------- | ------ | --------------------------------------------- |
+| `DEPLOY_ENV`           | for non-default value | `LOCAL`                 | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
+| `RPC_URL`              | for non-default value | `http://localhost:8545` | `.env` | RPC URL                                       |
+| `FUNDED_KEY`           | Yes                   | -                       | `.env` | Private key with funds for deployment         |
+| `METADATA_URI`         | Yes                   | -                       | `.env` | URI for AVS metadata                          |
+| `LST_STRATEGY_ADDRESS` | for ecdsa             | -                       | `.env` | Liquid staking token strategy address         |
 
 ### Set Service URI
 
@@ -91,8 +91,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 | Environment Variable           | Required              | Default                       | Source | Description                                   |
 | ------------------------------ | --------------------- | ----------------------------- | ------ | --------------------------------------------- |
 | `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
-| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env` | RPC URL for local development                 |
-| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env` | RPC URL for testnet deployment                |
+| `RPC_URL`                      | for non-default value | `http://localhost:8545`       | `.env` | RPC URL                                       |
 | `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Volume | Service manager contract address              |
 | `FUNDED_KEY`                   | if not mounted        | From `.nodes/deployer`        | Volume | Deployer private key                          |
 | `SERVICE_URI`                  | Yes                   | -                             | Params | URI for the service                           |
@@ -141,8 +140,7 @@ docker run --rm --network host \
 | Environment Variable           | Required              | Default                       | Source       | Description                                   |
 | ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
 | `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
-| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
-| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `RPC_URL`                      | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL                                       |
 | `LST_CONTRACT_ADDRESS`         | Yes                   | -                             | `.env`       | Liquid staking token contract address         |
 | `LST_STRATEGY_ADDRESS`         | Yes                   | -                             | `.env`       | Liquid staking token strategy address         |
 | `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
@@ -167,8 +165,7 @@ docker run --rm --network host \
 | Environment Variable           | Required              | Default                       | Source       | Description                                   |
 | ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
 | `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
-| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
-| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `RPC_URL`                      | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL                                       |
 | `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
 | `OPERATOR_KEY`                 | Yes                   | -                             | Command line | Private key for the operator                  |
 
@@ -196,8 +193,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 | Environment Variable           | Required              | Default                       | Source       | Description                                   |
 | ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
 | `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
-| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
-| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `RPC_URL`                      | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL                                       |
 | `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
 
 ### Update Quorum
@@ -215,8 +211,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 | Environment Variable           | Required              | Default                       | Source | Description                                   |
 | ------------------------------ | --------------------- | ----------------------------- | ------ | --------------------------------------------- |
 | `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
-| `LOCAL_ETHEREUM_RPC_URL`       | for non-default value | `http://localhost:8545`       | `.env` | RPC URL for local development                 |
-| `TESTNET_RPC_URL`              | for testnet           | -                             | `.env` | RPC URL for testnet deployment                |
+| `RPC_URL`                      | for non-default value | `http://localhost:8545`       | `.env` | RPC URL                                       |
 | `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | Volume | Service manager contract address              |
 | `FUNDED_KEY`                   | if not mounted        | From `.nodes/deployer`        | Volume | Deployer private key                          |
 | `QUORUM_NUMERATOR`             | Yes                   | -                             | Params | Numerator for quorum calculation              |
@@ -258,13 +253,12 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    wavs-middleware unpause
 ```
 
-| Environment Variable     | Required              | Default                       | Source | Description                                   |
-| ------------------------ | --------------------- | ----------------------------- | ------ | --------------------------------------------- |
-| `DEPLOY_ENV`             | for non-default value | `LOCAL`                       | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
-| `LOCAL_ETHEREUM_RPC_URL` | for non-default value | `http://localhost:8545`       | `.env` | RPC URL for local development                 |
-| `TESTNET_RPC_URL`        | for testnet           | -                             | `.env` | RPC URL for testnet deployment                |
-| `REGISTRY_ADDRESS`       | if not mounted        | From `.nodes/avs_deploy.json` | Volume | AVS registrar address                         |
-| `FUNDED_KEY`             | if not mounted        | From `.nodes/deployer`        | Volume | Deployer private key                          |
+| Environment Variable | Required              | Default                       | Source | Description                                   |
+| -------------------- | --------------------- | ----------------------------- | ------ | --------------------------------------------- |
+| `DEPLOY_ENV`         | for non-default value | `LOCAL`                       | `.env` | Deployment environment (`LOCAL` or `TESTNET`) |
+| `RPC_URL`            | for non-default value | `http://localhost:8545`       | `.env` | RPC URL                                       |
+| `REGISTRY_ADDRESS`   | if not mounted        | From `.nodes/avs_deploy.json` | Volume | AVS registrar address                         |
+| `FUNDED_KEY`         | if not mounted        | From `.nodes/deployer`        | Volume | Deployer private key                          |
 
 ### Delegate to Operator
 
@@ -303,8 +297,7 @@ docker run --rm --network host \
 | Environment Variable              | Required              | Default                       | Source       | Description                                   |
 | --------------------------------- | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
 | `DEPLOY_ENV`                      | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
-| `LOCAL_ETHEREUM_RPC_URL`          | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL for local development                 |
-| `TESTNET_RPC_URL`                 | for testnet           | -                             | `.env`       | RPC URL for testnet deployment                |
+| `RPC_URL`                         | for non-default value | `http://localhost:8545`       | `.env`       | RPC URL                                       |
 | `LST_CONTRACT_ADDRESS`            | Yes                   | -                             | `.env`       | Liquid staking token contract address         |
 | `LST_STRATEGY_ADDRESS`            | Yes                   | -                             | `.env`       | Liquid staking token strategy address         |
 | `WAVS_SERVICE_MANAGER_ADDRESS`    | if not mounted        | From `.nodes/avs_deploy.json` | Command line | Service manager contract address              |
@@ -421,7 +414,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 ## Deploy Testnet
 
-Same as the local deploy, but add `TESTNET_RPC_URL` to the .env and change `DEPLOY_ENV` to `"TESTNET"` and make sure the `FUNDED_KEY` is actually funded on testnet
+Same as the local deploy, change `DEPLOY_ENV` to `"TESTNET"` and make sure the `FUNDED_KEY` is actually funded on testnet
 
 ## References
 
@@ -440,7 +433,7 @@ sequenceDiagram
     participant Contracts as Contracts
 
     Env->>Env: Load Environment Variables
-    Env->>Env: Set LOCAL_ETHEREUM_RPC_URL
+    Env->>Env: Set RPC_URL
     Env->>Env: Check Required Variables
 
     Deploy->>Contracts: Deploy Middleware Contracts
@@ -481,7 +474,7 @@ sequenceDiagram
 ### Initial Setup
 
 - Load environment variables from `.env` file
-- Set `LOCAL_ETHEREUM_RPC_URL` based on environment (TESTNET or LOCAL)
+- Set `RPC_URL` based on environment (TESTNET or LOCAL)
 - Check for required environment variables
 
 ### Deploy Process (deploy.sh)

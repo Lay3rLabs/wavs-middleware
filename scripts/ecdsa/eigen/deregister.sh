@@ -34,6 +34,6 @@ echo "Deregistering WAVS registration..."
 
 # Pause registration
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/ecdsa/WavsDeregisterOperator.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --skip-simulation || handle_error "Failed to deregister WAVS registration"
+forge script script/eigenlayer/ecdsa/WavsDeregisterOperator.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --skip-simulation || handle_error "Failed to deregister WAVS registration"
 
 echo "WAVS registration deregistered successfully"
