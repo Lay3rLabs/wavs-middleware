@@ -44,7 +44,6 @@ echo "Deploying contracts"
 
 # Deploy contracts
 cd contracts || handle_error "Failed to change to contracts directory"
-ensure_dir deployments/wavs-mock/
 
 forge script script/eigenlayer/ecdsa/WavsMockDeployer.s.sol --rpc-url "$MOCK_RPC_URL" --private-key "$MOCK_DEPLOYER_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMockDeployer"
 
