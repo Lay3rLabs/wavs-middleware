@@ -42,9 +42,7 @@ jobs:
         sudo chmod +x /usr/local/bin/docci
         rm docci.tar.gz
 
-    # TODO: build and cache docker image of wavs-middleware here for future runs
-
-
-    # - run: docci run DEV.md --cleanup-commands="killall anvil || true" --hide-background-logs
+    # TODO: build and cache docker image of wavs-middleware here for future runs?
+    - run: docci run DEV.md --cleanup-commands="killall anvil || true" --hide-background-logs
     - run: docci run DEV_1.md --cleanup-commands="killall anvil || true" --hide-background-logs
     - run: docci run DEV_2.md --cleanup-commands="killall anvil || true" --hide-background-logs
