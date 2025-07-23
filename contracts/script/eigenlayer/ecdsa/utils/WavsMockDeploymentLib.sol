@@ -133,15 +133,15 @@ library WavsMockDeploymentLib {
 
     /**
      * @notice The set initial configuration function.
-     * @param deployment The deployment data.
+     * @param serviceManagerAddress The service manager address.
      * @param configuration The initial configuration.
      */
     function setInitialConfiguration(
-        DeploymentData memory deployment,
+        address serviceManagerAddress,
         InitialConfiguration memory configuration
     ) internal {
-        MirrorStakeRegistry stakeRegistry = MirrorStakeRegistry(deployment.stakeRegistry);
-        WavsServiceManager serviceManager = WavsServiceManager(deployment.wavsServiceManager);
+        WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
+        MirrorStakeRegistry stakeRegistry = MirrorStakeRegistry(serviceManager.getStakeRegistry());
 
         // // FIXME: remove debug
         // console2.log("owners");
