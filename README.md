@@ -374,6 +374,8 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    wavs-middleware -m mock deploy
 ```
 
+This will write the deployed contract addresses to `./.nodes/mock.json` (where `./nodes` is whatever you mounted your volume to)
+
 | Environment Variable | Required              | Default                 | Source       | Description                                   |
 | -------------------- | --------------------- | ----------------------- | ------------ | --------------------------------------------- |
 | `DEPLOY_ENV`         | for non-default value | `LOCAL`                 | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
@@ -422,8 +424,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 
 | Environment Variable           | Required              | Default                     | Source       | Description                                   |
 | ------------------------------ | --------------------- | --------------------------- | ------------ | --------------------------------------------- |
-| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                     | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
-| `MOCK_DEPLOYER_KEY`            | Yes                   | -                           | Command line | Private key for mock deployment               |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                     | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |            |
 | `MOCK_RPC_URL`                 | for non-default value | `http://localhost:8546`     | Command line | RPC URL for mock blockchain                   |
 | `MOCK_DEPLOYER_KEY`            | if not mounted        | From `.nodes/mock-deployer` | Volume       | Deployer private key                          |
 | `MOCK_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/mock.json`     | Volume       | Service manager contract address              |
