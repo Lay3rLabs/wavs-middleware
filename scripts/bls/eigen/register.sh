@@ -40,4 +40,4 @@ echo "Delegate amount: $WAVS_DELEGATE_AMOUNT"
 
 # Register operator
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/bls/WavsRegisterOperator.s.sol -vvv --rpc-url "$LOCAL_ETHEREUM_RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --skip-simulation --slow || handle_error "Failed to register operator"
+forge script script/eigenlayer/bls/WavsRegisterOperator.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --skip-simulation --slow || handle_error "Failed to register operator"

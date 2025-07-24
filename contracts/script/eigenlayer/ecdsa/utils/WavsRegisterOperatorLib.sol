@@ -154,7 +154,7 @@ library WavsRegisterOperatorLib {
             # Calculate expiry (current time + 1 hour)
             local expiry=$(($(date +%s) + 3600))
 
-            local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$operator_address" "$WAVS_SERVICE_MANAGER_ADDRESS" "$salt" "$expiry" --rpc-url "$LOCAL_ETHEREUM_RPC_URL")
+            local digest_hash=$(cast call "$avs_directory_address" "calculateOperatorAVSRegistrationDigestHash(address,address,bytes32,uint256)" "$operator_address" "$WAVS_SERVICE_MANAGER_ADDRESS" "$salt" "$expiry" --rpc-url "$RPC_URL")
             # Remove 0x prefix from digest hash if present
             digest_hash=${digest_hash#0x}
             # Sign the digest hash with the private key
