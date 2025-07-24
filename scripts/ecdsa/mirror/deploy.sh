@@ -51,7 +51,6 @@ forge script script/eigenlayer/ecdsa/WavsMirrorPrepareDeploy.s.sol --rpc-url "$S
 
 echo "Got config:"
 cat "deployments/wavs-mirror-config.json"
-ensure_dir deployments/wavs-mirror/
 
 echo
 echo "Deploying contracts"

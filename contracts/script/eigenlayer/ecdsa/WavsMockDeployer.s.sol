@@ -20,8 +20,6 @@ contract WavsMockDeployer is Script {
     address public proxyAdmin;
     /// @notice The deployment data.
     WavsMockDeploymentLib.DeploymentData public deployment;
-    /// @notice The initial configuration.
-    WavsMockDeploymentLib.InitialConfiguration public configuration;
 
     /// @notice The error for the stake registry address cannot be zero.
     error WavsMockDeployer__StakeRegistryAddressCannotBeZero();
@@ -31,11 +29,7 @@ contract WavsMockDeployer is Script {
     error WavsMockDeployer__ProxyAdminAddressCannotBeZero();
 
     /// @notice The setup function for the script.
-    function setUp() public virtual {
-        // Pass in the configuration as a file, load it
-        string memory configFile = "./deployments/wavs-mock-config.json";
-        configuration = WavsMockDeploymentLib.loadConfiguration(configFile);
-    }
+    function setUp() public virtual {}
 
     /// @notice The run function for the script.
     function run() external {
@@ -45,10 +39,6 @@ contract WavsMockDeployer is Script {
         // deploy middleware contracts
         console2.log("Deploying contracts...");
         deployment = WavsMockDeploymentLib.deployContracts(proxyAdmin);
-
-        // initialize the operator set
-        console2.log("Configuring initial state...");
-        WavsMockDeploymentLib.setInitialConfiguration(deployment, configuration);
 
         vm.stopBroadcast();
 
