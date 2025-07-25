@@ -20,7 +20,9 @@ parse_args "$@"
 
 # Check required parameters with defaults
 check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
-DEFAULT_MOCK_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/mock.json" || true)
+check_param "DEPLOY_FILE_MOCK" "${DEPLOY_FILE_MOCK:-mock}"
+
+DEFAULT_MOCK_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/${DEPLOY_FILE_MOCK}.json" || true)
 check_param "MOCK_SERVICE_MANAGER_ADDRESS" "${MOCK_SERVICE_MANAGER_ADDRESS:-$DEFAULT_MOCK_SERVICE_MANAGER_ADDRESS}"
 
 # Set up RPC URL based on environment

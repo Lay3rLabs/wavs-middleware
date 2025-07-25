@@ -30,6 +30,7 @@ fi
 
 # Check required parameters
 check_param "MOCK_DEPLOYER_KEY" "${MOCK_DEPLOYER_KEY:-}"
+check_param "DEPLOY_FILE_MOCK" "${DEPLOY_FILE_MOCK:-mock}"
 
 # Get deployer address and save private key
 MOCK_DEPLOYER_ADDRESS=$(cast wallet address "$MOCK_DEPLOYER_KEY")
@@ -51,4 +52,4 @@ echo "Mock contracts deployed with addresses:"
 cat "deployments/wavs-ecdsa/mock_deploy.json" | jq .addresses
 
 # Save deployment data
-save_deployment_data "$HOME/.nodes/mock.json" "$(cat "deployments/wavs-ecdsa/mock_deploy.json")"
+save_deployment_data "$HOME/.nodes/${DEPLOY_FILE_MOCK}.json" "$(cat "deployments/wavs-ecdsa/mock_deploy.json")"
