@@ -15,6 +15,8 @@ import {WavsMockDeploymentLib} from "./utils/WavsMockDeploymentLib.sol";
 contract WavsMockConfiguration is Script {
     /// @notice The environment variable for the service manager address.
     string public constant ENV_SERVICE_MANAGER = "MOCK_SERVICE_MANAGER_ADDRESS";
+    /// @notice The environment variable for the configuration file.
+    string public constant ENV_CONFIGURATION = "CONFIGURE_FILE";
 
     /// @notice The initial configuration.
     WavsMockDeploymentLib.InitialConfiguration public configuration;
@@ -24,7 +26,8 @@ contract WavsMockConfiguration is Script {
     /// @notice The setup function for the script.
     function setUp() public virtual {
         // Pass in the configuration as a file, load it
-        string memory configFile = "./deployments/wavs-mock-config.json";
+        string memory configFile =
+            string.concat("./deployments/", vm.envString(ENV_CONFIGURATION), ".json");
         configuration = WavsMockDeploymentLib.loadConfiguration(configFile);
 
         serviceManagerAddress = vm.envAddress(ENV_SERVICE_MANAGER);

@@ -414,11 +414,12 @@ Create a `mock-config.json` file on your local machine. This file defines the in
 
 ```bash
 # Set the path to your local config file
-LOCAL_CONFIG_PATH=$(pwd)/mock-config.json
+LOCAL_CONFIG_PATH=$(pwd) # file path that contains config file
+CONFIGURE_FILE=wavs-mock-config
 MOCK_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/mock.json)
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   -v $LOCAL_CONFIG_PATH:/wavs/contracts/deployments/wavs-mock-config.json \
+   -v $LOCAL_CONFIG_PATH:/wavs/contracts/deployments \
    --env-file .env \
    wavs-middleware -m mock configure
 ```
@@ -430,6 +431,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 | `MOCK_DEPLOYER_KEY`            | if not mounted        | From `.nodes/mock-deployer` | Volume       | Deployer private key                          |
 | `MOCK_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/mock.json`     | Volume       | Service manager contract address              |
 | `DEPLOY_FILE_MOCK`             | for non-default value | `mock`                      | Command line | File name to store mock deployment            |
+| `CONFIGURE_FILE`               | for non-default value | `wavs-mock-config`          | Command line | File name to read configuration data          |
 
 ## Deploy Testnet
 
