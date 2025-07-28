@@ -49,7 +49,7 @@ cd contracts || handle_error "Failed to change to contracts directory"
 forge script script/eigenlayer/ecdsa/WavsMockDeployer.s.sol --rpc-url "$MOCK_RPC_URL" --private-key "$MOCK_DEPLOYER_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMockDeployer"
 
 echo "Mock contracts deployed with addresses:"
-cat "deployments/wavs-ecdsa/mock_deploy.json" | jq .addresses
+cat "deployments/wavs-ecdsa/${DEPLOY_FILE_MOCK}.json" | jq .addresses
 
 # Save deployment data
-save_deployment_data "$HOME/.nodes/${DEPLOY_FILE_MOCK}.json" "$(cat "deployments/wavs-ecdsa/mock_deploy.json")"
+save_deployment_data "$HOME/.nodes/${DEPLOY_FILE_MOCK}.json" "$(cat "deployments/wavs-ecdsa/${DEPLOY_FILE_MOCK}.json")"

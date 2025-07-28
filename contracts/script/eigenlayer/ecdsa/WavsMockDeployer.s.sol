@@ -16,6 +16,9 @@ import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 contract WavsMockDeployer is Script {
     using UpgradeableProxyLib for address;
 
+    /// @notice The deployment file name.
+    string public constant ENV_DEPLOY_FILE_MOCK = "DEPLOY_FILE_MOCK";
+
     /// @notice The proxy admin address.
     address public proxyAdmin;
     /// @notice The deployment data.
@@ -43,7 +46,9 @@ contract WavsMockDeployer is Script {
         vm.stopBroadcast();
 
         verifyDeployment();
-        WavsMockDeploymentLib.writeDeploymentJson(deployment);
+
+        string memory deployFile = vm.envString(ENV_DEPLOY_FILE_MOCK);
+        WavsMockDeploymentLib.writeDeploymentJson(deployment, deployFile);
     }
 
     /// @notice The verify deployment function.

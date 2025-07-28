@@ -194,10 +194,9 @@ library WavsMockDeploymentLib {
     /**
      * @notice The write deployment JSON function.
      * @param data The deployment data.
+     * @param fileName The file name.
      */
-    function writeDeploymentJson(
-        DeploymentData memory data
-    ) internal {
+    function writeDeploymentJson(DeploymentData memory data, string memory fileName) internal {
         address proxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(data.wavsServiceManager));
 
         string memory deploymentData = _generateDeploymentJson(data, proxyAdmin);
@@ -206,8 +205,12 @@ library WavsMockDeploymentLib {
             VM.createDir("deployments/wavs-ecdsa", true);
         }
 
-        VM.writeFile("deployments/wavs-ecdsa/mock_deploy.json", deploymentData);
-        console2.log("Deployment artifacts written to: deployments/wavs-ecdsa/mock_deploy.json");
+        VM.writeFile(string.concat("deployments/wavs-ecdsa/", fileName, ".json"), deploymentData);
+        console2.log(
+            string.concat(
+                "Deployment artifacts written to: deployments/wavs-ecdsa/", fileName, ".json"
+            )
+        );
     }
 
     /**
