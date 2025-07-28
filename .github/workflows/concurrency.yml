@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: true
 
-    name: Mock Concurrency tests 
+    name: Mock Concurrency tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,9 +41,13 @@ jobs:
             sleep 1
           done
 
+      - name: Build wavs-middleware Docker image
+        run: |
+          docker build -t wavs-middleware .
+
       - name: Run Concurrency tests
         run: |
-          cd scripts/ecdsa/mock && ./concurrency_test.sh 
+          cd scripts/ecdsa/mock && ./concurrency_test.sh
 
       - name: "Add test summary"
         run: |

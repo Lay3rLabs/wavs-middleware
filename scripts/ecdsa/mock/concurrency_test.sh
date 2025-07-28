@@ -7,7 +7,7 @@ set -euo pipefail
 ######### CONFIGURATION #########
 N=50 # Change this to how many wallets you want
 CONCURRENT=true
-MIDDLEWARE_IMAGE="ghcr.io/lay3rlabs/wavs-middleware:0.5.0-beta.8"
+MIDDLEWARE_IMAGE="wavs-middleware"
 ANVIL_RPC_URL="http://localhost:8545"
 ANVIL_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 # default anvil key
 ################################
