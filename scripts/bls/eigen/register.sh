@@ -60,8 +60,21 @@ if [[ "$DEPLOY_ENV" == "LOCAL" ]]; then
         cast rpc evm_mine --rpc-url http://localhost:8545
     done
 elif [[ "$DEPLOY_ENV" == "TESTNET" ]]; then
-    WAIT_TIME=$((12 * ALLOCATION_DELAY))
-    echo "Waiting $WAIT_TIME seconds for testnet transaction confirmation..." && sleep "$WAIT_TIME"
+    # Calculate the target block number (current + allocation delay)
+    START_BLOCK=$(cast block-number --rpc-url "$RPC_URL")
+    TARGET_BLOCK=$((START_BLOCK + ALLOCATION_DELAY))
+    echo "Current block: $START_BLOCK"
+    echo "Waiting until block: $TARGET_BLOCK (allocation delay: $ALLOCATION_DELAY)"
+
+    while true; do
+        CURRENT_BLOCK=$(cast block-number --rpc-url "$RPC_URL")
+        if (( CURRENT_BLOCK >= TARGET_BLOCK )); then
+            echo "Reached target block: $CURRENT_BLOCK"
+            break
+        else
+            echo "Current block: $CURRENT_BLOCK, sleeping 10 seconds until target block $TARGET_BLOCK..." && sleep 10
+        fi
+    done
 fi
 
 # Register operator
