@@ -22,7 +22,7 @@ parse_args "$@"
 check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
 check_param "LST_CONTRACT_ADDRESS" "${LST_CONTRACT_ADDRESS:-}"
 check_param "LST_STRATEGY_ADDRESS" "${LST_STRATEGY_ADDRESS:-}"
-DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" 2>/dev/null || true)
 check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SERVICE_MANAGER}"
 check_param "OPERATOR_KEY" "${OPERATOR_KEY:-}"
 check_param "WAVS_SIGNING_KEY" "${WAVS_SIGNING_KEY:-}"

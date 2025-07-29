@@ -30,7 +30,7 @@ check_param "OPERATOR_ADDRESS" "${OPERATOR_ADDRESS:-}"
 check_param "LST_CONTRACT_ADDRESS" "${LST_CONTRACT_ADDRESS:-}"
 check_param "LST_STRATEGY_ADDRESS" "${LST_STRATEGY_ADDRESS:-}"
 check_param "WAVS_DELEGATE_AMOUNT" "${WAVS_DELEGATE_AMOUNT:-$1}"
-DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" 2>/dev/null || true)
 check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SERVICE_MANAGER}"
 
 # Optional parameters with defaults
