@@ -20,7 +20,7 @@ parse_args "$@"
 
 # Check required parameters with defaults
 check_param "DEPLOY_ENV" "${DEPLOY_ENV:-LOCAL}"
-DEFAULT_REGISTRY_ADDRESS=$(jq -r '.addresses.registryCoordinator' "$HOME/.nodes/avs_deploy.json" || true)
+DEFAULT_REGISTRY_ADDRESS=$(jq -r '.addresses.registryCoordinator' "$HOME/.nodes/avs_deploy.json" 2>/dev/null || true)
 check_param "REGISTRY_ADDRESS" "${REGISTRY_ADDRESS:-$DEFAULT_REGISTRY_ADDRESS}"
 
 # Set up environment based on DEPLOY_ENV

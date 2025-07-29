@@ -40,7 +40,7 @@ echo "Deployer address: $deployer_address"
 ensure_balance "$deployer_address" "$MIRROR_RPC_URL"
 
 # Read service manager address from file
-DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+DEFAULT_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" 2>/dev/null || true)
 check_param "WAVS_SERVICE_MANAGER_ADDRESS" "${WAVS_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SERVICE_MANAGER}"
 
 echo "Reading source chain config:"

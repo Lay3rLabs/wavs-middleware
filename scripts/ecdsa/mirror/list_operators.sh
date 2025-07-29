@@ -31,9 +31,9 @@ else
 fi
 
 # Get service manager addresses from environment variables or files
-DEFAULT_SOURCE_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" || true)
+DEFAULT_SOURCE_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/avs_deploy.json" 2>/dev/null || true)
 check_param "SOURCE_SERVICE_MANAGER_ADDRESS" "${SOURCE_SERVICE_MANAGER_ADDRESS:-$DEFAULT_SOURCE_SERVICE_MANAGER}"
-DEFAULT_MIRROR_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/mirror.json" || true)
+DEFAULT_MIRROR_SERVICE_MANAGER=$(jq -r '.addresses.WavsServiceManager' "$HOME/.nodes/mirror.json" 2>/dev/null || true)
 check_param "MIRROR_SERVICE_MANAGER_ADDRESS" "${MIRROR_SERVICE_MANAGER_ADDRESS:-$DEFAULT_MIRROR_SERVICE_MANAGER}"
 
 # Change to contracts directory and run the script
