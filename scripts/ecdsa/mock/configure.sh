@@ -48,6 +48,6 @@ echo "Configuring mock contracts"
 # Configure contracts
 cd contracts || handle_error "Failed to change to contracts directory"
 
-forge script script/eigenlayer/ecdsa/WavsMockConfiguration.s.sol --rpc-url "$MOCK_RPC_URL" --private-key "$MOCK_DEPLOYER_KEY" -vvv --broadcast || handle_error "Failed to configure WavsMockDeployer"
+forge script script/eigenlayer/ecdsa/WavsMockConfiguration.s.sol --rpc-url "$MOCK_RPC_URL" --private-key "$MOCK_DEPLOYER_KEY" -vvv --broadcast --skip-simulation || handle_error "Failed to configure WavsMockDeployer"
 
 echo "Mock contracts configured successfully"

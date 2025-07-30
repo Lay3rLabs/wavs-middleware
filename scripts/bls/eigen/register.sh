@@ -52,7 +52,7 @@ echo "Delegate amount: $WAVS_DELEGATE_AMOUNT"
 cd contracts || handle_error "Failed to change to contracts directory"
 
 # Deposit into strategy
-forge script script/eigenlayer/bls/WavsDepositIntoStrategy.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$OPERATOR_KEY" --broadcast || handle_error "Failed to deposit into strategy"
+forge script script/eigenlayer/bls/WavsDepositIntoStrategy.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --skip-simulation || handle_error "Failed to deposit into strategy"
 
 # Wait based on environment
 if [[ "$DEPLOY_ENV" == "LOCAL" ]]; then
@@ -79,4 +79,4 @@ elif [[ "$DEPLOY_ENV" == "TESTNET" ]]; then
 fi
 
 # Register operator
-forge script script/eigenlayer/bls/WavsRegisterOperator.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --slow || handle_error "Failed to register operator"
+forge script script/eigenlayer/bls/WavsRegisterOperator.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --slow --skip-simulation || handle_error "Failed to register operator"

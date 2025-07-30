@@ -47,14 +47,14 @@ echo "Reading source chain config:"
 
 # Prepare deployment
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/ecdsa/WavsMirrorPrepareDeploy.s.sol --rpc-url "$SOURCE_RPC_URL" -vvv --broadcast || handle_error "Failed to run WavsMirrorPrepareDeploy script"
+forge script script/eigenlayer/ecdsa/WavsMirrorPrepareDeploy.s.sol --rpc-url "$SOURCE_RPC_URL" -vvv --broadcast --skip-simulation || handle_error "Failed to run WavsMirrorPrepareDeploy script"
 
 echo "Got config:"
 cat "deployments/wavs-mirror-config.json"
 
 echo
 echo "Deploying contracts"
-forge script script/eigenlayer/ecdsa/WavsMirrorDeployer.s.sol --rpc-url "$MIRROR_RPC_URL" --private-key "$FUNDED_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMirrorDeployer"
+forge script script/eigenlayer/ecdsa/WavsMirrorDeployer.s.sol --rpc-url "$MIRROR_RPC_URL" --private-key "$FUNDED_KEY" -vvv --broadcast --skip-simulation || handle_error "Failed to deploy WavsMirrorDeployer"
 
 echo "Mirror contracts deployed with addresses:"
 cat "deployments/wavs-ecdsa/mirror_deploy.json" | jq .addresses
