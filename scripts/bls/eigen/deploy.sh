@@ -45,7 +45,7 @@ ensure_balance "$deployer_address"
 echo "Deployer address: $deployer_address configured for $DEPLOY_ENV environment"
 
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/bls/WavsMiddlewareDeployer.s.sol --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" -vvv --broadcast || handle_error "Failed to deploy WavsMiddlewareDeployer"
+forge script script/eigenlayer/bls/WavsMiddlewareDeployer.s.sol --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" -vvv --broadcast --skip-simulation || handle_error "Failed to deploy WavsMiddlewareDeployer"
 
 echo "BLS contracts deployed with addresses:"
 cat deployments/wavs-bls/avs_deploy.json | jq .addresses

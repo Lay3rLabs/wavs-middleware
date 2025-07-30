@@ -42,6 +42,6 @@ echo "Updating quorum configuration to $QUORUM_NUMERATOR/$QUORUM_DENOMINATOR..."
 
 # Update quorum configuration
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/ecdsa/WavsUpdateQuorum.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast || handle_error "Failed to update quorum configuration"
+forge script script/eigenlayer/ecdsa/WavsUpdateQuorum.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" --broadcast --skip-simulation || handle_error "Failed to update quorum configuration"
 
 echo "Quorum configuration updated successfully"
