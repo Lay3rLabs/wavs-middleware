@@ -121,6 +121,17 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 docker run --rm --network host -v ./.nodes:/root/.nodes \
    --env-file .env \
    wavs-middleware unpause
+
+PROXY_OWNER=$(cast wallet new --json | jq -r '.[0].private_key')
+PROXY_OWNER_ADDRESS=$(cast wallet addr --private-key "$PROXY_OWNER")
+echo "Proxy owner address: $PROXY_OWNER_ADDRESS"
+AVS_OWNER=$(cast wallet new --json | jq -r '.[0].private_key')
+AVS_OWNER_ADDRESS=$(cast wallet addr --private-key "$AVS_OWNER")
+echo "Avs owner address: $AVS_OWNER_ADDRESS"
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   --env-file .env \
+   wavs-middleware transfer_ownership ${PROXY_OWNER} ${AVS_OWNER}
 ```
 
 ```bash
@@ -128,7 +139,6 @@ MOCK_DEPLOYER_KEY=$(cast wallet new --json | jq -r '.[0].private_key')
 MOCK_DEPLOYER_ADDRESS=$(cast wallet addr --private-key "$MOCK_DEPLOYER_KEY")
 
 docker run --rm --network host -v ./.nodes:/root/.nodes \
-   --env-file .env \
    -e MOCK_DEPLOYER_KEY=${MOCK_DEPLOYER_KEY} \
    wavs-middleware -m mock deploy
 
@@ -137,4 +147,14 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    -v $LOCAL_CONFIG_PATH:/wavs/contracts/deployments/wavs-mock-config.json \
    --env-file .env \
    wavs-middleware -m mock configure
+
+PROXY_OWNER=$(cast wallet new --json | jq -r '.[0].private_key')
+PROXY_OWNER_ADDRESS=$(cast wallet addr --private-key "$PROXY_OWNER")
+echo "Proxy owner address: $PROXY_OWNER_ADDRESS"
+AVS_OWNER=$(cast wallet new --json | jq -r '.[0].private_key')
+AVS_OWNER_ADDRESS=$(cast wallet addr --private-key "$AVS_OWNER")
+echo "Avs owner address: $AVS_OWNER_ADDRESS"
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   wavs-middleware -m mock transfer_ownership ${PROXY_OWNER} ${AVS_OWNER}
 ```
