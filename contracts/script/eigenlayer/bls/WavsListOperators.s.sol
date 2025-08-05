@@ -3,10 +3,15 @@ pragma solidity ^0.8.27;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
+import {ISlashingRegistryCoordinator} from
+    "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {IStakeRegistry} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
+import {IBLSApkRegistry} from "@eigenlayer-middleware/src/interfaces/IBLSApkRegistry.sol";
+import {ISocketRegistry} from "@eigenlayer-middleware/src/interfaces/ISocketRegistry.sol";
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {BN254} from "@eigenlayer-middleware/src/libraries/BN254.sol";
 
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
 
@@ -31,7 +36,10 @@ contract WavsListOperators is Script {
         uint96 totalWeight;
         uint96 minimumStake;
         address[] operators;
-        uint96[] weights;
+        bytes32[] operatorIds;
+        BN254.G1Point[] pubkeys;
+        string[] sockets;
+        uint96[] stakes;
         IStakeRegistry.StrategyParams[] strategies;
     }
 
@@ -50,7 +58,8 @@ contract WavsListOperators is Script {
     /// @notice The run function for the script.
     function run() external {
         vm.startBroadcast();
-        OperatorInfo memory opInfo = _listOperators(serviceManager.getStakeRegistry());
+        OperatorInfo memory opInfo =
+            _listOperators(serviceManager.getRegistryCoordinator(), uint8(0));
         _quorumNumerator = serviceManager.quorumNumerator();
         _quorumDenominator = serviceManager.quorumDenominator();
         _writeOperatorListJson(opInfo);
@@ -90,8 +99,8 @@ contract WavsListOperators is Script {
                 ": ",
                 Strings.toHexString(uint160(opInfo.operators[i]), 20)
             );
-            string memory weight = string.concat("= ", Strings.toString(uint256(opInfo.weights[i])));
-            console.log(op, weight);
+            string memory stake = string.concat("= ", Strings.toString(uint256(opInfo.stakes[i])));
+            console.log(op, stake);
         }
 
         console.log(" "); // Blank line for separation
@@ -102,39 +111,59 @@ contract WavsListOperators is Script {
 
     /**
      * @notice The list operators function.
-     * @param _stakeRegistry The stake registry address.
-     * @return opInfo The operator info.
+     * @param _slashingRegistryCoordinator The slashing registry coordinator address.
+     * @param _quorumNumber The quorum number.
+     * @return The operator info.
      */
     function _listOperators(
-        address _stakeRegistry
+        address _slashingRegistryCoordinator,
+        uint8 _quorumNumber
     ) private view returns (OperatorInfo memory) {
-        IStakeRegistry stakeRegistry = IStakeRegistry(_stakeRegistry);
+        ISlashingRegistryCoordinator slashingRegistryCoordinator =
+            ISlashingRegistryCoordinator(_slashingRegistryCoordinator);
+        IStakeRegistry stakeRegistry = slashingRegistryCoordinator.stakeRegistry();
+        ISocketRegistry socketRegistry = slashingRegistryCoordinator.socketRegistry();
+        IBLSApkRegistry blsApkRegistry = slashingRegistryCoordinator.blsApkRegistry();
 
-        uint96 totalWeight = stakeRegistry.getCurrentTotalStake(0);
+        uint96 totalWeight = stakeRegistry.getCurrentTotalStake(_quorumNumber);
 
         IAllocationManager allocationManager =
             IAllocationManager(serviceManager.getAllocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: address(serviceManager), id: 0});
+        OperatorSet memory opSetQuery =
+            OperatorSet({avs: address(serviceManager), id: _quorumNumber});
         address[] memory operators = allocationManager.getMembers(opSetQuery);
+        uint256 operatorCount = operators.length;
 
-        uint96[] memory weights = new uint96[](operators.length);
-        for (uint256 i = 0; i < operators.length; ++i) {
-            weights[i] = stakeRegistry.weightOfOperatorForQuorum(0, operators[i]);
+        bytes32[] memory operatorIds = new bytes32[](operatorCount);
+        BN254.G1Point[] memory pubkeys = new BN254.G1Point[](operatorCount);
+        string[] memory sockets = new string[](operatorCount);
+        uint96[] memory stakes = new uint96[](operatorCount);
+
+        for (uint256 i = 0; i < operatorCount; ++i) {
+            (BN254.G1Point memory pubkey, bytes32 operatorId) =
+                blsApkRegistry.getRegisteredPubkey(operators[i]);
+            operatorIds[i] = operatorId;
+            pubkeys[i] = pubkey;
+            sockets[i] = socketRegistry.getOperatorSocket(operatorIds[i]);
+            stakes[i] = stakeRegistry.getCurrentStake(operatorIds[i], _quorumNumber);
         }
 
-        uint256 strategyParamsLength = stakeRegistry.strategyParamsLength(0);
+        uint256 strategyParamsLength = stakeRegistry.strategyParamsLength(_quorumNumber);
         IStakeRegistry.StrategyParams[] memory strategies =
             new IStakeRegistry.StrategyParams[](strategyParamsLength);
         for (uint256 i = 0; i < strategyParamsLength; ++i) {
-            strategies[i] = stakeRegistry.strategyParamsByIndex(uint8(0), i);
+            strategies[i] = stakeRegistry.strategyParamsByIndex(_quorumNumber, i);
         }
 
         return OperatorInfo({
             stakeRegistry: address(stakeRegistry),
             totalWeight: totalWeight,
-            minimumStake: stakeRegistry.minimumStakeForQuorum(0),
+            minimumStake: stakeRegistry.minimumStakeForQuorum(_quorumNumber),
             operators: operators,
-            weights: weights,
+            operatorIds: operatorIds,
+            pubkeys: pubkeys,
+            sockets: sockets,
+            stakes: stakes,
             strategies: strategies
         });
     }
@@ -150,9 +179,7 @@ contract WavsListOperators is Script {
             vm.createDir("deployments/wavs-bls", true);
         }
 
-        string memory json = "{\"serviceManager\":\"";
-        json = string.concat(json, Strings.toHexString(uint160(address(serviceManager)), 20));
-        json = string.concat(json, "\",\"stakeRegistry\":\"");
+        string memory json = "{\"stakeRegistry\":\"";
         json = string.concat(json, Strings.toHexString(uint160(opInfo.stakeRegistry), 20));
         json = string.concat(json, "\",\"totalWeight\":\"");
         json = string.concat(json, Strings.toString(opInfo.totalWeight));
@@ -181,8 +208,18 @@ contract WavsListOperators is Script {
             }
             json = string.concat(json, "{\"operator\":\"");
             json = string.concat(json, Strings.toHexString(uint160(opInfo.operators[i]), 20));
-            json = string.concat(json, "\",\"weight\":\"");
-            json = string.concat(json, Strings.toString(opInfo.weights[i]));
+            json = string.concat(json, "\",\"operatorId\":\"");
+            json = string.concat(json, Strings.toHexString(uint256(opInfo.operatorIds[i]), 32));
+            json = string.concat(json, "\",\"pubkey\":{");
+            json = string.concat(json, "\"x\":\"");
+            json = string.concat(json, Strings.toHexString(uint256(opInfo.pubkeys[i].X), 32));
+            json = string.concat(json, "\",\"y\":\"");
+            json = string.concat(json, Strings.toHexString(uint256(opInfo.pubkeys[i].Y), 32));
+            json = string.concat(json, "\"},");
+            json = string.concat(json, "\"socket\":\"");
+            json = string.concat(json, opInfo.sockets[i]);
+            json = string.concat(json, "\",\"stake\":\"");
+            json = string.concat(json, Strings.toString(opInfo.stakes[i]));
             json = string.concat(json, "\"}");
         }
 
