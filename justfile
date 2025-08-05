@@ -5,7 +5,10 @@ help:
 
 # builds middleware
 docker-build TAG="local":
-    {{SUDO}} docker build . -t ghcr.io/lay3rlabs/wavs-middleware:{{TAG}}
+  {{SUDO}} docker build . -t ghcr.io/lay3rlabs/wavs-middleware:{{TAG}}
+
+docker-push TAG="local":
+  {{SUDO}} docker push ghcr.io/lay3rlabs/wavs-middleware:{{TAG}}
 
 dos2unix:
   find ./scripts -type f -exec dos2unix {} +
