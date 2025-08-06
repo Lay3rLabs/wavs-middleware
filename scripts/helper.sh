@@ -144,3 +144,54 @@ load_deployment_data() {
         fi
     fi
 }
+
+transfer_ecdsa_ownership() {
+    # Arguments (all optional, will fallback to env/params if not provided)
+    # $1 - WAVS_SERVICE_MANAGER_ADDRESS
+    # $2 - PROXY_OWNER
+    # $3 - AVS_OWNER
+    # $4 - FUNDED_KEY
+
+    local wsm_address="${1}"
+    local proxy_owner="${2}"
+    local avs_owner="${3}"
+    local funded_key="${4}"
+    local mode="${5}"
+
+    local avs_registrar_address
+    if [ "$mode" == "eigen" ]; then
+        # Get the AllocationManager address from the WAVS Service Manager
+        local allocation_manager_address
+        allocation_manager_address=$(cast call "$wsm_address" "getAllocationManager()(address)" --rpc-url "$RPC_URL")
+        echo "Allocation manager address: $allocation_manager_address"
+        # Get the AVS Registrar address from the AllocationManager for the WAVS Service Manager
+        avs_registrar_address=$(cast call "$allocation_manager_address" "getAVSRegistrar(address)(address)" "$wsm_address" --rpc-url "$RPC_URL")
+        echo "AVS registrar address: $avs_registrar_address"
+    fi
+    # Get the StakeRegistry address from the WAVS Service Manager
+    local stake_registry_address
+    stake_registry_address=$(cast call "$wsm_address" "getStakeRegistry()(address)" --rpc-url "$RPC_URL")
+    echo "Stake registry address: $stake_registry_address"
+
+    # Get the ProxyAdmin of the WAVS Service Manager
+    local proxy_admin_address
+    proxy_admin_address=$(cast storage "$wsm_address" "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103" --rpc-url "$RPC_URL" | tail -n1 | sed 's/^0x000000000000000000000000//')
+    proxy_admin_address="0x$proxy_admin_address"
+    echo "Proxy admin address: $proxy_admin_address"
+
+    echo "Transferring proxy ownership to $proxy_owner"
+    cast send "$proxy_admin_address" "transferOwnership(address)" "$proxy_owner" --private-key "$funded_key" --rpc-url "$RPC_URL"
+
+    if [ "$mode" == "eigen" ]; then
+        echo "Transferring avs registrar ownership to $avs_owner"
+        cast send "$avs_registrar_address" "transferOwnership(address)" "$avs_owner" --private-key "$funded_key" --rpc-url "$RPC_URL"
+    fi
+
+    echo "Transferring stake registry ownership to $avs_owner"
+    cast send "$stake_registry_address" "transferOwnership(address)" "$avs_owner" --private-key "$funded_key" --rpc-url "$RPC_URL"
+
+    echo "Transferring allocation manager ownership to $avs_owner"
+    cast send "$wsm_address" "transferOwnership(address)" "$avs_owner" --private-key "$funded_key" --rpc-url "$RPC_URL"
+
+    echo "Ownership transferred successfully"
+}
