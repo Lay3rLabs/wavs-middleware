@@ -26,7 +26,6 @@ contract WavsMiddlewareDeploymentLibTest is Test {
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_parseStrategies function.
     function test_parseStrategies() public {
-        /* solhint-enable func-name-mixedcase */
         IECDSAStakeRegistryTypes.Quorum memory quorum =
             WavsMiddlewareDeploymentLib.readQuorumConfig("deployments/strategies/", 17_000);
         console2.log(quorum.strategies.length);

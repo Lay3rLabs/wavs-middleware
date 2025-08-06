@@ -97,7 +97,6 @@ contract WavsMirrorDeploymentLibTest is Test {
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_initial_state function.
     function test_initial_state() public view {
-        /* solhint-enable func-name-mixedcase */
         // Verify deployment addresses are set correctly
         assertNotEq(deployment.stakeRegistry, address(0), "StakeRegistry address cannot be zero");
         assertNotEq(
@@ -144,10 +143,8 @@ contract WavsMirrorDeploymentLibTest is Test {
         );
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_success function.
     function test_validateQuorumSigned_success() public view {
-        /* solhint-enable func-name-mixedcase */
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
@@ -162,10 +159,8 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_insufficient function.
     function test_validateQuorumSigned_insufficient() public {
-        /* solhint-enable func-name-mixedcase */
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(2)),
@@ -185,10 +180,8 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_exact function.
     function test_validateQuorumSigned_exact() public {
-        /* solhint-enable func-name-mixedcase */
         // Change quorum to 3 of 5
         address actualOwner = serviceManager.owner();
         vm.startPrank(actualOwner);
@@ -209,10 +202,8 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_explicitSigningKeys function.
     function test_validateQuorumSigned_explicitSigningKeys() public {
-        /* solhint-enable func-name-mixedcase */
         // Get the actual owner of the contracts
         address actualOwner = serviceManager.owner();
 
@@ -253,10 +244,8 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold function.
     function test_setQuorumThreshold() public {
-        /* solhint-enable func-name-mixedcase */
         // Change quorum to 3 of 5
         address actualOwner = serviceManager.owner();
         vm.startPrank(actualOwner);
@@ -289,20 +278,16 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold_only_owner function.
     function test_setQuorumThreshold_only_owner() public {
-        /* solhint-enable func-name-mixedcase */
         // Non-owner should not be able to set quorum threshold
         vm.prank(address(0x999));
         vm.expectRevert("Ownable: caller is not the owner");
         serviceManager.setQuorumThreshold(1, 2);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold_invalid_params function.
     function test_setQuorumThreshold_invalid_params() public {
-        /* solhint-enable func-name-mixedcase */
         // Get the actual owner of the contracts
         address actualOwner = serviceManager.owner();
 
@@ -330,10 +315,8 @@ contract WavsMirrorDeploymentLibTest is Test {
         vm.stopPrank();
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validate_invalid_signature_length function.
     function test_validate_invalid_signature_length() public {
-        /* solhint-enable func-name-mixedcase */
         // Empty operators array
         address[] memory emptySigners = new address[](0);
         bytes[] memory emptySignatures = new bytes[](0);
@@ -432,10 +415,8 @@ contract WavsMirrorDeploymentLibTest is Test {
         }
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_writeAndLoadConfiguration_roundtrip function.
     function test_writeAndLoadConfiguration_roundtrip() public {
-        /* solhint-enable func-name-mixedcase */
         // 1. Define a sample InitialConfiguration
         WavsMirrorDeploymentLib.InitialConfiguration memory originalConfig;
         originalConfig.operators = operators; // Use operators from setUp

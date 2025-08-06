@@ -66,17 +66,14 @@ contract WavsServiceManagerTest is Test {
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_initial_state function.
     function test_initial_state() public view {
-        /* solhint-enable func-name-mixedcase */
         // Test initial state
         assertEq(serviceManager.quorumNumerator(), 2, "Initial quorum numerator should be 2");
         assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
         assertEq(serviceManager.avsDirectory(), avsDirectory, "AVS directory should be set");
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold function.
     function test_setQuorumThreshold() public {
-        /* solhint-enable func-name-mixedcase */
         // Change quorum to 51%
         vm.startPrank(owner);
         serviceManager.setQuorumThreshold(51, 100);
@@ -86,20 +83,16 @@ contract WavsServiceManagerTest is Test {
         assertEq(serviceManager.quorumDenominator(), 100, "Quorum denominator should be updated");
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold_only_owner function.
     function test_setQuorumThreshold_only_owner() public {
-        /* solhint-enable func-name-mixedcase */
         // Non-owner should not be able to set quorum threshold
         vm.prank(makeAddr("non-owner"));
         vm.expectRevert("Ownable: caller is not the owner");
         serviceManager.setQuorumThreshold(1, 2);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold_invalid_params function.
     function test_setQuorumThreshold_invalid_params() public {
-        /* solhint-enable func-name-mixedcase */
         // numerator = 0
         vm.prank(owner);
         vm.expectRevert(
@@ -122,10 +115,8 @@ contract WavsServiceManagerTest is Test {
         serviceManager.setQuorumThreshold(3, 2);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setServiceURI function.
     function test_setServiceURI() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
         serviceManager.setServiceURI("https://wavs.io");
         vm.stopPrank();

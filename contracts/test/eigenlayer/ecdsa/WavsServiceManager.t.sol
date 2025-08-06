@@ -89,7 +89,6 @@ contract WavsServiceManagerTest is Test {
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_initial_state function.
     function test_initial_state() public view {
-        /* solhint-enable func-name-mixedcase */
         // Test initial state
         assertEq(serviceManager.quorumNumerator(), 2, "Initial quorum numerator should be 2");
         assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
@@ -100,10 +99,8 @@ contract WavsServiceManagerTest is Test {
         assertEq(signer, operator1, "At block query should match operator");
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_success function.
     function test_validateQuorumSigned_success() public view {
-        /* solhint-enable func-name-mixedcase */
         // 2/3 of 500 is 333, so 400 should pass
         serviceManager.validate(
             IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}),
@@ -114,10 +111,8 @@ contract WavsServiceManagerTest is Test {
         assertTrue(true, "Validation should pass with sufficient quorum");
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_insufficient function.
     function test_validateQuorumSigned_insufficient() public {
-        /* solhint-enable func-name-mixedcase */
         // 2/3 of 500 is 333, so 300 should fail
         vm.expectRevert(
             abi.encodeWithSelector(IWavsServiceManager.InsufficientQuorum.selector, 300, 333, 500)
@@ -128,10 +123,8 @@ contract WavsServiceManagerTest is Test {
         );
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_exact function.
     function test_validateQuorumSigned_exact() public {
-        /* solhint-enable func-name-mixedcase */
         // Change quorum to 3 of 5
         vm.startPrank(owner);
         serviceManager.setQuorumThreshold(3, 5);
@@ -147,10 +140,8 @@ contract WavsServiceManagerTest is Test {
         assertTrue(true, "Validation should pass with exact quorum");
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_explicitSigningKeys function.
     function test_validateQuorumSigned_explicitSigningKeys() public {
-        /* solhint-enable func-name-mixedcase */
         address signer1 = address(0x13579);
 
         vm.startPrank(owner);
@@ -180,10 +171,8 @@ contract WavsServiceManagerTest is Test {
         assertTrue(true, "Validation should pass when signer is set");
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validateQuorumSigned_zero_total_weight function.
     function test_validateQuorumSigned_zero_total_weight() public {
-        /* solhint-enable func-name-mixedcase */
         // Set total weight to 0, which should always fail
         mockStakeRegistry.setTotalWeight(0);
 
@@ -194,10 +183,8 @@ contract WavsServiceManagerTest is Test {
         );
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold function.
     function test_setQuorumThreshold() public {
-        /* solhint-enable func-name-mixedcase */
         // Change quorum to 51%
         vm.startPrank(owner);
         serviceManager.setQuorumThreshold(51, 100);
@@ -222,20 +209,16 @@ contract WavsServiceManagerTest is Test {
         );
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold_only_owner function.
     function test_setQuorumThreshold_only_owner() public {
-        /* solhint-enable func-name-mixedcase */
         // Non-owner should not be able to set quorum threshold
         vm.prank(address(0x999));
         vm.expectRevert("Ownable: caller is not the owner");
         serviceManager.setQuorumThreshold(1, 2);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setQuorumThreshold_invalid_params function.
     function test_setQuorumThreshold_invalid_params() public {
-        /* solhint-enable func-name-mixedcase */
         // numerator = 0
         vm.prank(owner);
         vm.expectRevert(
@@ -258,10 +241,8 @@ contract WavsServiceManagerTest is Test {
         serviceManager.setQuorumThreshold(3, 2);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_validate_invalid_signature_length function.
     function test_validate_invalid_signature_length() public {
-        /* solhint-enable func-name-mixedcase */
         // Empty operators array
         address[] memory emptySigners = new address[](0);
         bytes[] memory emptySignatures = new bytes[](0);

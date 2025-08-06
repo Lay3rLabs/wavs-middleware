@@ -68,13 +68,14 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
         totalOperators = _totalOperators;
     }
 
+    /* solhint-disable use-natspec */
     /**
      * @notice The updateOperatorsForQuorum function.
      * @param operatorsPerQuorum The operators per quorum.
      * @param {_signature} The signature.
      * @dev This function doubles the weights of even operators and halves the weights of odd operators, for testing.
      */
-    function updateOperatorsForQuorum( // solhint-disable-line use-natspec
+    function updateOperatorsForQuorum(
         address[][] calldata operatorsPerQuorum,
         bytes calldata /* _signature */
     ) external virtual {
@@ -103,7 +104,7 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
      * @param {signature} The signature.
      * @return The selector.
      */
-    function isValidSignature( // solhint-disable-line use-natspec
+    function isValidSignature(
         bytes32, /* digest */
         bytes calldata /* signature */
     ) external pure returns (bytes4) {
@@ -116,7 +117,7 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
      * @param {blockNumber} The block number.
      * @return The operator weight.
      */
-    function getOperatorWeightAtBlock( // solhint-disable-line use-natspec
+    function getOperatorWeightAtBlock(
         address operator,
         uint32 /* blockNumber */
     ) external view returns (uint256) {
@@ -128,7 +129,7 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
      * @param {blockNumber} The block number.
      * @return The total weight.
      */
-    function getLastCheckpointTotalWeightAtBlock( // solhint-disable-line use-natspec
+    function getLastCheckpointTotalWeightAtBlock(
         uint32 /* blockNumber */
     ) external view returns (uint256) {
         return totalWeight;
@@ -151,7 +152,7 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
      * @param {blockNumber} The block number.
      * @return The signing key.
      */
-    function getOperatorSigningKeyAtBlock( // solhint-disable-line use-natspec
+    function getOperatorSigningKeyAtBlock(
         address operator,
         uint256 /* blockNumber */
     ) external view returns (address) {
@@ -175,7 +176,7 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
      * @param {blockNumber} The block number.
      * @return The operator.
      */
-    function getOperatorForSigningKeyAtBlock( // solhint-disable-line use-natspec
+    function getOperatorForSigningKeyAtBlock(
         address signing,
         uint256 /* blockNumber */
     ) external view returns (address) {
