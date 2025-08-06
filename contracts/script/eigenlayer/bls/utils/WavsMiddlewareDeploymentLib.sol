@@ -72,24 +72,10 @@ library WavsMiddlewareDeploymentLib {
         address operatorStateRetriever;
     }
 
-    /**
-     * @notice The strategy config struct.
-     * @param strategy The strategy address.
-     * @param multiplier The multiplier.
-     */
-    struct StrategyConfig {
-        address strategy;
-        uint96 multiplier;
-    }
-
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     /// @notice The error for the strategies file not found.
     error WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
-    /// @notice The error for the deployment file not found.
-    error WavsMiddlewareDeploymentLib__DeploymentFileNotFound();
-    /// @notice The error for the AVS directory mismatch.
-    error WavsMiddlewareDeploymentLib__AVSDirectoryMismatch();
 
     /**
      * @notice The deploy contracts function.
