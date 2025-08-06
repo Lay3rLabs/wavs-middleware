@@ -38,6 +38,7 @@ contract WavsListOperators is Script {
         address[] operators;
         bytes32[] operatorIds;
         BN254.G1Point[] pubkeys;
+        BN254.G2Point[] pubkeyG2s;
         string[] sockets;
         uint96[] stakes;
         IStakeRegistry.StrategyParams[] strategies;
@@ -136,6 +137,7 @@ contract WavsListOperators is Script {
 
         bytes32[] memory operatorIds = new bytes32[](operatorCount);
         BN254.G1Point[] memory pubkeys = new BN254.G1Point[](operatorCount);
+        BN254.G2Point[] memory pubkeyG2s = new BN254.G2Point[](operatorCount);
         string[] memory sockets = new string[](operatorCount);
         uint96[] memory stakes = new uint96[](operatorCount);
 
@@ -144,6 +146,7 @@ contract WavsListOperators is Script {
                 blsApkRegistry.getRegisteredPubkey(operators[i]);
             operatorIds[i] = operatorId;
             pubkeys[i] = pubkey;
+            pubkeyG2s[i] = blsApkRegistry.getOperatorPubkeyG2(operators[i]);
             sockets[i] = socketRegistry.getOperatorSocket(operatorIds[i]);
             stakes[i] = stakeRegistry.getCurrentStake(operatorIds[i], _quorumNumber);
         }
@@ -162,6 +165,7 @@ contract WavsListOperators is Script {
             operators: operators,
             operatorIds: operatorIds,
             pubkeys: pubkeys,
+            pubkeyG2s: pubkeyG2s,
             sockets: sockets,
             stakes: stakes,
             strategies: strategies
@@ -216,6 +220,19 @@ contract WavsListOperators is Script {
             json = string.concat(json, "\",\"y\":\"");
             json = string.concat(json, Strings.toHexString(uint256(opInfo.pubkeys[i].Y), 32));
             json = string.concat(json, "\"},");
+            json = string.concat(json, "\"pubkeyG2\":{");
+            json = string.concat(json, "\"x\":[\"");
+            json = string.concat(json, Strings.toHexString(uint256(opInfo.pubkeyG2s[i].X[0]), 32));
+            json = string.concat(
+                json, "\",\"", Strings.toHexString(uint256(opInfo.pubkeyG2s[i].X[1]), 32)
+            );
+            json = string.concat(json, "\"],");
+            json = string.concat(json, "\"y\":[\"");
+            json = string.concat(json, Strings.toHexString(uint256(opInfo.pubkeyG2s[i].Y[0]), 32));
+            json = string.concat(
+                json, "\",\"", Strings.toHexString(uint256(opInfo.pubkeyG2s[i].Y[1]), 32)
+            );
+            json = string.concat(json, "\"]},");
             json = string.concat(json, "\"socket\":\"");
             json = string.concat(json, opInfo.sockets[i]);
             json = string.concat(json, "\",\"stake\":\"");
