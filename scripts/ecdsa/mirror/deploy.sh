@@ -47,7 +47,7 @@ echo "Reading source chain config:"
 
 # Prepare deployment
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/ecdsa/WavsMirrorPrepareDeploy.s.sol --rpc-url "$SOURCE_RPC_URL" -vvv --broadcast --skip-simulation || handle_error "Failed to run WavsMirrorPrepareDeploy script"
+forge script script/eigenlayer/ecdsa/WavsMirrorPrepareDeploy.s.sol --rpc-url "$SOURCE_RPC_URL" -vvv --skip-simulation || handle_error "Failed to run WavsMirrorPrepareDeploy script"
 
 echo "Got config:"
 cat "deployments/wavs-mirror-config.json"

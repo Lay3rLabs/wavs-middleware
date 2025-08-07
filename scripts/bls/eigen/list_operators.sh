@@ -30,7 +30,7 @@ echo "Listing operators for service manager: $WAVS_SERVICE_MANAGER_ADDRESS"
 
 # List operators
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/bls/WavsListOperators.s.sol -vvv --rpc-url "$RPC_URL" --broadcast --skip-simulation || handle_error "Failed to list operators"
+forge script script/eigenlayer/bls/WavsListOperators.s.sol -vvv --rpc-url "$RPC_URL" --skip-simulation || handle_error "Failed to list operators"
 
 # Save operator list data
 save_deployment_data "$HOME/.nodes/bls-list-operators.json" "$(cat "deployments/wavs-bls/list_operators.json")"

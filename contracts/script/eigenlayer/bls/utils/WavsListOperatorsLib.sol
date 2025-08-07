@@ -71,11 +71,13 @@ library WavsListOperatorsLib {
      * @notice The get config data function.
      * @param _serviceManager The service manager address.
      * @param _quorumNumber The quorum number.
+     * @param _operators The operators.
      * @return configData The config data.
      */
     function getConfigData(
         address _serviceManager,
-        uint8 _quorumNumber
+        uint8 _quorumNumber,
+        address[] memory _operators
     ) internal view returns (ConfigData memory configData) {
         WavsServiceManager serviceManager = WavsServiceManager(_serviceManager);
         configData.quorumNumerator = serviceManager.quorumNumerator();
@@ -90,23 +92,18 @@ library WavsListOperatorsLib {
         configData.totalWeight = stakeRegistry.getCurrentTotalStake(_quorumNumber);
         configData.minimumStake = stakeRegistry.minimumStakeForQuorum(_quorumNumber);
 
-        IAllocationManager allocationManager =
-            IAllocationManager(serviceManager.getAllocationManager());
-        OperatorSet memory opSetQuery =
-            OperatorSet({avs: address(serviceManager), id: _quorumNumber});
-        address[] memory operators = allocationManager.getMembers(opSetQuery);
-        uint256 operatorCount = operators.length;
+        uint256 operatorCount = _operators.length;
 
         OperatorData[] memory operatorData = new OperatorData[](operatorCount);
 
         for (uint256 i = 0; i < operatorCount; ++i) {
             (BN254.G1Point memory pubkey, bytes32 operatorId) =
-                blsApkRegistry.getRegisteredPubkey(operators[i]);
+                blsApkRegistry.getRegisteredPubkey(_operators[i]);
             operatorData[i] = OperatorData({
-                operator: operators[i],
+                operator: _operators[i],
                 operatorId: operatorId,
                 pubkey: pubkey,
-                pubkeyG2: blsApkRegistry.getOperatorPubkeyG2(operators[i]),
+                pubkeyG2: blsApkRegistry.getOperatorPubkeyG2(_operators[i]),
                 socket: socketRegistry.getOperatorSocket(operatorId),
                 stake: stakeRegistry.getCurrentStake(operatorId, _quorumNumber)
             });
@@ -123,6 +120,27 @@ library WavsListOperatorsLib {
         configData.operators = operatorData;
 
         return configData;
+    }
+
+    /**
+     * @notice The get operators function.
+     * @param _serviceManager The service manager address.
+     * @param _quorumNumber The quorum number.
+     * @return operators The operators.
+     */
+    function getOperators(
+        address _serviceManager,
+        uint8 _quorumNumber
+    ) internal view returns (address[] memory) {
+        WavsServiceManager serviceManager = WavsServiceManager(_serviceManager);
+
+        IAllocationManager allocationManager =
+            IAllocationManager(serviceManager.getAllocationManager());
+        OperatorSet memory opSetQuery =
+            OperatorSet({avs: address(serviceManager), id: _quorumNumber});
+        address[] memory operators = allocationManager.getMembers(opSetQuery);
+
+        return operators;
     }
 
     /**

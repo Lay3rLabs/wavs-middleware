@@ -47,12 +47,10 @@ contract WavsListOperators is Script {
 
     /// @notice The run function for the script.
     function run() external {
-        vm.startBroadcast();
         OperatorInfo memory opInfo = listOperators();
         uint256 quorumNumerator = serviceManager.quorumNumerator();
         uint256 quorumDenominator = serviceManager.quorumDenominator();
         _writeOperatorListJson(opInfo);
-        vm.stopBroadcast();
 
         console.log("=== List Operators ===");
         console.log("Service Manager Address:", address(serviceManager));

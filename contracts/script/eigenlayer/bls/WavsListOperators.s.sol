@@ -24,10 +24,9 @@ contract WavsListOperators is Script {
 
     /// @notice The run function for the script.
     function run() external {
-        vm.startBroadcast();
+        address[] memory operators = WavsListOperatorsLib.getOperators(_serviceManager, uint8(0));
         WavsListOperatorsLib.ConfigData memory configData =
-            WavsListOperatorsLib.getConfigData(_serviceManager, uint8(0));
+            WavsListOperatorsLib.getConfigData(_serviceManager, uint8(0), operators);
         WavsListOperatorsLib.writeOperatorListJson(configData);
-        vm.stopBroadcast();
     }
 }
