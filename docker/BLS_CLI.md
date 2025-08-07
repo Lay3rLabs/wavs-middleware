@@ -11,10 +11,22 @@ CHAIN=holesky
 cp docker/env.example.$CHAIN docker/.env
 ```
 
+## Test
+
+Terminal 1
+
 ```bash docci-background
 source docker/.env
 anvil --fork-url $FORK_RPC_URL --host 0.0.0.0 --port 8545
 ```
+
+Terminal 2
+
+```bash docci-background
+anvil --host 0.0.0.0 --port 8546
+```
+
+Terminal 3
 
 <!-- verifies the update_quorum was set properly in `list_operators` -->
 
@@ -53,4 +65,12 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 docker run --rm --network host -v ./.nodes:/root/.nodes \
    --env-file .env \
    wavs-middleware -s bls list_operators
+```
+
+```bash
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   wavs-middleware -s bls -m mirror deploy
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   wavs-middleware -s bls -m mirror list_operators
 ```

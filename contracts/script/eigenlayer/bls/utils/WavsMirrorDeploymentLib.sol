@@ -10,11 +10,11 @@ import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol";
 import {SlashingRegistryCoordinator} from
     "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
 
+import {IStakeRegistry} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
 import {
-    IStakeRegistry,
-    IStakeRegistryTypes
-} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
-import {IBLSApkRegistry} from "@eigenlayer-middleware/src/interfaces/IBLSApkRegistry.sol";
+    IBLSApkRegistry,
+    IBLSApkRegistryTypes
+} from "@eigenlayer-middleware/src/interfaces/IBLSApkRegistry.sol";
 import {IIndexRegistry} from "@eigenlayer-middleware/src/interfaces/IIndexRegistry.sol";
 import {ISocketRegistry} from "@eigenlayer-middleware/src/interfaces/ISocketRegistry.sol";
 import {
@@ -34,6 +34,10 @@ import {MirrorStakeRegistry} from "src/eigenlayer/bls/mirror/MirrorStakeRegistry
 import {MirrorSlashingRegistryCoordinator} from
     "src/eigenlayer/bls/mirror/MirrorSlashingRegistryCoordinator.sol";
 import {MirrorBLSApkRegistry} from "src/eigenlayer/bls/mirror/MirrorBLSApkRegistry.sol";
+import {WavsListOperatorsLib} from "./WavsListOperatorsLib.sol";
+import {IMirrorSlashingRegistryCoordinator} from
+    "src/eigenlayer/bls/interfaces/IMirrorSlashingRegistryCoordinator.sol";
+import {IWavsServiceManager} from "src/eigenlayer/bls/interfaces/IWavsServiceManager.sol";
 
 /**
  * @title WavsMiddlewareDeploymentLib
@@ -158,16 +162,13 @@ library WavsMirrorDeploymentLib {
     /**
      * @notice The configure contracts function.
      * @param deployment The deployment data.
-     * @param strategyParams The strategy params.
-     * @param minimumWeight The minimum weight.
-     * @param lookAheadPeriod The look ahead period.
+     * @param configData The config data.
      */
     function configureContracts(
         DeploymentData memory deployment,
-        IStakeRegistryTypes.StrategyParams[] memory strategyParams,
-        uint96 minimumWeight,
-        uint32 lookAheadPeriod
+        WavsListOperatorsLib.ConfigData memory configData
     ) internal {
+        uint32 lookAheadPeriod = 0;
         ISlashingRegistryCoordinator slashingRegistryCoordinator =
             ISlashingRegistryCoordinator(deployment.slashingRegistryCoordinator);
         slashingRegistryCoordinator.createSlashableStakeQuorum(
@@ -176,9 +177,37 @@ library WavsMirrorDeploymentLib {
                 kickBIPsOfOperatorStake: 10_500,
                 kickBIPsOfTotalStake: 100
             }),
-            minimumWeight,
-            strategyParams,
+            configData.minimumStake,
+            configData.strategies,
             lookAheadPeriod
+        );
+
+        uint32[] memory opSetIds = new uint32[](1);
+        opSetIds[0] = 0;
+
+        uint256 operatorCount = configData.operators.length;
+        for (uint256 i = 0; i < operatorCount; ++i) {
+            bytes memory data = abi.encode(
+                ISlashingRegistryCoordinatorTypes.RegistrationType.NORMAL,
+                configData.operators[i].socket,
+                IBLSApkRegistryTypes.PubkeyRegistrationParams({
+                    pubkeyRegistrationSignature: configData.operators[i].pubkey,
+                    pubkeyG1: configData.operators[i].pubkey,
+                    pubkeyG2: configData.operators[i].pubkeyG2
+                })
+            );
+            IMirrorSlashingRegistryCoordinator(deployment.slashingRegistryCoordinator)
+                .registerOperatorForMirror(
+                configData.operators[i].operator,
+                deployment.wavsServiceManager,
+                opSetIds,
+                configData.operators[i].stake,
+                data
+            );
+        }
+
+        IWavsServiceManager(deployment.wavsServiceManager).setQuorumThreshold(
+            configData.quorumNumerator, configData.quorumDenominator
         );
     }
 
@@ -197,8 +226,8 @@ library WavsMirrorDeploymentLib {
             VM.createDir("deployments/wavs-bls", true);
         }
 
-        VM.writeFile("deployments/wavs-bls/mirror.json", deploymentData);
-        console2.log("Deployment artifacts written to: deployments/wavs-bls/mirror.json");
+        VM.writeFile("deployments/wavs-bls/mirror_deploy.json", deploymentData);
+        console2.log("Deployment artifacts written to: deployments/wavs-bls/mirror_deploy.json");
     }
 
     /**

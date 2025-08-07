@@ -3,11 +3,9 @@ pragma solidity ^0.8.27;
 
 import {Script} from "forge-std/Script.sol";
 
-import {IStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
-
 import {WavsMirrorDeploymentLib} from "./utils/WavsMirrorDeploymentLib.sol";
-import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
+import {WavsListOperatorsLib} from "./utils/WavsListOperatorsLib.sol";
 
 /**
  * @title WavsMirrorDeployer
@@ -18,45 +16,38 @@ import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 contract WavsMirrorDeployer is Script {
     using UpgradeableProxyLib for address;
 
-    /// @notice The proxy admin address.
-    address public proxyAdmin;
-    /// @notice The WAVS mirror deployment data.
-    WavsMirrorDeploymentLib.DeploymentData public wavsMirrorDeployment;
-    /// @notice The strategy parameters.
-    IStakeRegistryTypes.StrategyParams[] public strategyParams;
-    /// @notice The minimum weight.
-    uint96 public minimumWeight;
+    string private constant ENV_SERVICE_MANAGER = "WAVS_SERVICE_MANAGER_ADDRESS";
+    string private constant ENV_SOURCE_RPC_URL = "SOURCE_RPC_URL";
+    string private constant ENV_MIRROR_RPC_URL = "MIRROR_RPC_URL";
+
+    WavsListOperatorsLib.ConfigData private configData;
+    string private sourceRpcUrl;
+    string private mirrorRpcUrl;
+    address private _serviceManager;
 
     /// @notice The setup function for the script.
     function setUp() public virtual {
-        string memory fileName = string.concat("deployments/bls-list-operators.json");
-        strategyParams = WavsMiddlewareDeploymentLib.readStrategyParamsConfig(fileName);
-        minimumWeight = 100;
+        _serviceManager = vm.envAddress(ENV_SERVICE_MANAGER);
+        sourceRpcUrl = vm.envString(ENV_SOURCE_RPC_URL);
+        mirrorRpcUrl = vm.envString(ENV_MIRROR_RPC_URL);
     }
 
     /// @notice The run function for the script.
     function run() external {
+        vm.createSelectFork(sourceRpcUrl);
+        address[] memory operators = WavsListOperatorsLib.getOperators(_serviceManager, uint8(0));
+        configData = WavsListOperatorsLib.getConfigData(_serviceManager, uint8(0), operators);
+        vm.createSelectFork(mirrorRpcUrl);
+
         vm.startBroadcast();
-        proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
+        address proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
 
         // first deploy (from eigenlayer)
-        wavsMirrorDeployment = WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
+        WavsMirrorDeploymentLib.DeploymentData memory wavsMirrorDeployment =
+            WavsMirrorDeploymentLib.deployContracts(proxyAdmin);
 
         // WAVS configuration
-        uint32 lookAheadPeriod = 0;
-        WavsMirrorDeploymentLib.configureContracts(
-            wavsMirrorDeployment, strategyParams, minimumWeight, lookAheadPeriod
-        );
-        uint32[] memory opSetIds = new uint32[](1);
-        opSetIds[0] = 0;
-
-        // for (uint256 i = 0; i < operators.length; i++) {
-        //     MirrorSlashingRegistryCoordinator(wavsMirrorDeployment.slashingRegistryCoordinator)
-        //         .registerOperatorForMirror(
-        //         operators[i], wavsMirrorDeployment.wavsServiceManager, opSetIds, ""
-        //     );
-        // }
-
+        WavsMirrorDeploymentLib.configureContracts(wavsMirrorDeployment, configData);
         vm.stopBroadcast();
 
         WavsMirrorDeploymentLib.writeDeploymentJson(wavsMirrorDeployment);
