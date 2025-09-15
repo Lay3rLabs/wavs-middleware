@@ -260,6 +260,34 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 | `REGISTRY_ADDRESS`   | if not mounted        | From `.nodes/avs_deploy.json` | Volume | AVS registrar address                         |
 | `FUNDED_KEY`         | if not mounted        | From `.nodes/deployer`        | Volume | Deployer private key                          |
 
+### Transfer Ownership
+
+Transfers ownership of the service contracts to new owners.
+
+```bash
+PROXY_OWNER=$(cast wallet new --json | jq -r '.[0].private_key')
+PROXY_OWNER_ADDRESS=$(cast wallet addr --private-key "$PROXY_OWNER")
+echo "Proxy owner address: $PROXY_OWNER_ADDRESS"
+AVS_OWNER=$(cast wallet new --json | jq -r '.[0].private_key')
+AVS_OWNER_ADDRESS=$(cast wallet addr --private-key "$AVS_OWNER")
+echo "Avs owner address: $AVS_OWNER_ADDRESS"
+
+# WAVS_SERVICE_MANAGER_ADDRESS=$(jq -r '.addresses.WavsServiceManager' .nodes/avs_deploy.json)
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   --env-file .env \
+   wavs-middleware transfer_ownership ${PROXY_OWNER} ${AVS_OWNER}
+```
+
+| Environment Variable           | Required              | Default                       | Source | Description                                    |
+| ------------------------------ | --------------------- | ----------------------------- | ------ | ---------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env` | Deployment environment (`LOCAL` or `TESTNET`)  |
+| `RPC_URL`                      | for non-default value | `http://localhost:8545`       | `.env` | RPC URL                                        |
+| `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/avs_deploy.json` | volume | Service manager contract address               |
+| `FUNDED_KEY`                   | if not mounted        | From `.nodes/deployer`        | Volume | Deployer private key                           |
+| `PROXY_OWNER`                  | Yes                   | -                             | Params | New owner for proxy admin                      |
+| `AVS_OWNER`                    | Yes                   | -                             | Params | New owner for AVS registrar and stake registry |
+
 ### Delegate to Operator
 
 Delegates tokens to an operator.
@@ -432,6 +460,32 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 | `MOCK_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/mock.json`     | Volume       | Service manager contract address              |
 | `DEPLOY_FILE_MOCK`             | for non-default value | `mock`                      | Command line | File name to store mock deployment            |
 | `CONFIGURE_FILE`               | for non-default value | `wavs-mock-config`          | Command line | File name to read configuration data          |
+
+### 5. Mock Transfer Ownership
+
+Transfers ownership of the mock service contracts to new owners.
+
+```bash
+PROXY_OWNER=$(cast wallet new --json | jq -r '.[0].private_key')
+PROXY_OWNER_ADDRESS=$(cast wallet addr --private-key "$PROXY_OWNER")
+echo "Proxy owner address: $PROXY_OWNER_ADDRESS"
+AVS_OWNER=$(cast wallet new --json | jq -r '.[0].private_key')
+AVS_OWNER_ADDRESS=$(cast wallet addr --private-key "$AVS_OWNER")
+echo "Avs owner address: $AVS_OWNER_ADDRESS"
+
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   --env-file .env \
+   wavs-middleware -m mock transfer_ownership ${PROXY_OWNER} ${AVS_OWNER}
+```
+
+| Environment Variable           | Required              | Default                     | Source       | Description                                    |
+| ------------------------------ | --------------------- | --------------------------- | ------------ | ---------------------------------------------- |
+| `DEPLOY_ENV`                   | for non-default value | `LOCAL`                     | `.env`       | Deployment environment (`LOCAL` or `TESTNET`)  |
+| `MOCK_RPC_URL`                 | for non-default value | `http://localhost:8546`     | Command line | RPC URL for mock blockchain                    |
+| `MOCK_DEPLOYER_KEY`            | if not mounted        | From `.nodes/mock-deployer` | Volume       | Deployer private key                           |
+| `WAVS_SERVICE_MANAGER_ADDRESS` | if not mounted        | From `.nodes/mock.json`     | Volume       | Service manager contract address               |
+| `PROXY_OWNER`                  | Yes                   | -                           | Params       | New owner for proxy admin                      |
+| `AVS_OWNER`                    | Yes                   | -                           | Params       | New owner for AVS registrar and stake registry |
 
 ## Deploy Testnet
 

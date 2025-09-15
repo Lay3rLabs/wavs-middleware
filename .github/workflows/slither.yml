@@ -28,6 +28,16 @@ jobs:
         run: |
           forge --version
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm install
+
       - name: Slither analysis
         uses: crytic/slither-action@v0.4.0
         with:
