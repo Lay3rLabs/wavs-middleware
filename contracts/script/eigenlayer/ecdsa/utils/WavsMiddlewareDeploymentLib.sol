@@ -48,16 +48,6 @@ library WavsMiddlewareDeploymentLib {
         address operatorUpdateHandler;
     }
 
-    /**
-     * @notice The strategy config struct.
-     * @param strategy The strategy address.
-     * @param multiplier The multiplier.
-     */
-    struct StrategyConfig {
-        address strategy;
-        uint96 multiplier;
-    }
-
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     /// @notice The error for the strategies file not found.

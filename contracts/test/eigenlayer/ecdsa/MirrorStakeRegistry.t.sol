@@ -102,7 +102,6 @@ contract MirrorStakeRegistryTest is Test {
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_initialization function.
     function test_initialization() public view {
-        /* solhint-enable func-name-mixedcase */
         assertEq(registry.owner(), owner, "Owner should be set correctly");
         assertEq(
             address(registry.serviceManager()),
@@ -111,10 +110,8 @@ contract MirrorStakeRegistryTest is Test {
         );
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_registrationMethodsRevert function.
     function test_registrationMethodsRevert() public {
-        /* solhint-enable func-name-mixedcase */
         // Test registerOperatorWithSignature reverts
         ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry memory sig;
         vm.expectRevert(MirrorStakeRegistry.RegistrationNotSupported.selector);
@@ -142,10 +139,8 @@ contract MirrorStakeRegistryTest is Test {
         registry.updateOperatorsForQuorum(operatorsArray, extraData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_ownerConfigMethodsRevert function.
     function test_ownerConfigMethodsRevert() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Test updateQuorumConfig reverts
@@ -165,10 +160,8 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_onlyOwnerRestriction function.
     function test_onlyOwnerRestriction() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(address(0x999)); // Not the owner
 
         // Test setOperatorDetails reverts for non-owners
@@ -189,10 +182,8 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_setOperatorDetails function.
     function test_setOperatorDetails() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set operator details
@@ -222,10 +213,8 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_batchSetOperatorDetails function.
     function test_batchSetOperatorDetails() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set up batch data
@@ -302,10 +291,8 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_updateExistingOperator function.
     function test_updateExistingOperator() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set initial operator details
@@ -345,10 +332,8 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_batchSetOperatorDetails_mismatchedArrays function.
     function test_batchSetOperatorDetails_mismatchedArrays() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set up batch data with mismatched array lengths
@@ -389,10 +374,8 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_getOperatorWeightAtBlock function.
     function test_getOperatorWeightAtBlock() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set operator details
@@ -414,10 +397,8 @@ contract MirrorStakeRegistryTest is Test {
         vm.stopPrank();
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_getTotalWeight function.
     function test_getTotalWeight() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set up batch data
@@ -532,10 +513,8 @@ contract MirrorStakeRegistryTest is Test {
         }
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_isValidSignature function.
     function test_isValidSignature() public {
-        /* solhint-enable func-name-mixedcase */
         vm.startPrank(owner);
 
         // Set up operators with weights

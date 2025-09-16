@@ -99,7 +99,6 @@ contract MirrorOperatorSyncHandlerTest is Test {
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_initial_state function.
     function test_initial_state() public view {
-        /* solhint-enable func-name-mixedcase */
         // Verify deployment addresses are set correctly
         assertNotEq(address(serviceHandler), address(0), "ServiceHandler address cannot be zero");
 
@@ -127,10 +126,8 @@ contract MirrorOperatorSyncHandlerTest is Test {
         );
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_invalid_payload function.
     function test_invalid_payload() public {
-        /* solhint-enable func-name-mixedcase */
         // Create an envelope with invalid payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
@@ -146,10 +143,8 @@ contract MirrorOperatorSyncHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_invalid_trigger_id function.
     function test_invalid_trigger_id() public {
-        /* solhint-enable func-name-mixedcase */
         // Keep the same operators
         address[] memory newOperators = operators;
         address[] memory newSigningKeyAddresses = signingKeyAddresses;
@@ -209,10 +204,8 @@ contract MirrorOperatorSyncHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_insufficient_quorum function.
     function test_insufficient_quorum() public {
-        /* solhint-enable func-name-mixedcase */
         // Create a valid UpdateWithId payload with triggerId = 1
         address[] memory newOperators = new address[](1);
         address[] memory newSigningKeyAddresses = new address[](1);
@@ -258,10 +251,8 @@ contract MirrorOperatorSyncHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_successful_update_weight function.
     function test_successful_update_weight() public {
-        /* solhint-enable func-name-mixedcase */
         // let's change the weights and a public key
         // now op1 and op2 have 2/3 and can pass a future round
         address[] memory newOperators = new address[](2);

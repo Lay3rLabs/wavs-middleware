@@ -38,10 +38,10 @@ check_param "MIRROR_SERVICE_MANAGER_ADDRESS" "${MIRROR_SERVICE_MANAGER_ADDRESS:-
 
 # Change to contracts directory and run the script
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/ecdsa/WavsMirrorListOperators.s.sol -vvv --skip-simulation || handle_error "Failed to list operators"
+forge script script/eigenlayer/bls/WavsMirrorListOperators.s.sol -vvv --skip-simulation || handle_error "Failed to list operators"
 
 echo "Operator list:"
-cat "deployments/wavs-ecdsa/mirror_list_operators.json" | jq .
+cat "deployments/wavs-bls/list_operators.json" | jq .
 
 # Save operator list data
-save_deployment_data "$HOME/.nodes/mirror-list-operators.json" "$(cat "deployments/wavs-ecdsa/mirror_list_operators.json")"
+save_deployment_data "$HOME/.nodes/mirror-list-operators.json" "$(cat "deployments/wavs-bls/list_operators.json")"

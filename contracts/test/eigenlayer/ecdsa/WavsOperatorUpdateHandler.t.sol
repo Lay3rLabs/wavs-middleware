@@ -120,7 +120,6 @@ contract WavsOperatorUpdateHandlerTest is Test {
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_initial_state function.
     function test_initial_state() public view {
-        /* solhint-enable func-name-mixedcase */
         // Test initial state of the service handler
         assertEq(
             address(serviceHandler.getServiceManager()),
@@ -134,10 +133,8 @@ contract WavsOperatorUpdateHandlerTest is Test {
         );
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_invalid_payload function.
     function test_invalid_payload() public {
-        /* solhint-enable func-name-mixedcase */
         // Create an envelope with invalid payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
@@ -153,10 +150,8 @@ contract WavsOperatorUpdateHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_insufficient_quorum function.
     function test_insufficient_quorum() public {
-        /* solhint-enable func-name-mixedcase */
         // Create a valid UpdateWithId payload with triggerId = 1
         IWavsOperatorUpdateHandler.OperatorUpdatePayload memory updateData =
         IWavsOperatorUpdateHandler.OperatorUpdatePayload({
@@ -187,10 +182,8 @@ contract WavsOperatorUpdateHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_failed_update_operators function.
     function test_failed_update_operators() public {
-        /* solhint-enable func-name-mixedcase */
         // Create the update data with some operators
         IWavsOperatorUpdateHandler.OperatorUpdatePayload memory updateData =
         IWavsOperatorUpdateHandler.OperatorUpdatePayload({
@@ -213,10 +206,8 @@ contract WavsOperatorUpdateHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_successful_update_operators function.
     function test_successful_update_operators() public {
-        /* solhint-enable func-name-mixedcase */
         // Create the update data
         address[][] memory operatorsPerQuorum = new address[][](1);
         operatorsPerQuorum[0] = operators;

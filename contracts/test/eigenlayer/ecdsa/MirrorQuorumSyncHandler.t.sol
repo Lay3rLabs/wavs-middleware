@@ -102,7 +102,6 @@ contract MirrorQuorumSyncHandlerTest is Test {
     /* solhint-disable func-name-mixedcase */
     /// @notice The test_initial_state function.
     function test_initial_state() public view {
-        /* solhint-enable func-name-mixedcase */
         // Test initial state of the service handler
         assertEq(serviceHandler.lastTriggerId(), 0, "Initial trigger ID should be 0");
         assertEq(
@@ -114,10 +113,8 @@ contract MirrorQuorumSyncHandlerTest is Test {
         assertEq(serviceManager.quorumDenominator(), 3, "Initial quorum denominator should be 3");
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_invalid_trigger_id function.
     function test_invalid_trigger_id() public {
-        /* solhint-enable func-name-mixedcase */
         // update trigger to 5
         IMirrorQuorumSyncHandler.UpdateWithId memory updateData =
             IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 5, numerator: 2, denominator: 3});
@@ -158,10 +155,8 @@ contract MirrorQuorumSyncHandlerTest is Test {
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
     }
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_insufficient_quorum function.
     function test_insufficient_quorum() public {
-        /* solhint-enable func-name-mixedcase */
         // Create a valid UpdateWithId payload with triggerId = 1
         IMirrorQuorumSyncHandler.UpdateWithId memory updateData =
             IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 1, numerator: 2, denominator: 3});
@@ -211,10 +206,8 @@ contract MirrorQuorumSyncHandlerTest is Test {
     }
     */
 
-    /* solhint-disable func-name-mixedcase */
     /// @notice The test_successful_update_quorum function.
     function test_successful_update_quorum() public {
-        /* solhint-enable func-name-mixedcase */
         // let's change quorum so 2/5 (4/10)can pass, not 2/3
         // Create the UpdateWithId struct with triggerId = 1
         IMirrorQuorumSyncHandler.UpdateWithId memory updateData =

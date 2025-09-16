@@ -3,13 +3,14 @@ pragma solidity ^0.8.27;
 
 import {Script} from "forge-std/Script.sol";
 
-import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol";
 import {PauserRegistry} from "@eigenlayer/contracts/permissions/PauserRegistry.sol";
 import {IStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
+import {SlashingRegistryCoordinator} from
+    "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
 
 import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeploymentLib.sol";
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
@@ -100,8 +101,8 @@ contract WavsMiddlewareDeployer is Script {
         WavsServiceManager wavsServiceManager =
             WavsServiceManager(wavsMiddlewareDeployment.wavsServiceManager);
         StakeRegistry stakeRegistry = StakeRegistry(wavsMiddlewareDeployment.stakeRegistry);
-        RegistryCoordinator registryCoordinator =
-            RegistryCoordinator(wavsMiddlewareDeployment.registryCoordinator);
+        SlashingRegistryCoordinator registryCoordinator =
+            SlashingRegistryCoordinator(wavsMiddlewareDeployment.registryCoordinator);
         BLSApkRegistry blsApkRegistry = BLSApkRegistry(wavsMiddlewareDeployment.blsApkRegistry);
         IndexRegistry indexRegistry = IndexRegistry(wavsMiddlewareDeployment.indexRegistry);
         SocketRegistry socketRegistry = SocketRegistry(wavsMiddlewareDeployment.socketRegistry);
@@ -120,10 +121,7 @@ contract WavsMiddlewareDeployer is Script {
             revert WavsMiddlewareDeployer__StakeRegistryMismatch();
         }
         if (
-            address(registryCoordinator.serviceManager())
-                != wavsMiddlewareDeployment.wavsServiceManager
-                || address(registryCoordinator.stakeRegistry())
-                    != wavsMiddlewareDeployment.stakeRegistry
+            address(registryCoordinator.stakeRegistry()) != wavsMiddlewareDeployment.stakeRegistry
                 || address(registryCoordinator.blsApkRegistry())
                     != wavsMiddlewareDeployment.blsApkRegistry
                 || address(registryCoordinator.indexRegistry())

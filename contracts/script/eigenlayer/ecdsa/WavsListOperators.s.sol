@@ -47,11 +47,10 @@ contract WavsListOperators is Script {
 
     /// @notice The run function for the script.
     function run() external {
-        vm.startBroadcast();
         OperatorInfo memory opInfo = listOperators();
         uint256 quorumNumerator = serviceManager.quorumNumerator();
         uint256 quorumDenominator = serviceManager.quorumDenominator();
-        vm.stopBroadcast();
+        _writeOperatorListJson(opInfo);
 
         console.log("=== List Operators ===");
         console.log("Service Manager Address:", address(serviceManager));
@@ -123,5 +122,43 @@ contract WavsListOperators is Script {
             signingKeyAddresses: signingKeyAddresses,
             weights: weights
         });
+    }
+
+    /**
+     * @notice The write operator list JSON function.
+     * @param opInfo The operator info.
+     */
+    function _writeOperatorListJson(
+        OperatorInfo memory opInfo
+    ) private {
+        if (!vm.exists("deployments/wavs-ecdsa")) {
+            vm.createDir("deployments/wavs-ecdsa", true);
+        }
+
+        string memory json = string.concat("{");
+        json = string.concat(json, "\"stakeRegistry\":\"");
+        json = string.concat(json, Strings.toHexString(uint160(address(opInfo.stakeRegistry)), 20));
+        json = string.concat(json, "\",\"totalWeight\":\"");
+        json = string.concat(json, Strings.toString(opInfo.totalWeight));
+        json = string.concat(json, "\",\"thresholdWeight\":\"");
+        json = string.concat(json, Strings.toString(opInfo.thresholdWeight));
+        json = string.concat(json, "\",\"operators\":[");
+        for (uint256 i = 0; i < opInfo.operators.length; ++i) {
+            json = string.concat(json, "{\"operator\":\"");
+            json = string.concat(json, Strings.toHexString(uint160(opInfo.operators[i]), 20));
+            json = string.concat(json, "\",\"signingKeyAddress\":\"");
+            json =
+                string.concat(json, Strings.toHexString(uint160(opInfo.signingKeyAddresses[i]), 20));
+            json = string.concat(json, "\",\"weight\":\"");
+            json = string.concat(json, Strings.toString(opInfo.weights[i]));
+            json = string.concat(json, "\"}");
+            if (i < opInfo.operators.length - 1) {
+                json = string.concat(json, ",");
+            }
+        }
+        json = string.concat(json, "]");
+        json = string.concat(json, "}");
+
+        vm.writeFile("deployments/wavs-ecdsa/list_operators.json", json);
     }
 }

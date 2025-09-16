@@ -5,20 +5,16 @@ import {console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
-import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol";
 import {SlashingRegistryCoordinator} from
     "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
-import {InstantSlasher} from "@eigenlayer-middleware/src/slashers/InstantSlasher.sol";
-import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
+import {IStakeRegistry} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
 import {
-    IStakeRegistry,
-    IStakeRegistryTypes
-} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
-import {IBLSApkRegistry} from "@eigenlayer-middleware/src/interfaces/IBLSApkRegistry.sol";
+    IBLSApkRegistry,
+    IBLSApkRegistryTypes
+} from "@eigenlayer-middleware/src/interfaces/IBLSApkRegistry.sol";
 import {IIndexRegistry} from "@eigenlayer-middleware/src/interfaces/IIndexRegistry.sol";
 import {ISocketRegistry} from "@eigenlayer-middleware/src/interfaces/ISocketRegistry.sol";
 import {
@@ -28,16 +24,20 @@ import {
 
 import {PauserRegistry} from "@eigenlayer/contracts/permissions/PauserRegistry.sol";
 import {IPauserRegistry} from "@eigenlayer/contracts/interfaces/IPauserRegistry.sol";
-import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
-import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
-import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
+import {MirrorStakeRegistry} from "src/eigenlayer/bls/mirror/MirrorStakeRegistry.sol";
+import {MirrorSlashingRegistryCoordinator} from
+    "src/eigenlayer/bls/mirror/MirrorSlashingRegistryCoordinator.sol";
+import {MirrorBLSApkRegistry} from "src/eigenlayer/bls/mirror/MirrorBLSApkRegistry.sol";
+import {WavsListOperatorsLib} from "./WavsListOperatorsLib.sol";
+import {IMirrorSlashingRegistryCoordinator} from
+    "src/eigenlayer/bls/interfaces/IMirrorSlashingRegistryCoordinator.sol";
+import {IWavsServiceManager} from "src/eigenlayer/bls/interfaces/IWavsServiceManager.sol";
 
 /**
  * @title WavsMiddlewareDeploymentLib
@@ -45,7 +45,7 @@ import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
  * @notice This library contains functions for deploying the WAVS middleware contracts.
  * @dev This library is used to deploy the WAVS middleware contracts.
  */
-library WavsMiddlewareDeploymentLib {
+library WavsMirrorDeploymentLib {
     // using stdJson for *;
     using Strings for *;
     using UpgradeableProxyLib for address;
@@ -54,7 +54,7 @@ library WavsMiddlewareDeploymentLib {
      * @notice The deployment data struct.
      * @param wavsServiceManager The WAVS service manager address.
      * @param stakeRegistry The stake registry address.
-     * @param registryCoordinator The registry coordinator address.
+     * @param slashingRegistryCoordinator The mirror slashing registry coordinator address.
      * @param blsApkRegistry The BLS APK registry address.
      * @param indexRegistry The index registry address.
      * @param socketRegistry The socket registry address.
@@ -63,87 +63,72 @@ library WavsMiddlewareDeploymentLib {
     struct DeploymentData {
         address wavsServiceManager;
         address stakeRegistry;
-        address registryCoordinator;
+        address slashingRegistryCoordinator;
         address blsApkRegistry;
         address indexRegistry;
         address socketRegistry;
         address pauserRegistry;
-        address slasher;
-        address operatorStateRetriever;
     }
 
     Vm internal constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    /// @notice The error for the strategies file not found.
-    error WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
-
     /**
      * @notice The deploy contracts function.
      * @param proxyAdmin The proxy admin address.
-     * @param core The core deployment data.
      * @return deployment The deployment data.
      */
     function deployContracts(
-        address proxyAdmin,
-        ReadCoreLib.DeploymentData memory core
+        address proxyAdmin
     ) internal returns (DeploymentData memory) {
         // First, deploy upgradeable proxy contracts that will point to the implementations.
         address wavsServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        address registryCoordinator = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        address slashingRegistryCoordinator = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address blsApkRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address indexRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         address socketRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        address slasher = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
 
         address[] memory pausers = new address[](1);
         pausers[0] = msg.sender;
         address pauserRegistry = address(new PauserRegistry(pausers, msg.sender));
-        address operatorStateRetriever = address(new OperatorStateRetriever());
 
         address wavsServiceManagerImpl = address(
             new WavsServiceManager(
-                core.avsDirectory,
-                core.rewardsCoordinator,
-                registryCoordinator,
+                address(0),
+                address(0),
+                slashingRegistryCoordinator,
                 stakeRegistry,
-                core.permissionController,
-                core.allocationManager
+                address(0),
+                address(0)
             )
         );
         address stakeRegistryImpl = address(
-            new StakeRegistry(
-                ISlashingRegistryCoordinator(registryCoordinator),
-                IDelegationManager(core.delegationManager),
-                IAVSDirectory(core.avsDirectory),
-                IAllocationManager(core.allocationManager)
+            new MirrorStakeRegistry(
+                ISlashingRegistryCoordinator(slashingRegistryCoordinator),
+                IDelegationManager(address(0)),
+                IAVSDirectory(address(0)),
+                IAllocationManager(address(0))
             )
         );
         address slashingRegistryCoordinatorImpl = address(
-            new SlashingRegistryCoordinator(
+            new MirrorSlashingRegistryCoordinator(
                 IStakeRegistry(stakeRegistry),
                 IBLSApkRegistry(blsApkRegistry),
                 IIndexRegistry(indexRegistry),
                 ISocketRegistry(socketRegistry),
-                IAllocationManager(core.allocationManager),
+                IAllocationManager(msg.sender),
                 IPauserRegistry(pauserRegistry),
                 "1.0.0"
             )
         );
 
-        address blsApkRegistryImpl =
-            address(new BLSApkRegistry(ISlashingRegistryCoordinator(registryCoordinator)));
-        address indexRegistryImpl =
-            address(new IndexRegistry(ISlashingRegistryCoordinator(registryCoordinator)));
-        address socketRegistryImpl =
-            address(new SocketRegistry(ISlashingRegistryCoordinator(registryCoordinator)));
-        address slasherImpl = address(
-            new InstantSlasher(
-                IAllocationManager(core.allocationManager),
-                ISlashingRegistryCoordinator(registryCoordinator),
-                wavsServiceManager
-            )
+        address blsApkRegistryImpl = address(
+            new MirrorBLSApkRegistry(ISlashingRegistryCoordinator(slashingRegistryCoordinator))
         );
+        address indexRegistryImpl =
+            address(new IndexRegistry(ISlashingRegistryCoordinator(slashingRegistryCoordinator)));
+        address socketRegistryImpl =
+            address(new SocketRegistry(ISlashingRegistryCoordinator(slashingRegistryCoordinator)));
 
         UpgradeableProxyLib.upgradeAndCall(
             wavsServiceManager,
@@ -152,7 +137,7 @@ library WavsMiddlewareDeploymentLib {
         );
         UpgradeableProxyLib.upgrade(stakeRegistry, stakeRegistryImpl);
         UpgradeableProxyLib.upgradeAndCall(
-            registryCoordinator,
+            slashingRegistryCoordinator,
             slashingRegistryCoordinatorImpl,
             abi.encodeCall(
                 SlashingRegistryCoordinator.initialize,
@@ -162,106 +147,68 @@ library WavsMiddlewareDeploymentLib {
         UpgradeableProxyLib.upgrade(blsApkRegistry, blsApkRegistryImpl);
         UpgradeableProxyLib.upgrade(indexRegistry, indexRegistryImpl);
         UpgradeableProxyLib.upgrade(socketRegistry, socketRegistryImpl);
-        UpgradeableProxyLib.upgrade(slasher, slasherImpl);
 
         return DeploymentData({
             wavsServiceManager: wavsServiceManager,
             stakeRegistry: stakeRegistry,
-            registryCoordinator: registryCoordinator,
+            slashingRegistryCoordinator: slashingRegistryCoordinator,
             blsApkRegistry: blsApkRegistry,
             indexRegistry: indexRegistry,
             socketRegistry: socketRegistry,
-            pauserRegistry: pauserRegistry,
-            slasher: slasher,
-            operatorStateRetriever: operatorStateRetriever
+            pauserRegistry: pauserRegistry
         });
     }
 
     /**
      * @notice The configure contracts function.
      * @param deployment The deployment data.
-     * @param strategyParams The strategy params.
-     * @param metadataUri The metadata URI.
-     * @param allocationManagerAddress The allocation manager address.
-     * @param permissionControllerAddress The permission controller address.
-     * @param minimumWeight The minimum weight.
-     * @param lookAheadPeriod The look ahead period.
+     * @param configData The config data.
      */
     function configureContracts(
         DeploymentData memory deployment,
-        IStakeRegistryTypes.StrategyParams[] memory strategyParams,
-        string memory metadataUri,
-        address allocationManagerAddress,
-        address permissionControllerAddress,
-        uint96 minimumWeight,
-        uint32 lookAheadPeriod
+        WavsListOperatorsLib.ConfigData memory configData
     ) internal {
-        // set avs registrar
-        WavsServiceManager wavsServiceManager = WavsServiceManager(deployment.wavsServiceManager);
-        wavsServiceManager.setAppointee(
-            deployment.registryCoordinator,
-            allocationManagerAddress,
-            IAllocationManager.createOperatorSets.selector
-        );
-
-        wavsServiceManager.updateAVSMetadataURI(metadataUri);
-
+        uint32 lookAheadPeriod = 0;
         ISlashingRegistryCoordinator slashingRegistryCoordinator =
-            ISlashingRegistryCoordinator(deployment.registryCoordinator);
+            ISlashingRegistryCoordinator(deployment.slashingRegistryCoordinator);
         slashingRegistryCoordinator.createSlashableStakeQuorum(
             ISlashingRegistryCoordinatorTypes.OperatorSetParam({
                 maxOperatorCount: 10_000,
                 kickBIPsOfOperatorStake: 10_500,
                 kickBIPsOfTotalStake: 100
             }),
-            minimumWeight,
-            strategyParams,
+            configData.minimumStake,
+            configData.strategies,
             lookAheadPeriod
         );
 
-        wavsServiceManager.addPendingAdmin(msg.sender);
-        IPermissionController permissionController =
-            IPermissionController(permissionControllerAddress);
-        permissionController.acceptAdmin(deployment.wavsServiceManager);
+        uint32[] memory opSetIds = new uint32[](1);
+        opSetIds[0] = 0;
 
-        IAllocationManager allocationManager = IAllocationManager(allocationManagerAddress);
-        allocationManager.setAVSRegistrar(
-            deployment.wavsServiceManager, IAVSRegistrar(deployment.registryCoordinator)
+        uint256 operatorCount = configData.operators.length;
+        for (uint256 i = 0; i < operatorCount; ++i) {
+            bytes memory data = abi.encode(
+                ISlashingRegistryCoordinatorTypes.RegistrationType.NORMAL,
+                configData.operators[i].socket,
+                IBLSApkRegistryTypes.PubkeyRegistrationParams({
+                    pubkeyRegistrationSignature: configData.operators[i].pubkey,
+                    pubkeyG1: configData.operators[i].pubkey,
+                    pubkeyG2: configData.operators[i].pubkeyG2
+                })
+            );
+            IMirrorSlashingRegistryCoordinator(deployment.slashingRegistryCoordinator)
+                .registerOperatorForMirror(
+                configData.operators[i].operator,
+                deployment.wavsServiceManager,
+                opSetIds,
+                configData.operators[i].stake,
+                data
+            );
+        }
+
+        IWavsServiceManager(deployment.wavsServiceManager).setQuorumThreshold(
+            configData.quorumNumerator, configData.quorumDenominator
         );
-    }
-
-    /**
-     * @notice The read strategy params config function.
-     * @param fileName The file name.
-     * @return strategyParams The strategy params.
-     */
-    function readStrategyParamsConfig(
-        string memory fileName
-    ) internal returns (IStakeRegistryTypes.StrategyParams[] memory) {
-        if (!VM.exists(fileName)) {
-            revert WavsMiddlewareDeploymentLib__StrategiesFileNotFound();
-        }
-
-        // load the strategies config
-        string memory json = VM.readFile(fileName);
-        address[] memory strategies = abi.decode(VM.parseJson(json, ".strategies"), (address[]));
-        uint256 strategyCount = strategies.length;
-        uint96[] memory multipliers = new uint96[](strategyCount);
-        for (uint256 i; i < strategyCount; ++i) {
-            multipliers[i] = 1 ether;
-        }
-
-        // convert to quorum
-        IStakeRegistryTypes.StrategyParams[] memory strategyParams =
-            new IStakeRegistryTypes.StrategyParams[](strategyCount);
-        for (uint256 i; i < strategyCount; ++i) {
-            strategyParams[i] = IStakeRegistryTypes.StrategyParams({
-                strategy: IStrategy(strategies[i]),
-                multiplier: multipliers[i]
-            });
-        }
-
-        return strategyParams;
     }
 
     /**
@@ -279,8 +226,8 @@ library WavsMiddlewareDeploymentLib {
             VM.createDir("deployments/wavs-bls", true);
         }
 
-        VM.writeFile("deployments/wavs-bls/avs_deploy.json", deploymentData);
-        console2.log("Deployment artifacts written to: deployments/wavs-bls/avs_deploy.json");
+        VM.writeFile("deployments/wavs-bls/mirror_deploy.json", deploymentData);
+        console2.log("Deployment artifacts written to: deployments/wavs-bls/mirror_deploy.json");
     }
 
     /**
@@ -330,10 +277,10 @@ library WavsMiddlewareDeploymentLib {
             data.stakeRegistry.toHexString(),
             "\",\"stakeRegistryImpl\":\"",
             data.stakeRegistry.getImplementation().toHexString(),
-            "\",\"registryCoordinator\":\"",
-            data.registryCoordinator.toHexString(),
-            "\",\"registryCoordinatorImpl\":\"",
-            data.registryCoordinator.getImplementation().toHexString(),
+            "\",\"slashingRegistryCoordinator\":\"",
+            data.slashingRegistryCoordinator.toHexString(),
+            "\",\"slashingRegistryCoordinatorImpl\":\"",
+            data.slashingRegistryCoordinator.getImplementation().toHexString(),
             "\",\"blsApkRegistry\":\"",
             data.blsApkRegistry.toHexString(),
             "\",\"blsApkRegistryImpl\":\"",
@@ -348,12 +295,6 @@ library WavsMiddlewareDeploymentLib {
             data.socketRegistry.getImplementation().toHexString(),
             "\",\"pauserRegistry\":\"",
             data.pauserRegistry.toHexString(),
-            "\",\"slasher\":\"",
-            data.slasher.toHexString(),
-            "\",\"slasherImpl\":\"",
-            data.slasher.getImplementation().toHexString(),
-            "\",\"operatorStateRetriever\":\"",
-            data.operatorStateRetriever.toHexString(),
             "\"}"
         );
     }
