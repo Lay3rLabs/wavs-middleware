@@ -9,7 +9,6 @@ import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol";
-import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
 import {SlashingRegistryCoordinator} from
     "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
 import {InstantSlasher} from "@eigenlayer-middleware/src/slashers/InstantSlasher.sol";
@@ -22,9 +21,6 @@ import {
 import {IBLSApkRegistry} from "@eigenlayer-middleware/src/interfaces/IBLSApkRegistry.sol";
 import {IIndexRegistry} from "@eigenlayer-middleware/src/interfaces/IIndexRegistry.sol";
 import {ISocketRegistry} from "@eigenlayer-middleware/src/interfaces/ISocketRegistry.sol";
-import {IServiceManager} from "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
-import {IRegistryCoordinatorTypes} from
-    "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
 import {
     ISlashingRegistryCoordinator,
     ISlashingRegistryCoordinatorTypes
@@ -137,19 +133,15 @@ library WavsMiddlewareDeploymentLib {
                 IAllocationManager(core.allocationManager)
             )
         );
-        address registryCoordinatorImpl = address(
-            new RegistryCoordinator(
-                IRegistryCoordinatorTypes.RegistryCoordinatorParams({
-                    serviceManager: IServiceManager(wavsServiceManager),
-                    slashingParams: IRegistryCoordinatorTypes.SlashingRegistryParams({
-                        stakeRegistry: IStakeRegistry(stakeRegistry),
-                        blsApkRegistry: IBLSApkRegistry(blsApkRegistry),
-                        indexRegistry: IIndexRegistry(indexRegistry),
-                        socketRegistry: ISocketRegistry(socketRegistry),
-                        allocationManager: IAllocationManager(core.allocationManager),
-                        pauserRegistry: IPauserRegistry(pauserRegistry)
-                    })
-                })
+        address slashingRegistryCoordinatorImpl = address(
+            new SlashingRegistryCoordinator(
+                IStakeRegistry(stakeRegistry),
+                IBLSApkRegistry(blsApkRegistry),
+                IIndexRegistry(indexRegistry),
+                ISocketRegistry(socketRegistry),
+                IAllocationManager(core.allocationManager),
+                IPauserRegistry(pauserRegistry),
+                "1.0.0"
             )
         );
 
@@ -175,7 +167,7 @@ library WavsMiddlewareDeploymentLib {
         UpgradeableProxyLib.upgrade(stakeRegistry, stakeRegistryImpl);
         UpgradeableProxyLib.upgradeAndCall(
             registryCoordinator,
-            registryCoordinatorImpl,
+            slashingRegistryCoordinatorImpl,
             abi.encodeCall(
                 SlashingRegistryCoordinator.initialize,
                 (msg.sender, msg.sender, msg.sender, 0, wavsServiceManager)

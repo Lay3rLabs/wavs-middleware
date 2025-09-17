@@ -30,4 +30,7 @@ echo "Listing operators for service manager: $WAVS_SERVICE_MANAGER_ADDRESS"
 
 # List operators
 cd contracts || handle_error "Failed to change to contracts directory"
-forge script script/eigenlayer/ecdsa/WavsListOperators.s.sol -vvv --rpc-url "$RPC_URL" --broadcast --skip-simulation || handle_error "Failed to list operators"
+forge script script/eigenlayer/ecdsa/WavsListOperators.s.sol -vvv --rpc-url "$RPC_URL" --skip-simulation || handle_error "Failed to list operators"
+
+# Save operator list data
+save_deployment_data "$HOME/.nodes/ecdsa-list-operators.json" "$(cat "deployments/wavs-ecdsa/list_operators.json")"

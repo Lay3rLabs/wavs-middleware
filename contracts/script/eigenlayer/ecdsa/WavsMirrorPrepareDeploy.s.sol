@@ -32,15 +32,11 @@ contract WavsMirrorPrepareDeploy is Script, IECDSAStakeRegistryTypes {
 
     /// @notice The run function for the script.
     function run() external {
-        vm.startBroadcast();
-
         // Pass in the configuration as a file, load it
         WavsMirrorDeploymentLib.InitialConfiguration memory configuration =
             WavsMirrorDeploymentLib.loadConfigurationFromChain(serviceManagerAddress);
 
         // write the configuration to a file
         WavsMirrorDeploymentLib.writeConfiguration(configFile, configuration);
-
-        vm.stopBroadcast();
     }
 }
