@@ -2,7 +2,7 @@
 pragma solidity ^0.8.27;
 
 import {console2} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
+import {Vm, VmSafe} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
@@ -258,11 +258,13 @@ library WavsMirrorDeploymentLib {
     /**
      * @notice The load configuration from chain function.
      * @param serviceManagerAddress The service manager address.
+     * @param isPOA Whether this is a POA deployment.
      * @return cfg The initial configuration.
      */
     function loadConfigurationFromChain(
-        address serviceManagerAddress
-    ) internal view returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
+        address serviceManagerAddress,
+        bool isPOA
+    ) internal returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
         WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
         ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
 
@@ -273,13 +275,19 @@ library WavsMirrorDeploymentLib {
         cfg.quorumNumerator = serviceManager.quorumNumerator();
         cfg.quorumDenominator = serviceManager.quorumDenominator();
 
-        // get operators
-        IAllocationManager allocationManager =
-            IAllocationManager(serviceManager.getAllocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
-        cfg.operators = allocationManager.getMembers(opSetQuery);
+        // get operators - different approach for POA vs non-POA
+        if (isPOA) {
+            // POA deployment: query OperatorRegistered events
+            cfg.operators = loadOperatorsFromPOAEvents(address(stakeRegistry));
+        } else {
+            // Non-POA: use allocation manager
+            address allocationManagerAddr = serviceManager.getAllocationManager();
+            IAllocationManager allocationManager = IAllocationManager(allocationManagerAddr);
+            OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
+            cfg.operators = allocationManager.getMembers(opSetQuery);
+        }
 
-        // get operator info
+        // get operator info (same for both POA and non-POA)
         cfg.signingKeyAddresses = new address[](cfg.operators.length);
         cfg.weights = new uint256[](cfg.operators.length);
         for (uint256 i = 0; i < cfg.operators.length; ++i) {
@@ -288,6 +296,51 @@ library WavsMirrorDeploymentLib {
         }
 
         return cfg;
+    }
+
+    /**
+     * @notice Loads operators from POA stake registry by querying OperatorRegistered events
+     * @param stakeRegistryAddress The stake registry address
+     * @return operators Array of unique operator addresses
+     */
+    function loadOperatorsFromPOAEvents(
+        address stakeRegistryAddress
+    ) internal returns (address[] memory operators) {
+        // Get all OperatorRegistered events
+        bytes32[] memory topics = new bytes32[](1);
+        topics[0] = keccak256(abi.encodeWithSignature("OperatorRegistered(address,address)"));
+        VmSafe.EthGetLogs[] memory logs = VM.eth_getLogs(0, block.number, stakeRegistryAddress, topics);
+
+        // Use a dynamic array to store unique operators
+        address[] memory tempOperators = new address[](logs.length);
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < logs.length; i++) {
+            address operator = address(uint160(uint256(logs[i].topics[1])));
+
+            // Check if this operator is already in our list
+            bool found = false;
+            for (uint256 j = 0; j < count; j++) {
+                if (tempOperators[j] == operator) {
+                    found = true;
+                    break;
+                }
+            }
+
+            // Add to list if not found
+            if (!found) {
+                tempOperators[count] = operator;
+                count++;
+            }
+        }
+
+        // Create properly sized array
+        operators = new address[](count);
+        for (uint256 i = 0; i < count; i++) {
+            operators[i] = tempOperators[i];
+        }
+
+        return operators;
     }
 
     /**

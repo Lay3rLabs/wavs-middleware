@@ -351,6 +351,14 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    wavs-middleware -m mirror deploy
 ```
 
+For **POA (Proof of Authority)** deployments where the source chain uses a POA stake registry, set the `IS_POA` environment variable:
+
+```bash
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e IS_POA=true \
+   wavs-middleware -m mirror deploy
+```
+
 | Environment Variable           | Required              | Default                       | Source       | Description                                   |
 | ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
 | `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
@@ -358,6 +366,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 | `FUNDED_KEY`                   | if not mounted        | From `.nodes/deployer`        | Volume       | Deployer private key                          |
 | `SOURCE_RPC_URL`               | for non-default value | `http://localhost:8545`       | Command line | RPC URL for source chain                      |
 | `MIRROR_RPC_URL`               | for non-default value | `http://localhost:8546`       | Command line | RPC URL for mirror chain                      |
+| `IS_POA`                       | for POA deployments   | `false`                       | Command line | Set to `true` for POA stake registries        |
 
 ### List Mirror Operators
 
