@@ -11,10 +11,6 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../../helper.sh"
 
-# shellcheck source=../foundry_profile.sh
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/../foundry_profile.sh"
-
 # Parse command line arguments in key=value format
 parse_args "$@"
 
@@ -41,4 +37,9 @@ echo "Operator address: $OP_ADDR"
 
 # Register operator
 cd contracts || handle_error "Failed to change to contracts directory"
+
+# shellcheck source=../foundry_profile.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../foundry_profile.sh"
+
 forge script script/eigenlayer/ecdsa/WavsRegisterOperator.s.sol -vvv --rpc-url "$RPC_URL" --private-key "$OPERATOR_KEY" --broadcast --skip-simulation || handle_error "Failed to register operator"

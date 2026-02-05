@@ -11,10 +11,6 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../../helper.sh"
 
-# shellcheck source=../foundry_profile.sh
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/../foundry_profile.sh"
-
 # Parse command line arguments in key=value format
 parse_args "$@"
 
@@ -38,6 +34,11 @@ check_param "MIRROR_SERVICE_MANAGER_ADDRESS" "${MIRROR_SERVICE_MANAGER_ADDRESS:-
 
 # Change to contracts directory and run the script
 cd contracts || handle_error "Failed to change to contracts directory"
+
+# shellcheck source=../foundry_profile.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../foundry_profile.sh"
+
 forge script script/eigenlayer/ecdsa/WavsMirrorListOperators.s.sol -vvv --broadcast --skip-simulation || handle_error "Failed to list operators"
 
 echo "Operator list:"

@@ -11,10 +11,6 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../../helper.sh"
 
-# shellcheck source=../foundry_profile.sh
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/../foundry_profile.sh"
-
 # Parse command line arguments in key=value format
 parse_args "$@"
 
@@ -47,6 +43,11 @@ echo "Reading source chain config:"
 
 # Prepare deployment
 cd contracts || handle_error "Failed to change to contracts directory"
+
+# shellcheck source=../foundry_profile.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../foundry_profile.sh"
+
 forge script script/eigenlayer/ecdsa/WavsMirrorPrepareDeploy.s.sol --rpc-url "$SOURCE_RPC_URL" -vvv --broadcast --skip-simulation || handle_error "Failed to run WavsMirrorPrepareDeploy script"
 
 echo "Got config:"
