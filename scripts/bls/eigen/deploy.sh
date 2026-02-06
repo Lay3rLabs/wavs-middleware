@@ -11,10 +11,6 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../../helper.sh"
 
-# shellcheck source=../foundry_profile.sh
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/../foundry_profile.sh"
-
 # Parse command line arguments in key=value format
 parse_args "$@"
 
@@ -45,6 +41,11 @@ ensure_balance "$deployer_address"
 echo "Deployer address: $deployer_address configured for $DEPLOY_ENV environment"
 
 cd contracts || handle_error "Failed to change to contracts directory"
+
+# shellcheck source=../foundry_profile.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../foundry_profile.sh"
+
 forge script script/eigenlayer/bls/WavsMiddlewareDeployer.s.sol --rpc-url "$RPC_URL" --private-key "$FUNDED_KEY" -vvv --broadcast --skip-simulation || handle_error "Failed to deploy WavsMiddlewareDeployer"
 
 echo "BLS contracts deployed with addresses:"
