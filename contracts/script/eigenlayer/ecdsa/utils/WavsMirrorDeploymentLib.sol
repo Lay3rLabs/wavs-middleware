@@ -284,8 +284,10 @@ library WavsMirrorDeploymentLib {
             cfg.signingKeyAddresses = new address[](cfg.operators.length);
             cfg.weights = new uint256[](cfg.operators.length);
             for (uint256 i = 0; i < cfg.operators.length; ++i) {
-                cfg.signingKeyAddresses[i] = poaRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
-                cfg.weights[i] = IWavsServiceManager(serviceManagerAddress).getOperatorWeight(cfg.operators[i]);
+                cfg.signingKeyAddresses[i] =
+                    poaRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
+                cfg.weights[i] =
+                    IWavsServiceManager(serviceManagerAddress).getOperatorWeight(cfg.operators[i]);
             }
         } else {
             // EigenLayer mode
@@ -304,7 +306,8 @@ library WavsMirrorDeploymentLib {
             cfg.signingKeyAddresses = new address[](cfg.operators.length);
             cfg.weights = new uint256[](cfg.operators.length);
             for (uint256 i = 0; i < cfg.operators.length; ++i) {
-                cfg.signingKeyAddresses[i] = stakeRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
+                cfg.signingKeyAddresses[i] =
+                    stakeRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
                 cfg.weights[i] = stakeRegistry.getOperatorWeight(cfg.operators[i]);
             }
         }
