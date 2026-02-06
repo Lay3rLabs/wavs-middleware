@@ -2,8 +2,9 @@
 pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {IWavsServiceManager} from "src/eigenlayer/ecdsa/interfaces/IWavsServiceManager.sol";
@@ -166,9 +167,7 @@ contract WavsServiceManagerTest is Test {
         signers[0] = signer1; // Operators registered 0x1 to 0x5
         signatures[0] = ""; // Empty signature since we're mocking the validation
         IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
-            signers: signers,
-            signatures: signatures,
-            referenceBlock: uint32(block.number) - 1
+            signers: signers, signatures: signatures, referenceBlock: uint32(block.number) - 1
         });
 
         serviceManager.validate(
@@ -270,9 +269,7 @@ contract WavsServiceManagerTest is Test {
         serviceManager.validate(
             IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}),
             IWavsServiceHandler.SignatureData({
-                signers: emptySigners,
-                signatures: emptySignatures,
-                referenceBlock: 1
+                signers: emptySigners, signatures: emptySignatures, referenceBlock: 1
             })
         );
     }

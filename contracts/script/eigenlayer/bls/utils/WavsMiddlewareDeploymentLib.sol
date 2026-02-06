@@ -10,8 +10,9 @@ import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol";
 import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
-import {SlashingRegistryCoordinator} from
-    "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
+import {
+    SlashingRegistryCoordinator
+} from "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
 import {InstantSlasher} from "@eigenlayer-middleware/src/slashers/InstantSlasher.sol";
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
@@ -23,8 +24,9 @@ import {IBLSApkRegistry} from "@eigenlayer-middleware/src/interfaces/IBLSApkRegi
 import {IIndexRegistry} from "@eigenlayer-middleware/src/interfaces/IIndexRegistry.sol";
 import {ISocketRegistry} from "@eigenlayer-middleware/src/interfaces/ISocketRegistry.sol";
 import {IServiceManager} from "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
-import {IRegistryCoordinatorTypes} from
-    "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
+import {
+    IRegistryCoordinatorTypes
+} from "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
 import {
     ISlashingRegistryCoordinator,
     ISlashingRegistryCoordinatorTypes
@@ -232,9 +234,7 @@ library WavsMiddlewareDeploymentLib {
             ISlashingRegistryCoordinator(deployment.registryCoordinator);
         slashingRegistryCoordinator.createSlashableStakeQuorum(
             ISlashingRegistryCoordinatorTypes.OperatorSetParam({
-                maxOperatorCount: 10_000,
-                kickBIPsOfOperatorStake: 10_500,
-                kickBIPsOfTotalStake: 100
+                maxOperatorCount: 10_000, kickBIPsOfOperatorStake: 10_500, kickBIPsOfTotalStake: 100
             }),
             minimumWeight,
             strategyParams,
@@ -278,8 +278,7 @@ library WavsMiddlewareDeploymentLib {
             new IStakeRegistryTypes.StrategyParams[](strategyCount);
         for (uint256 i; i < strategyCount; ++i) {
             strategyParams[i] = IStakeRegistryTypes.StrategyParams({
-                strategy: IStrategy(strategies[i]),
-                multiplier: multipliers[i]
+                strategy: IStrategy(strategies[i]), multiplier: multipliers[i]
             });
         }
 

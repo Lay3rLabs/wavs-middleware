@@ -17,8 +17,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IPOAStakeRegistry} from "@poa-middleware/src/ecdsa/interfaces/IPOAStakeRegistry.sol";
 import {IWavsServiceManager} from "src/eigenlayer/ecdsa/interfaces/IWavsServiceManager.sol";
 import {MirrorStakeRegistry} from "src/eigenlayer/ecdsa/MirrorStakeRegistry.sol";
-import {MirrorOperatorSyncHandler} from
-    "src/eigenlayer/ecdsa/handlers/MirrorOperatorSyncHandler.sol";
+import {
+    MirrorOperatorSyncHandler
+} from "src/eigenlayer/ecdsa/handlers/MirrorOperatorSyncHandler.sol";
 import {MirrorQuorumSyncHandler} from "src/eigenlayer/ecdsa/handlers/MirrorQuorumSyncHandler.sol";
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
@@ -96,11 +97,11 @@ library WavsMirrorDeploymentLib {
 
         // use an mock quorum so checks pass, we don't use it internally
         IStrategy mockStrategyInstance = IStrategy(address(1)); // Using address(1) instead of address(0)
-        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams = IECDSAStakeRegistryTypes
-            .StrategyParams({
-            strategy: mockStrategyInstance,
-            multiplier: 10_000 // 100% in basis points
-        });
+        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams =
+            IECDSAStakeRegistryTypes.StrategyParams({
+                strategy: mockStrategyInstance,
+                multiplier: 10_000 // 100% in basis points
+            });
         IECDSAStakeRegistryTypes.StrategyParams[] memory strategies =
             new IECDSAStakeRegistryTypes.StrategyParams[](1);
         strategies[0] = strategyParams;

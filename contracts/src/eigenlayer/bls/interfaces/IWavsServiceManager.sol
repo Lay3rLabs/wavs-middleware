@@ -47,7 +47,10 @@ interface IWavsServiceManager {
      * @dev The fraction numerator/denominator represents the minimum portion of stake
      *      required for a valid signature (e.g., 2/3 or 51/100)
      */
-    function setQuorumThreshold(uint256 numerator, uint256 denominator) external;
+    function setQuorumThreshold(
+        uint256 numerator,
+        uint256 denominator
+    ) external;
 
     /**
      * @notice Returns the address of the registry coordinator.

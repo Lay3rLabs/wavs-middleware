@@ -122,9 +122,7 @@ contract SimpleServiceManagerTest is Test {
         signatures[1] = bytes("signature2");
 
         IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
-            signers: signers,
-            signatures: signatures,
-            referenceBlock: uint32(block.number - 1)
+            signers: signers, signatures: signatures, referenceBlock: uint32(block.number - 1)
         });
 
         // Should not revert
@@ -139,9 +137,7 @@ contract SimpleServiceManagerTest is Test {
         bytes[] memory signatures = new bytes[](0);
 
         IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
-            signers: signers,
-            signatures: signatures,
-            referenceBlock: uint32(block.number - 1)
+            signers: signers, signatures: signatures, referenceBlock: uint32(block.number - 1)
         });
 
         vm.expectRevert(IWavsServiceManager.InvalidSignatureLength.selector);
@@ -160,9 +156,7 @@ contract SimpleServiceManagerTest is Test {
         signatures[0] = bytes("signature1");
 
         IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
-            signers: signers,
-            signatures: signatures,
-            referenceBlock: uint32(block.number - 1)
+            signers: signers, signatures: signatures, referenceBlock: uint32(block.number - 1)
         });
 
         vm.expectRevert(IWavsServiceManager.InvalidSignatureLength.selector);
@@ -180,9 +174,7 @@ contract SimpleServiceManagerTest is Test {
         signatures[0] = bytes("signature1");
 
         IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
-            signers: signers,
-            signatures: signatures,
-            referenceBlock: uint32(block.number + 1)
+            signers: signers, signatures: signatures, referenceBlock: uint32(block.number + 1)
         });
 
         vm.expectRevert(IWavsServiceManager.InvalidSignatureBlock.selector);
@@ -208,9 +200,7 @@ contract SimpleServiceManagerTest is Test {
         signatures[1] = bytes("signature2");
 
         IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
-            signers: signers,
-            signatures: signatures,
-            referenceBlock: uint32(block.number - 1)
+            signers: signers, signatures: signatures, referenceBlock: uint32(block.number - 1)
         });
 
         vm.expectRevert(IWavsServiceManager.InvalidSignatureOrder.selector);
@@ -231,9 +221,7 @@ contract SimpleServiceManagerTest is Test {
         signatures[0] = bytes("signature1");
 
         IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
-            signers: signers,
-            signatures: signatures,
-            referenceBlock: uint32(block.number - 1)
+            signers: signers, signatures: signatures, referenceBlock: uint32(block.number - 1)
         });
 
         vm.expectRevert(IWavsServiceManager.InsufficientQuorumZero.selector);
@@ -259,9 +247,7 @@ contract SimpleServiceManagerTest is Test {
         signatures[1] = bytes("signature2");
 
         IWavsServiceHandler.SignatureData memory signatureData = IWavsServiceHandler.SignatureData({
-            signers: signers,
-            signatures: signatures,
-            referenceBlock: uint32(block.number - 1)
+            signers: signers, signatures: signatures, referenceBlock: uint32(block.number - 1)
         });
 
         vm.expectRevert(

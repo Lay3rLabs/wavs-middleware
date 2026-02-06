@@ -24,7 +24,10 @@ contract WavsOperatorUpdateHandler is IWavsOperatorUpdateHandler, IWavsServiceHa
      * @param _serviceManager The service manager instance
      * @param _ecdsaStakeRegistry The ECDSA stake registry instance
      */
-    constructor(WavsServiceManager _serviceManager, ECDSAStakeRegistry _ecdsaStakeRegistry) {
+    constructor(
+        WavsServiceManager _serviceManager,
+        ECDSAStakeRegistry _ecdsaStakeRegistry
+    ) {
         SERVICE_MANAGER = _serviceManager;
         ECDSA_STAKE_REGISTRY = _ecdsaStakeRegistry;
     }

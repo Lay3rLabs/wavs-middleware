@@ -41,9 +41,7 @@ contract SimpleSubmit is IWavsServiceHandler, ISimpleSubmit {
             abi.decode(envelope.payload, (ISimpleSubmit.DataWithId));
 
         signedDatas[dataWithId.triggerId] = ISimpleSubmit.SignedData({
-            data: dataWithId.data,
-            signatureData: signatureData,
-            envelope: envelope
+            data: dataWithId.data, signatureData: signatureData, envelope: envelope
         });
 
         validTriggers[dataWithId.triggerId] = true;

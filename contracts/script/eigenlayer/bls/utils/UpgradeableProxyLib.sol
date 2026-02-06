@@ -48,7 +48,10 @@ library UpgradeableProxyLib {
      * @param proxy The proxy address.
      * @param impl The implementation address.
      */
-    function upgrade(address proxy, address impl) internal {
+    function upgrade(
+        address proxy,
+        address impl
+    ) internal {
         ProxyAdmin admin = getProxyAdmin(proxy);
         admin.upgrade(ITransparentUpgradeableProxy(payable(proxy)), impl);
     }
@@ -59,7 +62,11 @@ library UpgradeableProxyLib {
      * @param impl The implementation address.
      * @param initData The initialization data.
      */
-    function upgradeAndCall(address proxy, address impl, bytes memory initData) internal {
+    function upgradeAndCall(
+        address proxy,
+        address impl,
+        bytes memory initData
+    ) internal {
         ProxyAdmin admin = getProxyAdmin(proxy);
         admin.upgradeAndCall(ITransparentUpgradeableProxy(payable(proxy)), impl, initData);
     }

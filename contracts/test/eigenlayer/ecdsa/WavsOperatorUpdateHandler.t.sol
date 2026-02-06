@@ -3,11 +3,13 @@ pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from
-    "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import {
+    ECDSAUpgradeable
+} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {
@@ -140,9 +142,7 @@ contract WavsOperatorUpdateHandlerTest is Test {
         /* solhint-enable func-name-mixedcase */
         // Create an envelope with invalid payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode("Bad payload")
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode("Bad payload")
         });
 
         // Create signature data with 4 operators (more than enough to pass quorum)
@@ -159,16 +159,13 @@ contract WavsOperatorUpdateHandlerTest is Test {
         /* solhint-enable func-name-mixedcase */
         // Create a valid UpdateWithId payload with triggerId = 1
         IWavsOperatorUpdateHandler.OperatorUpdatePayload memory updateData =
-        IWavsOperatorUpdateHandler.OperatorUpdatePayload({
-            operatorsPerQuorum: new address[][](0),
-            quorumNumbers: new bytes(0)
-        });
+            IWavsOperatorUpdateHandler.OperatorUpdatePayload({
+                operatorsPerQuorum: new address[][](0), quorumNumbers: new bytes(0)
+            });
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // Create signature data with only 2 operators (not enough for quorum)
@@ -193,16 +190,13 @@ contract WavsOperatorUpdateHandlerTest is Test {
         /* solhint-enable func-name-mixedcase */
         // Create the update data with some operators
         IWavsOperatorUpdateHandler.OperatorUpdatePayload memory updateData =
-        IWavsOperatorUpdateHandler.OperatorUpdatePayload({
-            operatorsPerQuorum: new address[][](1),
-            quorumNumbers: new bytes(0)
-        });
+            IWavsOperatorUpdateHandler.OperatorUpdatePayload({
+                operatorsPerQuorum: new address[][](1), quorumNumbers: new bytes(0)
+            });
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // 4/5 can pass this with > 2/3
@@ -221,16 +215,13 @@ contract WavsOperatorUpdateHandlerTest is Test {
         address[][] memory operatorsPerQuorum = new address[][](1);
         operatorsPerQuorum[0] = operators;
         IWavsOperatorUpdateHandler.OperatorUpdatePayload memory updateData =
-        IWavsOperatorUpdateHandler.OperatorUpdatePayload({
-            operatorsPerQuorum: operatorsPerQuorum,
-            quorumNumbers: new bytes(0)
-        });
+            IWavsOperatorUpdateHandler.OperatorUpdatePayload({
+                operatorsPerQuorum: operatorsPerQuorum, quorumNumbers: new bytes(0)
+            });
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // 4/5 can pass this with > 2/3

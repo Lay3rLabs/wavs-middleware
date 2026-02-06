@@ -3,8 +3,9 @@ pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
 
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {WavsServiceManager} from "src/eigenlayer/bls/WavsServiceManager.sol";
 import {IWavsServiceManager} from "src/eigenlayer/bls/interfaces/IWavsServiceManager.sol";

@@ -96,7 +96,10 @@ contract SimpleServiceManager is IWavsServiceManager {
      * @param operator The operator
      * @param weight The weight of the operator
      */
-    function setOperatorWeight(address operator, uint256 weight) external {
+    function setOperatorWeight(
+        address operator,
+        uint256 weight
+    ) external {
         operatorWeights[operator] = weight;
     }
 

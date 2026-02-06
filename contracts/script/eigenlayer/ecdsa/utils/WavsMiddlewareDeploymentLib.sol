@@ -18,8 +18,9 @@ import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {ReadCoreLib} from "./ReadCoreLib.sol";
 import {WavsAVSRegistrar} from "src/eigenlayer/ecdsa/WavsAVSRegistrar.sol";
-import {WavsOperatorUpdateHandler} from
-    "src/eigenlayer/ecdsa/handlers/WavsOperatorUpdateHandler.sol";
+import {
+    WavsOperatorUpdateHandler
+} from "src/eigenlayer/ecdsa/handlers/WavsOperatorUpdateHandler.sol";
 
 /**
  * @title WavsMiddlewareDeploymentLib
@@ -165,8 +166,10 @@ library WavsMiddlewareDeploymentLib {
         // If op set only allows one strategy, why do we need 12 registered with multipliers in the quorum?
         // Suggestion - use same both for opset and for initialize. But which one (or both)?
         //             ECDSAStakeRegistry.initialize, (result.WavsServiceManager, 100, quorum) // TODO: dynamically update threshold (?)
-        IAllocationManagerTypes.CreateSetParams memory opSetParams = IAllocationManagerTypes
-            .CreateSetParams({operatorSetId: 0, strategies: new IStrategy[](1)});
+        IAllocationManagerTypes.CreateSetParams memory opSetParams =
+            IAllocationManagerTypes.CreateSetParams({
+                operatorSetId: 0, strategies: new IStrategy[](1)
+            });
         opSetParams.strategies[0] = IStrategy(deployment.strategy);
         IAllocationManagerTypes.CreateSetParams[] memory opSetParamsArray =
             new IAllocationManagerTypes.CreateSetParams[](1);
@@ -203,8 +206,7 @@ library WavsMiddlewareDeploymentLib {
         for (uint256 i = 0; i < size; ++i) {
             totalMultiplier += multipliers[i];
             quorum.strategies[i] = IECDSAStakeRegistryTypes.StrategyParams({
-                strategy: IStrategy(strategies[i]),
-                multiplier: multipliers[i]
+                strategy: IStrategy(strategies[i]), multiplier: multipliers[i]
             });
         }
         if (totalMultiplier != 10_000) {
