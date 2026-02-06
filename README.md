@@ -607,20 +607,17 @@ sequenceDiagram
 - `execute_transaction`: Run a transaction and handle errors
 - `stop_impersonating`: Stop impersonating an account (LOCAL only)
 
-### Instructions on getting Holesky ETH
+### Instructions on getting Sepolia ETH
 
-To get Holesky ETH for running on testnet:
+To get Sepolia ETH for running on testnet:
 
-1. PoW Mining Faucet:
-
-   - Go to https://holesky-faucet.pk910.de/
-   - Connect your wallet
-   - Mine blocks in your browser to earn ETH
-   - Rewards based on mining time/hashrate
-   - No external requirements
-
-2. Alchemy Faucet (Alternative):
-   - Visit https://www.alchemy.com/faucets/holesky
+1. Alchemy Faucet:
+   - Visit https://www.alchemy.com/faucets/ethereum-sepolia
    - Requires mainnet ETH balance to use
    - Connect wallet and verify ownership
+   - Request funds (limits apply)
+
+2. Google Cloud Faucet:
+   - Visit https://cloud.google.com/application/web3/faucet/ethereum/sepolia
+   - No requirements
    - Request funds (limits apply)
