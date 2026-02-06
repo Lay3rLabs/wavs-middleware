@@ -11,6 +11,9 @@ optimizer = true
 optimizer_runs = 100
  # Higher number optimizes for frequent contract calls, lower number optimizes for deployment cost
 
+[profile.ci]
+via-ir = false
+
 [profile.bls]
 src = "src/eigenlayer/bls"
 test = "test/eigenlayer/bls"
