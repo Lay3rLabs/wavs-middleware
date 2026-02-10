@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import {IDelegationManager} from
-    "eigenlayer-contracts/src/contracts/interfaces/IDelegationManager.sol";
+import {
+    IDelegationManager
+} from "eigenlayer-contracts/src/contracts/interfaces/IDelegationManager.sol";
 import {
     ECDSAStakeRegistry,
     IECDSAStakeRegistryTypes
 } from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
-import {ISignatureUtilsMixinTypes} from
-    "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
-import {CheckpointsUpgradeable} from
-    "@openzeppelin-upgrades/contracts/utils/CheckpointsUpgradeable.sol";
+import {
+    ISignatureUtilsMixinTypes
+} from "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
+import {
+    CheckpointsUpgradeable
+} from "@openzeppelin-upgrades/contracts/utils/CheckpointsUpgradeable.sol";
 
 /**
  * @title Mirror Stake Registry

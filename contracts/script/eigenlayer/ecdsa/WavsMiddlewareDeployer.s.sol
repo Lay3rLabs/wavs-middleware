@@ -2,8 +2,9 @@
 pragma solidity ^0.8.27;
 
 import {Script} from "forge-std/Script.sol";
-import {IECDSAStakeRegistryTypes} from
-    "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {
+    IECDSAStakeRegistryTypes
+} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 import {WavsMiddlewareDeploymentLib} from "./utils/WavsMiddlewareDeploymentLib.sol";
 import {ReadCoreLib} from "./utils/ReadCoreLib.sol";

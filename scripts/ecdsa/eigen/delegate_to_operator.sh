@@ -11,10 +11,6 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../../helper.sh"
 
-# shellcheck source=../foundry_profile.sh
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/../foundry_profile.sh"
-
 # Parse command line arguments in key=value format
 parse_args "$@"
 
@@ -49,6 +45,9 @@ echo "Delegating $WAVS_DELEGATE_AMOUNT to operator $OPERATOR_ADDRESS..."
 
 # Change to contracts directory and run the script
 cd contracts || handle_error "Failed to change to contracts directory"
+# shellcheck source=../foundry_profile.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/../foundry_profile.sh"
 forge script script/eigenlayer/ecdsa/WavsDelegateToOperator.s.sol --rpc-url "$RPC_URL" --private-key "$STAKER_KEY" -vvv --broadcast --skip-simulation || handle_error "Failed to delegate to operator"
 
 echo "Successfully delegated to operator $OPERATOR_ADDRESS from staker $staker_address"

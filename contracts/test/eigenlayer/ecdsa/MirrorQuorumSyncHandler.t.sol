@@ -3,8 +3,9 @@ pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from
-    "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import {
+    ECDSAUpgradeable
+} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 import {WavsMirrorDeploymentLib} from "script/eigenlayer/ecdsa/utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "script/eigenlayer/ecdsa/utils/UpgradeableProxyLib.sol";
@@ -123,9 +124,7 @@ contract MirrorQuorumSyncHandlerTest is Test {
             IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 5, numerator: 2, denominator: 3});
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // Create signature data with all operators (5/5)
@@ -144,9 +143,7 @@ contract MirrorQuorumSyncHandlerTest is Test {
             IMirrorQuorumSyncHandler.UpdateWithId({triggerId: 2, numerator: 3, denominator: 4});
         // Create envelope with the encoded payload
         envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(2)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(2)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
         // Create signature data with all operators (5/5)
         signatureData = createSignatureData(envelope, 5, 0);
@@ -168,9 +165,7 @@ contract MirrorQuorumSyncHandlerTest is Test {
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // Create signature data with only 2 operators (not enough for quorum)
@@ -194,17 +189,17 @@ contract MirrorQuorumSyncHandlerTest is Test {
     function test_invalid_payload() public {
         // Create an invalid payload (not matching UpdateWithId struct)
         bytes memory invalidPayload = abi.encode("BAD");
-        
+
         // Create envelope with the invalid payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
             eventId: bytes20(uint160(1)),
             ordering: bytes12(0),
             payload: invalidPayload
         });
-        
+
         // Create signature data with all operators (5/5)
         IWavsServiceHandler.SignatureData memory signatureData = createSignatureData(envelope, 5, 5);
-        
+
         // Call handleSignedEnvelope should fail with abi decode error
         vm.expectRevert(); // Decoding error
         serviceHandler.handleSignedEnvelope(envelope, signatureData);
@@ -222,9 +217,7 @@ contract MirrorQuorumSyncHandlerTest is Test {
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // 4/5 can pass this with > 2/3
@@ -241,9 +234,7 @@ contract MirrorQuorumSyncHandlerTest is Test {
 
         // Create envelope with the encoded payload
         envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // 2/5 is now enough to pass

@@ -121,7 +121,7 @@ contract WavsMiddlewareDeployer is Script {
         }
         if (
             address(registryCoordinator.serviceManager())
-                != wavsMiddlewareDeployment.wavsServiceManager
+                    != wavsMiddlewareDeployment.wavsServiceManager
                 || address(registryCoordinator.stakeRegistry())
                     != wavsMiddlewareDeployment.stakeRegistry
                 || address(registryCoordinator.blsApkRegistry())
@@ -130,7 +130,8 @@ contract WavsMiddlewareDeployer is Script {
                     != wavsMiddlewareDeployment.indexRegistry
                 || address(registryCoordinator.socketRegistry())
                     != wavsMiddlewareDeployment.socketRegistry
-                || address(registryCoordinator.allocationManager()) != coreDeployment.allocationManager
+                || address(registryCoordinator.allocationManager())
+                    != coreDeployment.allocationManager
                 || address(registryCoordinator.pauserRegistry())
                     != wavsMiddlewareDeployment.pauserRegistry
         ) {

@@ -3,8 +3,9 @@ pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from
-    "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import {
+    ECDSAUpgradeable
+} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 import {WavsMirrorDeploymentLib} from "script/eigenlayer/ecdsa/utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "script/eigenlayer/ecdsa/utils/UpgradeableProxyLib.sol";
@@ -133,9 +134,7 @@ contract MirrorOperatorSyncHandlerTest is Test {
         /* solhint-enable func-name-mixedcase */
         // Create an envelope with invalid payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode("Bad payload")
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode("Bad payload")
         });
 
         // Create signature data with 4 operators (more than enough to pass quorum)
@@ -156,19 +155,17 @@ contract MirrorOperatorSyncHandlerTest is Test {
         uint256[] memory newWeights = weights;
 
         // Update to triggerId 5
-        IMirrorOperatorSyncHandler.UpdateWithId memory updateData = IMirrorOperatorSyncHandler
-            .UpdateWithId({
-            triggerId: 5,
-            thresholdWeight: 5000,
-            operators: newOperators,
-            signingKeyAddresses: newSigningKeyAddresses,
-            weights: newWeights
-        });
+        IMirrorOperatorSyncHandler.UpdateWithId memory updateData =
+            IMirrorOperatorSyncHandler.UpdateWithId({
+                triggerId: 5,
+                thresholdWeight: 5000,
+                operators: newOperators,
+                signingKeyAddresses: newSigningKeyAddresses,
+                weights: newWeights
+            });
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // Create signature data with 4 operators (more than enough to pass quorum)
@@ -195,9 +192,7 @@ contract MirrorOperatorSyncHandlerTest is Test {
         });
         // Create envelope with the encoded payload
         envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(2)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(2)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
         // Create signature data with 4 operators (more than enough to pass quorum)
         signatureData = createSignatureData(envelope, 4, 5);
@@ -223,20 +218,18 @@ contract MirrorOperatorSyncHandlerTest is Test {
         newWeights[0] = 10_000;
 
         // Create the UpdateWithId struct with triggerId = 1
-        IMirrorOperatorSyncHandler.UpdateWithId memory updateData = IMirrorOperatorSyncHandler
-            .UpdateWithId({
-            triggerId: 1,
-            thresholdWeight: 5000,
-            operators: newOperators,
-            signingKeyAddresses: newSigningKeyAddresses,
-            weights: newWeights
-        });
+        IMirrorOperatorSyncHandler.UpdateWithId memory updateData =
+            IMirrorOperatorSyncHandler.UpdateWithId({
+                triggerId: 1,
+                thresholdWeight: 5000,
+                operators: newOperators,
+                signingKeyAddresses: newSigningKeyAddresses,
+                weights: newWeights
+            });
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // Create signature data with only 3 operators (not enough for quorum)
@@ -276,20 +269,18 @@ contract MirrorOperatorSyncHandlerTest is Test {
         }
 
         // Create the UpdateWithId struct with triggerId = 1
-        IMirrorOperatorSyncHandler.UpdateWithId memory updateData = IMirrorOperatorSyncHandler
-            .UpdateWithId({
-            triggerId: 1,
-            thresholdWeight: 8000,
-            operators: newOperators,
-            signingKeyAddresses: newSigningKeyAddresses,
-            weights: newWeights
-        });
+        IMirrorOperatorSyncHandler.UpdateWithId memory updateData =
+            IMirrorOperatorSyncHandler.UpdateWithId({
+                triggerId: 1,
+                thresholdWeight: 8000,
+                operators: newOperators,
+                signingKeyAddresses: newSigningKeyAddresses,
+                weights: newWeights
+            });
 
         // Create envelope with the encoded payload
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // 4/5 can pass this with > 2/3
@@ -339,9 +330,7 @@ contract MirrorOperatorSyncHandlerTest is Test {
 
         // Create envelope with the encoded payload
         envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: abi.encode(updateData)
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: abi.encode(updateData)
         });
 
         // First 2 operators now have 2/3 and can pass

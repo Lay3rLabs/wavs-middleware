@@ -2,13 +2,16 @@
 pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
-import {IECDSAStakeRegistryTypes} from
-    "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistryStorage.sol";
-import {ISignatureUtilsMixinTypes} from
-    "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
+import {
+    IECDSAStakeRegistryTypes
+} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistryStorage.sol";
+import {
+    ISignatureUtilsMixinTypes
+} from "eigenlayer-contracts/src/contracts/interfaces/ISignatureUtilsMixin.sol";
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
-import {IERC1271Upgradeable} from
-    "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+import {
+    IERC1271Upgradeable
+} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {MirrorStakeRegistry} from "src/eigenlayer/ecdsa/MirrorStakeRegistry.sol";
@@ -80,11 +83,11 @@ contract MirrorStakeRegistryTest is Test {
         IStrategy mockStrategyInstance = IStrategy(address(1)); // Using address(1) instead of address(0)
 
         // Create the strategy params
-        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams = IECDSAStakeRegistryTypes
-            .StrategyParams({
-            strategy: mockStrategyInstance,
-            multiplier: 10_000 // 100% in basis points
-        });
+        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams =
+            IECDSAStakeRegistryTypes.StrategyParams({
+                strategy: mockStrategyInstance,
+                multiplier: 10_000 // 100% in basis points
+            });
 
         // Create the strategies array with one strategy
         IECDSAStakeRegistryTypes.StrategyParams[] memory strategies =

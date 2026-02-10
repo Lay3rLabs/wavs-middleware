@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import {IERC1271Upgradeable} from
-    "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
-import {IECDSAStakeRegistryErrors} from
-    "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {
+    IERC1271Upgradeable
+} from "@openzeppelin-upgrades/contracts/interfaces/IERC1271Upgradeable.sol";
+import {
+    IECDSAStakeRegistryErrors
+} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 /**
  * @title MockStakeRegistry
@@ -29,7 +31,10 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
      * @param operator The operator.
      * @param weight The weight.
      */
-    function setOperatorWeight(address operator, uint256 weight) external {
+    function setOperatorWeight(
+        address operator,
+        uint256 weight
+    ) external {
         operatorWeights[operator] = weight;
         // set this to self
         operatorToSigning[operator] = operator;
@@ -41,7 +46,10 @@ contract MockStakeRegistry is IECDSAStakeRegistryErrors {
      * @param operator The operator.
      * @param signer The signer.
      */
-    function setOperatorSigner(address operator, address signer) external {
+    function setOperatorSigner(
+        address operator,
+        address signer
+    ) external {
         address oldSigner = operatorToSigning[operator];
         delete signingToOperator[oldSigner];
         operatorToSigning[operator] = signer;

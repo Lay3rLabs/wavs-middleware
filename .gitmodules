@@ -6,3 +6,6 @@
 	url = https://github.com/Lay3rLabs/eigenlayer-middleware
 	# This commit hash (3ea829d52c4a8cb1d26c9a6ac4807b87c70a1f47) corresponds to wavs-1.4 branch (based on tag v1.4.0-testnet-holesky)
 	branch = 3ea829d52c4a8cb1d26c9a6ac4807b87c70a1f47 
+[submodule "contracts/lib/poa-middleware"]
+	path = contracts/lib/poa-middleware
+	url = https://github.com/Lay3rLabs/poa-middleware.git

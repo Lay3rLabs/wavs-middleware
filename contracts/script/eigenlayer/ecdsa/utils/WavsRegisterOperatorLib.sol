@@ -112,7 +112,10 @@ library WavsRegisterOperatorLib {
      * @param serviceManagerAddress The WAVS service manager address.
      * @param signingKeyAddress The signing key address.
      */
-    function registerToAvs(address serviceManagerAddress, address signingKeyAddress) internal {
+    function registerToAvs(
+        address serviceManagerAddress,
+        address signingKeyAddress
+    ) internal {
         WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
         ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
 
@@ -129,8 +132,10 @@ library WavsRegisterOperatorLib {
             opSetIds[0] = 0;
             // TODO: change this arbitrary code?
             bytes memory secretCode = bytes("0x1234");
-            IAllocationManagerTypes.RegisterParams memory params = IAllocationManagerTypes
-                .RegisterParams({avs: serviceManagerAddress, operatorSetIds: opSetIds, data: secretCode});
+            IAllocationManagerTypes.RegisterParams memory params =
+                IAllocationManagerTypes.RegisterParams({
+                    avs: serviceManagerAddress, operatorSetIds: opSetIds, data: secretCode
+                });
             allocationManager.registerForOperatorSets(operatorAddr, params);
 
             console2.log("Successfully registered operator %s to operator sets [0]", operatorAddr);
@@ -172,11 +177,9 @@ library WavsRegisterOperatorLib {
 
             console2.log("Registering operator with signature...");
             ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry memory operatorSignature =
-            ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry({
-                signature: signature,
-                salt: salt,
-                expiry: expiry
-            });
+                ISignatureUtilsMixinTypes.SignatureWithSaltAndExpiry({
+                    signature: signature, salt: salt, expiry: expiry
+                });
 
             stakeRegistry.registerOperatorWithSignature(operatorSignature, signingKeyAddress);
             console2.log(
@@ -210,12 +213,10 @@ library WavsRegisterOperatorLib {
         if (allocationManager.isMemberOfOperatorSet(operatorAddr, opSetQuery)) {
             uint32[] memory opSetIds = new uint32[](1);
             opSetIds[0] = 0;
-            IAllocationManagerTypes.DeregisterParams memory params = IAllocationManagerTypes
-                .DeregisterParams({
-                operator: operatorAddr,
-                avs: serviceManagerAddress,
-                operatorSetIds: opSetIds
-            });
+            IAllocationManagerTypes.DeregisterParams memory params =
+                IAllocationManagerTypes.DeregisterParams({
+                    operator: operatorAddr, avs: serviceManagerAddress, operatorSetIds: opSetIds
+                });
             allocationManager.deregisterFromOperatorSets(params);
 
             console2.log(

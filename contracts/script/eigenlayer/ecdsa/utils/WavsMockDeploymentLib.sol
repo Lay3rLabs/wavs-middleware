@@ -84,11 +84,11 @@ library WavsMockDeploymentLib {
 
         // use an mock quorum so checks pass, we don't use it internally
         IStrategy mockStrategyInstance = IStrategy(address(1)); // Using address(1) instead of address(0)
-        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams = IECDSAStakeRegistryTypes
-            .StrategyParams({
-            strategy: mockStrategyInstance,
-            multiplier: 10_000 // 100% in basis points
-        });
+        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams =
+            IECDSAStakeRegistryTypes.StrategyParams({
+                strategy: mockStrategyInstance,
+                multiplier: 10_000 // 100% in basis points
+            });
         IECDSAStakeRegistryTypes.StrategyParams[] memory strategies =
             new IECDSAStakeRegistryTypes.StrategyParams[](1);
         strategies[0] = strategyParams;
@@ -196,7 +196,10 @@ library WavsMockDeploymentLib {
      * @param data The deployment data.
      * @param fileName The file name.
      */
-    function writeDeploymentJson(DeploymentData memory data, string memory fileName) internal {
+    function writeDeploymentJson(
+        DeploymentData memory data,
+        string memory fileName
+    ) internal {
         address proxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(data.wavsServiceManager));
 
         string memory deploymentData = _generateDeploymentJson(data, proxyAdmin);

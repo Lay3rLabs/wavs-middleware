@@ -2,8 +2,9 @@
 pragma solidity ^0.8.27;
 
 import {BN254} from "@eigenlayer-middleware/src/libraries/BN254.sol";
-import {ISlashingRegistryCoordinator} from
-    "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
+import {
+    ISlashingRegistryCoordinator
+} from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {IBLSApkRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IBLSApkRegistry.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {BN256G2} from "@eigenlayer-middleware/test/utils/BN256G2.sol";
@@ -55,9 +56,7 @@ library BLSKeyGenerator {
         BN254.G1Point memory signature = BN254.scalar_mul(pubkeyRegistrationMessageHash, privateKey);
 
         params = IBLSApkRegistryTypes.PubkeyRegistrationParams({
-            pubkeyRegistrationSignature: signature,
-            pubkeyG1: pubkeyG1,
-            pubkeyG2: pubkeyG2
+            pubkeyRegistrationSignature: signature, pubkeyG1: pubkeyG1, pubkeyG2: pubkeyG2
         });
     }
 }

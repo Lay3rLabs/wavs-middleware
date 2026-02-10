@@ -4,8 +4,9 @@ pragma solidity ^0.8.27;
 import {ServiceManagerBase} from "@eigenlayer-middleware/src/ServiceManagerBase.sol";
 import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {ISlashingRegistryCoordinator} from
-    "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
+import {
+    ISlashingRegistryCoordinator
+} from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {IStakeRegistry} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
 import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
@@ -60,7 +61,10 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
      * @param initialOwner The initial owner of the contract
      * @param rewardsInitiator The address of the rewards initiator
      */
-    function initialize(address initialOwner, address rewardsInitiator) external initializer {
+    function initialize(
+        address initialOwner,
+        address rewardsInitiator
+    ) external initializer {
         __ServiceManagerBase_init(initialOwner, rewardsInitiator);
 
         quorumNumerator = 2;
@@ -91,7 +95,10 @@ contract WavsServiceManager is ServiceManagerBase, IWavsServiceManager {
     }
 
     /// @inheritdoc IWavsServiceManager
-    function setQuorumThreshold(uint256 numerator, uint256 denominator) external onlyOwner {
+    function setQuorumThreshold(
+        uint256 numerator,
+        uint256 denominator
+    ) external onlyOwner {
         if (numerator == 0) {
             revert InvalidQuorumParameters();
         }

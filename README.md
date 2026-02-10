@@ -351,6 +351,15 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    wavs-middleware -m mirror deploy
 ```
 
+For **POA (Proof of Authority)** deployments, set `IS_POA=true` and set `WAVS_SERVICE_MANAGER_ADDRESS` to the `POAStakeRegistry` address:
+
+```bash
+docker run --rm --network host -v ./.nodes:/root/.nodes \
+   -e IS_POA=true \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${POA_STAKE_REGISTRY_ADDRESS} \
+   wavs-middleware -m mirror deploy
+```
+
 | Environment Variable           | Required              | Default                       | Source       | Description                                   |
 | ------------------------------ | --------------------- | ----------------------------- | ------------ | --------------------------------------------- |
 | `DEPLOY_ENV`                   | for non-default value | `LOCAL`                       | `.env`       | Deployment environment (`LOCAL` or `TESTNET`) |
@@ -358,6 +367,7 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
 | `FUNDED_KEY`                   | if not mounted        | From `.nodes/deployer`        | Volume       | Deployer private key                          |
 | `SOURCE_RPC_URL`               | for non-default value | `http://localhost:8545`       | Command line | RPC URL for source chain                      |
 | `MIRROR_RPC_URL`               | for non-default value | `http://localhost:8546`       | Command line | RPC URL for mirror chain                      |
+| `IS_POA`                       | for POA deployments   | `false`                       | Command line | Set to `true` for POA stake registries        |
 
 ### List Mirror Operators
 
@@ -598,20 +608,17 @@ sequenceDiagram
 - `execute_transaction`: Run a transaction and handle errors
 - `stop_impersonating`: Stop impersonating an account (LOCAL only)
 
-### Instructions on getting Holesky ETH
+### Instructions on getting Sepolia ETH
 
-To get Holesky ETH for running on testnet:
+To get Sepolia ETH for running on testnet:
 
-1. PoW Mining Faucet:
-
-   - Go to https://holesky-faucet.pk910.de/
-   - Connect your wallet
-   - Mine blocks in your browser to earn ETH
-   - Rewards based on mining time/hashrate
-   - No external requirements
-
-2. Alchemy Faucet (Alternative):
-   - Visit https://www.alchemy.com/faucets/holesky
+1. Alchemy Faucet:
+   - Visit https://www.alchemy.com/faucets/ethereum-sepolia
    - Requires mainnet ETH balance to use
    - Connect wallet and verify ownership
+   - Request funds (limits apply)
+
+2. Google Cloud Faucet:
+   - Visit https://cloud.google.com/application/web3/faucet/ethereum/sepolia
+   - No requirements
    - Request funds (limits apply)

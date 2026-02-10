@@ -80,8 +80,8 @@ library WavsRegisterOperatorLib {
             opSetIds[0] = 0;
 
             BN254.G1Point memory pubkeyRegistrationMessageHash = ISlashingRegistryCoordinator(
-                WavsServiceManager(serviceManagerAddress).getRegistryCoordinator()
-            ).pubkeyRegistrationMessageHash(operatorAddr);
+                    WavsServiceManager(serviceManagerAddress).getRegistryCoordinator()
+                ).pubkeyRegistrationMessageHash(operatorAddr);
 
             IBLSApkRegistryTypes.PubkeyRegistrationParams memory blsParams =
                 BLSKeyGenerator.generateBLSParams(pubkeyRegistrationMessageHash, operatorKey);
@@ -89,8 +89,10 @@ library WavsRegisterOperatorLib {
             bytes memory data = abi.encode(
                 ISlashingRegistryCoordinatorTypes.RegistrationType.NORMAL, "Mock Socket", blsParams
             );
-            IAllocationManagerTypes.RegisterParams memory params = IAllocationManagerTypes
-                .RegisterParams({avs: serviceManagerAddress, operatorSetIds: opSetIds, data: data});
+            IAllocationManagerTypes.RegisterParams memory params =
+                IAllocationManagerTypes.RegisterParams({
+                    avs: serviceManagerAddress, operatorSetIds: opSetIds, data: data
+                });
 
             allocationManager.registerForOperatorSets(operatorAddr, params);
 

@@ -11,10 +11,6 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../../helper.sh"
 
-# shellcheck source=../foundry_profile.sh
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/../foundry_profile.sh"
-
 # Parse command line arguments in key=value format
 parse_args "$@"
 

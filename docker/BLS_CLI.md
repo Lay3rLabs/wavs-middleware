@@ -7,7 +7,7 @@ docker build -t wavs-middleware .
 ```
 
 ```bash docci-if-not-exists="docker/.env"
-CHAIN=holesky
+CHAIN=sepolia
 cp docker/env.example.$CHAIN docker/.env
 ```
 

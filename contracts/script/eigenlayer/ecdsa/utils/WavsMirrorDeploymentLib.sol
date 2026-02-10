@@ -2,7 +2,7 @@
 pragma solidity ^0.8.27;
 
 import {console2} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
+import {Vm, VmSafe} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
@@ -14,9 +14,12 @@ import {
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+import {IPOAStakeRegistry} from "@poa-middleware/src/ecdsa/interfaces/IPOAStakeRegistry.sol";
+import {IWavsServiceManager} from "src/eigenlayer/ecdsa/interfaces/IWavsServiceManager.sol";
 import {MirrorStakeRegistry} from "src/eigenlayer/ecdsa/MirrorStakeRegistry.sol";
-import {MirrorOperatorSyncHandler} from
-    "src/eigenlayer/ecdsa/handlers/MirrorOperatorSyncHandler.sol";
+import {
+    MirrorOperatorSyncHandler
+} from "src/eigenlayer/ecdsa/handlers/MirrorOperatorSyncHandler.sol";
 import {MirrorQuorumSyncHandler} from "src/eigenlayer/ecdsa/handlers/MirrorQuorumSyncHandler.sol";
 import {WavsServiceManager} from "src/eigenlayer/ecdsa/WavsServiceManager.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
@@ -94,11 +97,11 @@ library WavsMirrorDeploymentLib {
 
         // use an mock quorum so checks pass, we don't use it internally
         IStrategy mockStrategyInstance = IStrategy(address(1)); // Using address(1) instead of address(0)
-        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams = IECDSAStakeRegistryTypes
-            .StrategyParams({
-            strategy: mockStrategyInstance,
-            multiplier: 10_000 // 100% in basis points
-        });
+        IECDSAStakeRegistryTypes.StrategyParams memory strategyParams =
+            IECDSAStakeRegistryTypes.StrategyParams({
+                strategy: mockStrategyInstance,
+                multiplier: 10_000 // 100% in basis points
+            });
         IECDSAStakeRegistryTypes.StrategyParams[] memory strategies =
             new IECDSAStakeRegistryTypes.StrategyParams[](1);
         strategies[0] = strategyParams;
@@ -258,36 +261,109 @@ library WavsMirrorDeploymentLib {
     /**
      * @notice The load configuration from chain function.
      * @param serviceManagerAddress The service manager address.
+     * @param isPOA Whether this is a POA deployment.
      * @return cfg The initial configuration.
      */
     function loadConfigurationFromChain(
-        address serviceManagerAddress
-    ) internal view returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
-        WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
-        ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
-
+        address serviceManagerAddress,
+        bool isPOA
+    ) internal returns (WavsMirrorDeploymentLib.InitialConfiguration memory) {
         WavsMirrorDeploymentLib.InitialConfiguration memory cfg;
 
-        // get config values
-        cfg.thresholdWeight = stakeRegistry.getLastCheckpointThresholdWeight();
-        cfg.quorumNumerator = serviceManager.quorumNumerator();
-        cfg.quorumDenominator = serviceManager.quorumDenominator();
+        if (isPOA) {
+            // For POA, serviceManagerAddress IS the POAStakeRegistry
+            // (it implements both IPOAStakeRegistry and IWavsServiceManager)
+            IPOAStakeRegistry poaRegistry = IPOAStakeRegistry(serviceManagerAddress);
 
-        // get operators
-        IAllocationManager allocationManager =
-            IAllocationManager(serviceManager.getAllocationManager());
-        OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
-        cfg.operators = allocationManager.getMembers(opSetQuery);
+            cfg.thresholdWeight = poaRegistry.getLastCheckpointThresholdWeight();
+            (cfg.quorumNumerator, cfg.quorumDenominator) = poaRegistry.getLastCheckpointQuorum();
 
-        // get operator info
-        cfg.signingKeyAddresses = new address[](cfg.operators.length);
-        cfg.weights = new uint256[](cfg.operators.length);
-        for (uint256 i = 0; i < cfg.operators.length; ++i) {
-            cfg.signingKeyAddresses[i] = stakeRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
-            cfg.weights[i] = stakeRegistry.getOperatorWeight(cfg.operators[i]);
+            // Get operators from POA events
+            cfg.operators = loadOperatorsFromPOAEvents(serviceManagerAddress);
+
+            // Get operator signing keys and weights
+            cfg.signingKeyAddresses = new address[](cfg.operators.length);
+            cfg.weights = new uint256[](cfg.operators.length);
+            for (uint256 i = 0; i < cfg.operators.length; ++i) {
+                cfg.signingKeyAddresses[i] =
+                    poaRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
+                cfg.weights[i] =
+                    IWavsServiceManager(serviceManagerAddress).getOperatorWeight(cfg.operators[i]);
+            }
+        } else {
+            // EigenLayer mode
+            WavsServiceManager serviceManager = WavsServiceManager(serviceManagerAddress);
+            ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(serviceManager.stakeRegistry());
+
+            cfg.thresholdWeight = stakeRegistry.getLastCheckpointThresholdWeight();
+            cfg.quorumNumerator = serviceManager.quorumNumerator();
+            cfg.quorumDenominator = serviceManager.quorumDenominator();
+
+            address allocationManagerAddr = serviceManager.getAllocationManager();
+            IAllocationManager allocationManager = IAllocationManager(allocationManagerAddr);
+            OperatorSet memory opSetQuery = OperatorSet({avs: serviceManagerAddress, id: 0});
+            cfg.operators = allocationManager.getMembers(opSetQuery);
+
+            cfg.signingKeyAddresses = new address[](cfg.operators.length);
+            cfg.weights = new uint256[](cfg.operators.length);
+            for (uint256 i = 0; i < cfg.operators.length; ++i) {
+                cfg.signingKeyAddresses[i] =
+                    stakeRegistry.getLatestOperatorSigningKey(cfg.operators[i]);
+                cfg.weights[i] = stakeRegistry.getOperatorWeight(cfg.operators[i]);
+            }
         }
 
         return cfg;
+    }
+
+    /**
+     * @notice Loads operators from POA stake registry by querying OperatorRegistered events
+     * @param stakeRegistryAddress The stake registry address
+     * @return operators Array of unique operator addresses
+     */
+    function loadOperatorsFromPOAEvents(
+        address stakeRegistryAddress
+    ) internal returns (address[] memory operators) {
+        bytes32[] memory topics = new bytes32[](1);
+        topics[0] = keccak256("OperatorRegistered(address)");
+
+        uint256 fromBlock = block.number > 5000 ? block.number - 5000 : 0;
+        VmSafe.EthGetLogs[] memory logs =
+            VM.eth_getLogs(fromBlock, block.number, stakeRegistryAddress, topics);
+
+        address[] memory tempOperators = new address[](logs.length);
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < logs.length; i++) {
+            // Ensure the operator address topic exists before accessing it
+            if (logs[i].topics.length <= 1) {
+                // Skip logs that do not have the expected indexed operator address
+                continue;
+            }
+
+            address operator = address(uint160(uint256(logs[i].topics[1])));
+
+            bool found = false;
+            for (uint256 j = 0; j < count; j++) {
+                if (tempOperators[j] == operator) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                tempOperators[count] = operator;
+                count++;
+            }
+        }
+
+        // Create properly sized array
+        operators = new address[](count);
+        for (uint256 i = 0; i < count; i++) {
+            operators[i] = tempOperators[i];
+        }
+
+        return operators;
     }
 
     /**

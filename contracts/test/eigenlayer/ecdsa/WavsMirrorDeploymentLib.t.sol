@@ -2,11 +2,13 @@
 pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
-import {IECDSAStakeRegistryTypes} from
-    "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {
+    IECDSAStakeRegistryTypes
+} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ECDSAUpgradeable} from
-    "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
+import {
+    ECDSAUpgradeable
+} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 import {WavsMirrorDeploymentLib} from "script/eigenlayer/ecdsa/utils/WavsMirrorDeploymentLib.sol";
 import {UpgradeableProxyLib} from "script/eigenlayer/ecdsa/utils/UpgradeableProxyLib.sol";
@@ -150,9 +152,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         /* solhint-enable func-name-mixedcase */
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(1)),
-            ordering: bytes12(0),
-            payload: "one"
+            eventId: bytes20(uint160(1)), ordering: bytes12(0), payload: "one"
         });
 
         // Create signature data with first 4 operators (4/5 >= 2/3 == success)
@@ -168,9 +168,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         /* solhint-enable func-name-mixedcase */
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(2)),
-            ordering: bytes12(0),
-            payload: "two"
+            eventId: bytes20(uint160(2)), ordering: bytes12(0), payload: "two"
         });
 
         // Create signature data with first 3 operators (3/5 < 2/3 == failure)
@@ -197,9 +195,7 @@ contract WavsMirrorDeploymentLibTest is Test {
 
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(3)),
-            ordering: bytes12(0),
-            payload: "three"
+            eventId: bytes20(uint160(3)), ordering: bytes12(0), payload: "three"
         });
 
         // Create signature data with first 4 operators (3/5 >= 3/5 == success)
@@ -241,9 +237,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         assertEq(registeredOperator, operators[0], "Operator not registered correctly");
 
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(4)),
-            ordering: bytes12(0),
-            payload: "four"
+            eventId: bytes20(uint160(4)), ordering: bytes12(0), payload: "four"
         });
 
         // One operator will match threshold. Ensure lookup by signing key works well.
@@ -268,9 +262,7 @@ contract WavsMirrorDeploymentLibTest is Test {
 
         // Create the envelope
         IWavsServiceHandler.Envelope memory envelope = IWavsServiceHandler.Envelope({
-            eventId: bytes20(uint160(5)),
-            ordering: bytes12(0),
-            payload: "five"
+            eventId: bytes20(uint160(5)), ordering: bytes12(0), payload: "five"
         });
 
         // Create signature data with first 3 operators (3/5 >= 51% == success)
@@ -342,9 +334,7 @@ contract WavsMirrorDeploymentLibTest is Test {
         serviceManager.validate(
             IWavsServiceHandler.Envelope({eventId: bytes20(0), ordering: bytes12(0), payload: ""}),
             IWavsServiceHandler.SignatureData({
-                signers: emptySigners,
-                signatures: emptySignatures,
-                referenceBlock: 1
+                signers: emptySigners, signatures: emptySignatures, referenceBlock: 1
             })
         );
     }
