@@ -351,11 +351,12 @@ docker run --rm --network host -v ./.nodes:/root/.nodes \
    wavs-middleware -m mirror deploy
 ```
 
-For **POA (Proof of Authority)** deployments where the source chain uses a POA stake registry, set the `IS_POA` environment variable:
+For **POA (Proof of Authority)** deployments, set `IS_POA=true` and set `WAVS_SERVICE_MANAGER_ADDRESS` to the `POAStakeRegistry` address:
 
 ```bash
 docker run --rm --network host -v ./.nodes:/root/.nodes \
    -e IS_POA=true \
+   -e WAVS_SERVICE_MANAGER_ADDRESS=${POA_STAKE_REGISTRY_ADDRESS} \
    wavs-middleware -m mirror deploy
 ```
 
