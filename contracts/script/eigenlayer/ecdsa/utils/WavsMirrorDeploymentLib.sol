@@ -335,6 +335,12 @@ library WavsMirrorDeploymentLib {
         uint256 count = 0;
 
         for (uint256 i = 0; i < logs.length; i++) {
+            // Ensure the operator address topic exists before accessing it
+            if (logs[i].topics.length <= 1) {
+                // Skip logs that do not have the expected indexed operator address
+                continue;
+            }
+
             address operator = address(uint160(uint256(logs[i].topics[1])));
 
             bool found = false;
